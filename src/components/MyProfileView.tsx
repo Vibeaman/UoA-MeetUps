@@ -9,6 +9,7 @@ import {
   GraduationCap,
   MapPin,
   Camera,
+  LogIn,
   LogOut,
   ChevronRight,
   Sliders,
@@ -33,6 +34,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 }) => {
   const {
     currentUser,
+    isAuthenticated,
     isPremium,
     activePlan,
     setIsPremiumModalOpen,
@@ -233,17 +235,20 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" />
         </button>
 
-        {/* Switch Account */}
+        {/* Authentication */}
         <button
           onClick={() => {
-            signOut();
-            setIsAuthModalOpen(true);
+            if (isAuthenticated) {
+              signOut();
+            } else {
+              setIsAuthModalOpen(true);
+            }
           }}
           className="w-full p-3 rounded-2xl hover:bg-rose-950/40 flex items-center justify-between transition-colors text-rose-400"
         >
           <div className="flex items-center space-x-2.5">
-            <LogOut className="w-4 h-4" />
-            <span className="font-semibold">Switch Account / Sign In</span>
+            {isAuthenticated ? <LogOut className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+            <span className="font-semibold">{isAuthenticated ? 'Log Out' : 'Sign In'}</span>
           </div>
         </button>
       </div>
