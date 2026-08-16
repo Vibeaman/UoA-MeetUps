@@ -89,7 +89,7 @@ export const AuthModal: React.FC = () => {
       }
 
       const user = result.data.user;
-      const isVerified = Boolean(user?.email_confirmed_at);
+      const isVerified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
       if (!user || !result.data.session || !isVerified) {
         setVerificationEmail(email);
         setPasswordInput('');

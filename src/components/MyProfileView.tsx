@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldCheck,
   Edit3,
@@ -35,15 +35,22 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
   const {
     currentUser,
     isAuthenticated,
+    isAuthLoading,
     isPremium,
     activePlan,
     setIsPremiumModalOpen,
     setIsVerificationModalOpen,
     setIsAuthModalOpen,
     signOut,
+    refreshAuthentication,
     toggleMode,
     appMode,
   } = useApp();
+
+  useEffect(() => {
+    if (isAuthLoading || isAuthenticated) return;
+    void refreshAuthentication();
+  }, [isAuthLoading, isAuthenticated]);
 
   return (
     <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">

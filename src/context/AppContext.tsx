@@ -287,8 +287,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const refreshedUser = refreshedSession.session?.user;
     const { data, error } = await supabase.auth.getUser();
     const user = data.user || refreshedUser;
-    const verified = Boolean(user?.email_confirmed_at);
-    const authenticated = !error && Boolean(user) && verified;
+      const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
+      const authenticated = !error && Boolean(user) && verified;
 
     setIsAuthenticated(authenticated);
     setIsEmailVerified(verified);
@@ -350,7 +350,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       const user = data.session?.user;
-      const verified = Boolean(user?.email_confirmed_at);
+      const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
       setIsAuthenticated(Boolean(user) && verified);
       setIsEmailVerified(verified);
       if (user && verified) {
@@ -365,7 +365,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
-      const verified = Boolean(user?.email_confirmed_at);
+      const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
       setIsAuthenticated(Boolean(user) && verified);
       setIsEmailVerified(verified);
       if (user && verified) {
