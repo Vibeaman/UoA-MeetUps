@@ -1,0 +1,10 @@
+{
+  "name": "UoA MeetUps",
+  "description": "Exclusive campus dating and social app for University of Abuja students featuring Tinder-style swipe matching, discreet Lowkey Mode, student portal sync, photo verification, and real-time chat.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
