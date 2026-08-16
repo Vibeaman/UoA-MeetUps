@@ -8,7 +8,6 @@ import {
   GraduationCap,
   Sparkles,
   ArrowRight,
-  RefreshCw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getSupabase } from '../lib/supabase';
@@ -20,7 +19,6 @@ export const AuthModal: React.FC = () => {
     setIsAuthModalOpen,
     currentUser,
     updateCurrentUser,
-    syncStudentPortal,
     authenticateUser,
     refreshAuthentication,
     resendVerificationEmail,
@@ -33,8 +31,6 @@ export const AuthModal: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState(currentUser.name || 'Tariro Adebayo');
   const [ageConfirmed, setAgeConfirmed] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatusMsg, setSyncStatusMsg] = useState('');
   const [authError, setAuthError] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,14 +46,6 @@ export const AuthModal: React.FC = () => {
   }, [isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
-
-  const handlePortalSync = async () => {
-    setIsSyncing(true);
-    setSyncStatusMsg('Connecting to UniAbuja Student Portal Server...');
-    const res = await syncStudentPortal(matricInput);
-    setIsSyncing(false);
-    setSyncStatusMsg(res.message);
-  };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -357,22 +345,11 @@ export const AuthModal: React.FC = () => {
               />
             </div>
 
-            {/* Matric Number Input + Portal Sync */}
+            {/* Matric Number Input */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-left text-[11px] font-bold text-purple-300 uppercase">
-                  UniAbuja Matric Number
-                </label>
-                <button
-                  type="button"
-                  onClick={handlePortalSync}
-                  disabled={isSyncing || !matricInput.trim()}
-                  className="text-[10px] text-purple-300 hover:text-white font-bold flex items-center space-x-1 underline"
-                >
-                  <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>Sync Student Portal</span>
-                </button>
-              </div>
+              <label className="block text-left text-[11px] font-bold text-purple-300 uppercase mb-1">
+                UniAbuja Matric Number
+              </label>
 
               <input
                 type="text"
@@ -383,11 +360,6 @@ export const AuthModal: React.FC = () => {
                 className="w-full p-2.5 rounded-xl bg-[#150826] border border-purple-900/50 text-xs text-white uppercase placeholder-neutral-500 font-mono focus:outline-none focus:border-purple-400"
               />
 
-              {syncStatusMsg && (
-                <p className="text-[10px] text-emerald-400 text-left mt-1 font-semibold">
-                  {syncStatusMsg}
-                </p>
-              )}
             </div>
 
             {/* Password */}

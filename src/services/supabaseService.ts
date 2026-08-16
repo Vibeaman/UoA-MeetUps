@@ -142,7 +142,6 @@ export const supabaseService = {
         icebreakerPrompts: Array.isArray(r.icebreaker_prompts) ? r.icebreaker_prompts : [],
         badges: r.badges || [],
         isBanned: r.is_banned || false,
-        portalSynced: r.portal_synced ?? false,
         lastActive: r.last_active || 'Recently active',
         isOnline: r.is_online ?? false,
         instagramHandle: r.instagram || undefined,

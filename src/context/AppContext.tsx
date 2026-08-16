@@ -72,7 +72,6 @@ interface AppContextType {
   unmatchUser: (matchId: string) => void;
   verificationRequests: VerificationRequest[];
   submitVerification: (selfieUrl: string, idCardUrl?: string) => void;
-  syncStudentPortal: (matricNumber: string) => Promise<{ success: boolean; data?: Partial<UserProfile>; message: string }>;
   // Admin actions
   approveVerification: (requestId: string) => void;
   rejectVerification: (requestId: string, note?: string) => void;
@@ -991,67 +990,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  // Simulate UniAbuja Student Portal Sync
-  const syncStudentPortal = async (matricNumber: string): Promise<{ success: boolean; data?: Partial<UserProfile>; message: string }> => {
-    await new Promise((resolve) => setTimeout(resolve, 1500)); // Network delay simulation
-
-    const cleanMatric = matricNumber.trim().toUpperCase();
-    const matricRegex = /^[0-9]{2}\/[0-9]{3,4}[A-Z]{2,4}[0-9]{2,4}$/;
-
-    if (!cleanMatric || cleanMatric.length < 8) {
-      return {
-        success: false,
-        message: 'Invalid UniAbuja Matric Number format. Example: 21/104CS082 or 22/209LAW044',
-      };
-    }
-
-    // Determine faculty & level from matric prefix
-    const yearPrefix = cleanMatric.substring(0, 2);
-    let level: UserProfile['level'] = '100L';
-    if (yearPrefix === '23') level = '100L';
-    else if (yearPrefix === '22') level = '200L';
-    else if (yearPrefix === '21') level = '300L';
-    else if (yearPrefix === '20') level = '400L';
-    else if (yearPrefix === '19') level = '500L';
-
-    let department = currentUser.department;
-    let faculty = currentUser.faculty;
-
-    if (cleanMatric.includes('CS')) {
-      department = 'Computer Science';
-      faculty = 'Faculty of Science';
-    } else if (cleanMatric.includes('LAW')) {
-      department = 'Civil Law';
-      faculty = 'Faculty of Law';
-    } else if (cleanMatric.includes('MED') || cleanMatric.includes('MBBS')) {
-      department = 'Medicine & Surgery (MBBS)';
-      faculty = 'College of Health Sciences';
-    } else if (cleanMatric.includes('ENG')) {
-      department = 'Mechanical Engineering';
-      faculty = 'Faculty of Engineering';
-    } else if (cleanMatric.includes('MGT') || cleanMatric.includes('ACC')) {
-      department = 'Accounting';
-      faculty = 'Faculty of Management Sciences';
-    }
-
-    const updatedData: Partial<UserProfile> = {
-      matricNumber: cleanMatric,
-      level,
-      department,
-      faculty,
-      portalSynced: true,
-      badges: Array.from(new Set([...currentUser.badges, '⚡ Portal Synced', '🛡️ Verified Student'])),
-    };
-
-    updateCurrentUser(updatedData);
-
-    return {
-      success: true,
-      data: updatedData,
-      message: `UniAbuja Portal Sync Successful! Matric ${cleanMatric} verified under ${faculty}.`,
-    };
-  };
-
   // Admin: Approve Verification
   const approveVerification = (requestId: string) => {
     setVerificationRequests((prev) =>
@@ -1349,7 +1287,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         unmatchUser,
         verificationRequests,
         submitVerification,
-        syncStudentPortal,
         approveVerification,
         rejectVerification,
         resolveReport,

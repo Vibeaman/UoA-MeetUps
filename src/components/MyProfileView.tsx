@@ -9,7 +9,6 @@ import {
   GraduationCap,
   MapPin,
   Camera,
-  RefreshCw,
   LogOut,
   ChevronRight,
   Sliders,
@@ -42,20 +41,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     signOut,
     toggleMode,
     appMode,
-    syncStudentPortal,
   } = useApp();
-
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncFeedback, setSyncFeedback] = useState('');
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setSyncFeedback('Syncing with UniAbuja Portal...');
-    const res = await syncStudentPortal(currentUser.matricNumber);
-    setIsSyncing(false);
-    setSyncFeedback(res.message);
-    setTimeout(() => setSyncFeedback(''), 4000);
-  };
 
   return (
     <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
@@ -221,23 +207,8 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Portal Sync & Settings Actions */}
+      {/* Settings Actions */}
       <div className="space-y-1.5 rounded-3xl bg-[#120620] border border-purple-950 p-2 text-xs">
-        {/* Sync Portal */}
-        <button
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="w-full p-3 rounded-2xl hover:bg-purple-950/50 flex items-center justify-between transition-colors group"
-        >
-          <div className="flex items-center space-x-2.5 text-neutral-200">
-            <RefreshCw className={`w-4 h-4 text-purple-400 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="font-semibold">Sync UniAbuja Student Portal</span>
-          </div>
-          <span className="text-[10px] text-purple-300 font-mono">
-            {syncFeedback || '2025/2026 Session'}
-          </span>
-        </button>
-
         {/* Community Guidelines */}
         <button
           onClick={onOpenGuidelines}

@@ -101,7 +101,6 @@ export interface UserProfile {
   verificationStatus: VerificationStatus;
   selfieUrl?: string;
   studentIdCardUrl?: string;
-  portalSynced: boolean;
   lastActive: string; // e.g. "Just now", "5m ago", "1h ago"
   isOnline: boolean;
   distanceKm?: number;
