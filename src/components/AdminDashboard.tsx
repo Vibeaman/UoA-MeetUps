@@ -33,7 +33,11 @@ import {
 import { useApp } from '../context/AppContext';
 import { UserProfile, UserReport, VerificationRequest, GossipPost } from '../types';
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  onExit: () => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const {
     profiles,
     currentUser,
@@ -52,7 +56,6 @@ export const AdminDashboard: React.FC = () => {
     gossipPosts,
     campusPolls,
     matches,
-    setActiveTab,
   } = useApp();
 
   // Tab State
@@ -162,7 +165,7 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex items-center justify-between pb-3 border-b border-purple-900/60">
         <div className="flex items-center space-x-2.5">
           <button
-            onClick={() => setActiveTab('discover')}
+            onClick={onExit}
             className="p-2 rounded-xl bg-[#17082c] border border-purple-800/60 text-purple-300 hover:text-white hover:bg-purple-900 transition-all flex items-center space-x-1"
             title="Return to Student Discovery Feed"
           >

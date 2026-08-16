@@ -31,6 +31,9 @@ interface AppContextType {
   updateCurrentUser: (updates: Partial<UserProfile>) => void;
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
+  isAdminAuthenticated: boolean;
+  unlockAdmin: (password: string) => boolean;
+  logoutAdmin: () => void;
   currentMode: AppMode;
   toggleAppMode: (mode?: AppMode) => void;
   profiles: UserProfile[];
@@ -120,6 +123,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const ADMIN_PASSWORD = 'MJJ';
+
 const STORAGE_KEYS = {
   CURRENT_USER: 'uoa_current_user_v2',
   PROFILES: 'uoa_profiles_v2',
@@ -139,8 +144,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : INITIAL_CURRENT_USER;
   });
 
-  const [activeTab, setActiveTab] = useState<NavigationTab>('discover');
+  const [activeTab, setActiveTab] = useState<NavigationTab>(() => {
+    const pathname = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '/';
+    return pathname === '/admin' ? 'admin' : 'discover';
+  });
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [currentMode, setCurrentMode] = useState<AppMode>(currentUser.mode || 'normal');
+
+  const unlockAdmin = (password: string) => {
+    const isValid = password.trim().toUpperCase() === ADMIN_PASSWORD;
+    setIsAdminAuthenticated(isValid);
+    return isValid;
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+  };
 
   // Profiles
   const [profiles, setProfiles] = useState<UserProfile[]>(() => {
@@ -1150,6 +1169,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateCurrentUser,
         activeTab,
         setActiveTab,
+        isAdminAuthenticated,
+        unlockAdmin,
+        logoutAdmin,
         currentMode,
         toggleAppMode,
         profiles,

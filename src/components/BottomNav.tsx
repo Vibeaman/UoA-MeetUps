@@ -5,7 +5,6 @@ import {
   MessageCircle,
   ShieldCheck,
   User,
-  ShieldAlert,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
@@ -16,18 +15,10 @@ export const BottomNav: React.FC = () => {
     setActiveTab,
     matches,
     whoLikedMeProfiles,
-    currentUser,
-    reports,
-    verificationRequests,
   } = useApp();
 
   // Calculate unread messages
   const unreadMatchesCount = matches.filter((m) => m.hasUnread).length;
-  // Admin pending items
-  const pendingAdminItems =
-    reports.filter((r) => r.status === 'pending').length +
-    verificationRequests.filter((v) => v.status === 'pending').length;
-
   const navItems: { id: NavigationTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'discover',
@@ -55,12 +46,6 @@ export const BottomNav: React.FC = () => {
       id: 'profile',
       label: 'Profile',
       icon: <User className="w-5 h-5" />,
-    },
-    {
-      id: 'admin',
-      label: 'Admin',
-      icon: <ShieldAlert className="w-5 h-5" />,
-      badge: pendingAdminItems,
     },
   ];
 

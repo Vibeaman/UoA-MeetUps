@@ -8,6 +8,7 @@ import { ChatView } from './components/ChatView';
 import { SafetyCenterView } from './components/SafetyCenterView';
 import { MyProfileView } from './components/MyProfileView';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminAccessGate } from './components/AdminAccessGate';
 import { CommunityGuidelinesView } from './components/CommunityGuidelinesView';
 import { TipsView } from './components/TipsView';
 
@@ -23,7 +24,13 @@ import { ReportModal } from './components/ReportModal';
 import { UserProfile } from './types';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, setActiveTab, setIsProfileEditModalOpen } = useApp();
+  const {
+    activeTab,
+    setActiveTab,
+    setIsProfileEditModalOpen,
+    isAdminAuthenticated,
+    logoutAdmin,
+  } = useApp();
 
   // Modal and sub-view states
   const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
@@ -37,6 +44,14 @@ const MainAppContent: React.FC = () => {
 
   const handleOpenReport = (profile: UserProfile) => {
     setReportingUser(profile);
+  };
+
+  const handleExitAdmin = () => {
+    logoutAdmin();
+    setActiveTab('discover');
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin') {
+      window.history.replaceState({}, '', '/');
+    }
   };
 
   return (
@@ -86,17 +101,21 @@ const MainAppContent: React.FC = () => {
                 onOpenEditProfile={() => setIsProfileEditModalOpen(true)}
                 onOpenGuidelines={() => setShowGuidelines(true)}
                 onOpenTips={() => setShowTips(true)}
-                onOpenAdmin={() => setActiveTab('admin')}
               />
             )}
 
-            {activeTab === 'admin' && <AdminDashboard />}
+            {activeTab === 'admin' &&
+              (isAdminAuthenticated ? (
+                <AdminDashboard onExit={handleExitAdmin} />
+              ) : (
+                <AdminAccessGate onBack={handleExitAdmin} />
+              ))}
           </>
         )}
       </main>
 
-      {/* Bottom Nav */}
-      <BottomNav />
+      {/* Bottom Nav — hidden while the protected admin console is open */}
+      {activeTab !== 'admin' && <BottomNav />}
 
       {/* Modals & Overlays */}
       <ProfileDetailModal

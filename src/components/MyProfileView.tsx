@@ -25,14 +25,12 @@ interface MyProfileViewProps {
   onOpenEditProfile: () => void;
   onOpenGuidelines: () => void;
   onOpenTips: () => void;
-  onOpenAdmin: () => void;
 }
 
 export const MyProfileView: React.FC<MyProfileViewProps> = ({
   onOpenEditProfile,
   onOpenGuidelines,
   onOpenTips,
-  onOpenAdmin,
 }) => {
   const {
     currentUser,
@@ -261,20 +259,6 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             <span className="font-semibold">Campus Dating & Wellness Tips</span>
           </div>
           <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" />
-        </button>
-
-        {/* Admin Dashboard Trigger */}
-        <button
-          onClick={onOpenAdmin}
-          className="w-full p-3 rounded-2xl hover:bg-purple-950/50 flex items-center justify-between transition-colors group text-purple-300"
-        >
-          <div className="flex items-center space-x-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold">UniAbuja Admin Console</span>
-          </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 border border-purple-800 text-purple-200 font-bold">
-            Staff Portal
-          </span>
         </button>
 
         {/* Switch Account */}

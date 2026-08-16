@@ -26,6 +26,8 @@ export const Header: React.FC = () => {
     triggerBoost,
     setActiveTab,
     activeTab,
+    isAdminAuthenticated,
+    logoutAdmin,
   } = useApp();
 
   const [showModeTooltip, setShowModeTooltip] = useState(false);
@@ -47,12 +49,22 @@ export const Header: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const handleLogoClick = () => {
+    if (activeTab === 'admin' || isAdminAuthenticated) {
+      logoutAdmin();
+      if (typeof window !== 'undefined' && window.location.pathname === '/admin') {
+        window.history.replaceState({}, '', '/');
+      }
+    }
+    setActiveTab('discover');
+  };
+
   return (
     <header className="sticky top-0 z-30 w-full bg-[#090410]/90 backdrop-blur-xl border-b border-purple-950/60 px-3 sm:px-4 py-2.5 transition-all">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
         {/* Left: Logo & Campus Tag */}
         <div
-          onClick={() => setActiveTab('discover')}
+          onClick={handleLogoClick}
           className="flex items-center space-x-2.5 cursor-pointer group"
           id="header-logo-container"
         >
