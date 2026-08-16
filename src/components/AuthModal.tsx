@@ -119,6 +119,13 @@ export const AuthModal: React.FC = () => {
 
     try {
       const result = await refreshAuthentication();
+      if (!result.hasSession) {
+        setPasswordInput('');
+        setVerificationMessage('Your email may be confirmed, but this browser is not signed in. Sign in with your email and password to continue.');
+        setMode('login');
+        return;
+      }
+
       if (!result.isEmailVerified || !result.isAuthenticated) {
         setVerificationMessage('Your email is not confirmed yet. Open the link in your inbox, then check again.');
         return;

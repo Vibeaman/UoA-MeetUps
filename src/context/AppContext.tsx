@@ -36,7 +36,7 @@ interface AppContextType {
   isEmailVerified: boolean;
   authenticateUser: (userId?: string) => void;
   signOut: () => void;
-  refreshAuthentication: () => Promise<{ isAuthenticated: boolean; isEmailVerified: boolean; userId?: string }>;
+  refreshAuthentication: () => Promise<{ isAuthenticated: boolean; isEmailVerified: boolean; hasSession: boolean; userId?: string }>;
   resendVerificationEmail: (email: string) => Promise<{ success: boolean; message: string }>;
   requestAuthentication: () => boolean;
   isAdminAuthenticated: boolean;
@@ -274,8 +274,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const refreshAuthentication = async () => {
-    const { data, error } = await getSupabase().auth.getUser();
-    const user = data.user;
+    const supabase = getSupabase();
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    if (!sessionData.session) {
+      setIsAuthenticated(false);
+      setIsEmailVerified(false);
+      return { isAuthenticated: false, isEmailVerified: false, hasSession: false };
+    }
+
+    const { data: refreshedSession } = await supabase.auth.refreshSession();
+    const refreshedUser = refreshedSession.session?.user;
+    const { data, error } = await supabase.auth.getUser();
+    const user = data.user || refreshedUser;
     const verified = Boolean(user?.email_confirmed_at);
     const authenticated = !error && Boolean(user) && verified;
 
@@ -285,7 +296,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setCurrentUser((prev) => ({ ...prev, id: user.id }));
     }
 
-    return { isAuthenticated: authenticated, isEmailVerified: verified, userId: user?.id };
+    return { isAuthenticated: authenticated, isEmailVerified: verified, hasSession: true, userId: user?.id };
   };
 
   const resendVerificationEmail = async (email: string) => {
