@@ -39,6 +39,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     setIsPremiumModalOpen,
     setIsVerificationModalOpen,
     setIsAuthModalOpen,
+    signOut,
     toggleMode,
     appMode,
     syncStudentPortal,
@@ -263,7 +264,10 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
         {/* Switch Account */}
         <button
-          onClick={() => setIsAuthModalOpen(true)}
+          onClick={() => {
+            signOut();
+            setIsAuthModalOpen(true);
+          }}
           className="w-full p-3 rounded-2xl hover:bg-rose-950/40 flex items-center justify-between transition-colors text-rose-400"
         >
           <div className="flex items-center space-x-2.5">

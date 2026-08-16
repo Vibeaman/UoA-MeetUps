@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Lock,
@@ -22,18 +22,32 @@ export const AuthModal: React.FC = () => {
     updateCurrentUser,
     syncStudentPortal,
     authenticateUser,
+    refreshAuthentication,
+    resendVerificationEmail,
   } = useApp();
 
-  const [mode, setMode] = useState<'login' | 'signup' | 'onboarding'>('signup');
+  const [mode, setMode] = useState<'login' | 'signup' | 'verification' | 'onboarding'>('signup');
   const [matricInput, setMatricInput] = useState(currentUser.matricNumber || '21/104CS082');
   const [emailInput, setEmailInput] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState(currentUser.name || 'Tariro Adebayo');
   const [ageConfirmed, setAgeConfirmed] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState('');
   const [authError, setAuthError] = useState('');
+  const [verificationMessage, setVerificationMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [onboardingSlide, setOnboardingSlide] = useState(0);
+
+  useEffect(() => {
+    if (!isAuthModalOpen) return;
+    setMode('signup');
+    setPasswordInput('');
+    setAuthError('');
+    setVerificationMessage('');
+    setOnboardingSlide(0);
+  }, [isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
 
@@ -48,6 +62,7 @@ export const AuthModal: React.FC = () => {
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setVerificationMessage('');
 
     if (!ageConfirmed) {
       setAuthError('You must confirm that you are at least 18 years old to use UoA MeetUps.');
@@ -56,37 +71,99 @@ export const AuthModal: React.FC = () => {
 
     const email = emailInput.trim().toLowerCase();
     const password = passwordInput.trim();
-    const supabase = getSupabase();
-    const result =
-      mode === 'signup'
-        ? await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: fullNameInput.trim(),
-                matric_number: matricInput.trim().toUpperCase(),
+    setIsSubmitting(true);
+
+    try {
+      const supabase = getSupabase();
+      const result =
+        mode === 'signup'
+          ? await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                data: {
+                  full_name: fullNameInput.trim(),
+                  matric_number: matricInput.trim().toUpperCase(),
+                },
               },
-            },
-          })
-        : await supabase.auth.signInWithPassword({ email, password });
+            })
+          : await supabase.auth.signInWithPassword({ email, password });
 
-    if (result.error) {
-      setAuthError(result.error.message);
-      return;
+      if (result.error) {
+        if (mode === 'login' && /email not confirmed/i.test(result.error.message)) {
+          setVerificationEmail(email);
+          setAuthError('Your email has not been confirmed yet. Check your inbox before signing in.');
+          setMode('verification');
+        } else {
+          setAuthError(result.error.message);
+        }
+        return;
+      }
+
+      const user = result.data.user;
+      const isVerified = Boolean(user?.email_confirmed_at);
+      if (!user || !result.data.session || !isVerified) {
+        setVerificationEmail(email);
+        setPasswordInput('');
+        setMode('verification');
+        setVerificationMessage('We sent a confirmation link to your email. Open it before signing in.');
+        return;
+      }
+
+      updateCurrentUser({
+        matricNumber: matricInput.trim().toUpperCase(),
+        name: fullNameInput.trim(),
+      });
+      authenticateUser(user.id);
+      setOnboardingSlide(0);
+      setMode('onboarding');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    if (!result.data.session) {
-      setAuthError('Check your email to confirm your account, then sign in to continue.');
-      return;
+  const handleCheckVerification = async () => {
+    setAuthError('');
+    setVerificationMessage('Checking your email confirmation...');
+    setIsSubmitting(true);
+
+    try {
+      const result = await refreshAuthentication();
+      if (!result.isEmailVerified || !result.isAuthenticated) {
+        setVerificationMessage('Your email is not confirmed yet. Open the link in your inbox, then check again.');
+        return;
+      }
+
+      authenticateUser(result.userId);
+      setVerificationMessage('Email confirmed. You can continue into UoA MeetUps.');
+      setOnboardingSlide(0);
+      setMode('onboarding');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not check verification status.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    updateCurrentUser({
-      matricNumber: matricInput.trim().toUpperCase(),
-      name: fullNameInput.trim(),
-    });
-    authenticateUser(result.data.user?.id);
-    setMode('onboarding');
+  const handleResendVerification = async () => {
+    setAuthError('');
+    setVerificationMessage('Sending a new confirmation email...');
+    setIsSubmitting(true);
+
+    try {
+      const result = await resendVerificationEmail(verificationEmail);
+      if (result.success) {
+        setVerificationMessage(result.message);
+      } else {
+        setAuthError(result.message);
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not resend the confirmation email.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const onboardingSlides = [
@@ -138,7 +215,60 @@ export const AuthModal: React.FC = () => {
           <X className="w-5 h-5" />
         </button>
 
-        {mode === 'onboarding' ? (
+        {mode === 'verification' ? (
+          <div className="py-5 space-y-5 animate-fadeIn">
+            <div className="mx-auto w-16 h-16 rounded-full bg-purple-900/80 border-2 border-purple-400 flex items-center justify-center text-purple-300 shadow-[0_0_25px_#a855f7]">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black font-display text-white">Confirm your email</h2>
+              <p className="text-xs text-purple-300 mt-1">One quick step before you join the campus community.</p>
+            </div>
+            <div className="rounded-2xl border border-purple-800/60 bg-[#150826] p-4 text-left">
+              <p className="text-xs text-neutral-200 leading-relaxed">
+                We sent a confirmation link to <strong className="text-purple-200 break-all">{verificationEmail}</strong>. Open it in your email app, then return here and tap “I confirmed my email”.
+              </p>
+            </div>
+            {authError && (
+              <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-left text-[11px] font-semibold text-rose-300">
+                {authError}
+              </p>
+            )}
+            {verificationMessage && (
+              <p className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-left text-[11px] font-semibold text-emerald-300">
+                {verificationMessage}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleCheckVerification}
+              disabled={isSubmitting}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs shadow-lg shadow-purple-900/50 disabled:opacity-50"
+            >
+              {isSubmitting ? 'Checking...' : 'I confirmed my email'}
+            </button>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={isSubmitting}
+              className="w-full py-2.5 rounded-2xl border border-purple-700/60 text-purple-200 font-bold text-xs disabled:opacity-50"
+            >
+              Resend confirmation email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthError('');
+                setVerificationMessage('');
+                setPasswordInput('');
+                setMode('login');
+              }}
+              className="text-xs text-neutral-400 hover:text-white underline"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : mode === 'onboarding' ? (
           /* Onboarding Explanation Slides */
           <div className="py-4 space-y-5 animate-fadeIn">
             <div className="min-h-[220px] flex flex-col items-center justify-center">
@@ -301,7 +431,7 @@ export const AuthModal: React.FC = () => {
               type="submit"
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs shadow-lg shadow-purple-900/50 hover:brightness-110 transition-all"
             >
-              {mode === 'signup' ? 'Create Student Account' : 'Sign In'}
+              {isSubmitting ? 'Please wait...' : mode === 'signup' ? 'Create Student Account' : 'Sign In'}
             </button>
 
             {/* Toggle Login / Signup */}
@@ -311,7 +441,12 @@ export const AuthModal: React.FC = () => {
                   Already have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => setMode('login')}
+                    onClick={() => {
+                      setAuthError('');
+                      setVerificationMessage('');
+                      setPasswordInput('');
+                      setMode('login');
+                    }}
                     className="text-purple-300 font-bold hover:underline"
                   >
                     Sign In
@@ -322,7 +457,12 @@ export const AuthModal: React.FC = () => {
                   New to UoA MeetUps?{' '}
                   <button
                     type="button"
-                    onClick={() => setMode('signup')}
+                    onClick={() => {
+                      setAuthError('');
+                      setVerificationMessage('');
+                      setPasswordInput('');
+                      setMode('signup');
+                    }}
                     className="text-purple-300 font-bold hover:underline"
                   >
                     Register

@@ -32,8 +32,12 @@ interface AppContextType {
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  isEmailVerified: boolean;
   authenticateUser: (userId?: string) => void;
   signOut: () => void;
+  refreshAuthentication: () => Promise<{ isAuthenticated: boolean; isEmailVerified: boolean; userId?: string }>;
+  resendVerificationEmail: (email: string) => Promise<{ success: boolean; message: string }>;
   requestAuthentication: () => boolean;
   isAdminAuthenticated: boolean;
   unlockAdmin: (password: string) => boolean;
@@ -148,9 +152,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return saved ? JSON.parse(saved) : INITIAL_CURRENT_USER;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED) === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<NavigationTab>(() => {
     const pathname = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '/';
@@ -257,6 +261,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const authenticateUser = (userId?: string) => {
     setIsAuthenticated(true);
+    setIsEmailVerified(true);
     if (userId) {
       setCurrentUser((prev) => ({ ...prev, id: userId }));
     }
@@ -264,7 +269,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const signOut = () => {
     setIsAuthenticated(false);
+    setIsEmailVerified(false);
+    localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
     void getSupabase().auth.signOut();
+  };
+
+  const refreshAuthentication = async () => {
+    const { data, error } = await getSupabase().auth.getUser();
+    const user = data.user;
+    const verified = Boolean(user?.email_confirmed_at);
+    const authenticated = !error && Boolean(user) && verified;
+
+    setIsAuthenticated(authenticated);
+    setIsEmailVerified(verified);
+    if (authenticated && user) {
+      setCurrentUser((prev) => ({ ...prev, id: user.id }));
+    }
+
+    return { isAuthenticated: authenticated, isEmailVerified: verified, userId: user?.id };
+  };
+
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await getSupabase().auth.resend({ type: 'signup', email: email.trim().toLowerCase() });
+    return error
+      ? { success: false, message: error.message }
+      : { success: true, message: 'Verification email sent. Check your inbox and spam folder.' };
   };
 
   const requestAuthentication = () => {
@@ -296,32 +325,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, String(isAuthenticated));
+    if (isAuthenticated) {
+      localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, 'true');
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
     const supabase = getSupabase();
     let cancelled = false;
 
-    void supabase.auth.getSession().then(({ data }) => {
+    const syncSession = async () => {
+      const { data } = await supabase.auth.getSession();
       if (cancelled) return;
-      const userId = data.session?.user.id;
-      if (userId) {
-        authenticateUser(userId);
-      } else {
-        setIsAuthenticated(false);
+      const user = data.session?.user;
+      const verified = Boolean(user?.email_confirmed_at);
+      setIsAuthenticated(Boolean(user) && verified);
+      setIsEmailVerified(verified);
+      if (user && verified) {
+        setCurrentUser((prev) => ({ ...prev, id: user.id }));
       }
-    });
+      setIsAuthLoading(false);
+    };
+
+    void syncSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const userId = session?.user.id;
-      if (userId) {
-        authenticateUser(userId);
-      } else {
-        setIsAuthenticated(false);
+      const user = session?.user;
+      const verified = Boolean(user?.email_confirmed_at);
+      setIsAuthenticated(Boolean(user) && verified);
+      setIsEmailVerified(verified);
+      if (user && verified) {
+        setCurrentUser((prev) => ({ ...prev, id: user.id }));
       }
+      setIsAuthLoading(false);
     });
 
     return () => {
@@ -1269,8 +1309,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         activeTab,
         setActiveTab,
         isAuthenticated,
+        isAuthLoading,
+        isEmailVerified,
         authenticateUser,
         signOut,
+        refreshAuthentication,
+        resendVerificationEmail,
         requestAuthentication,
         isAdminAuthenticated,
         unlockAdmin,
