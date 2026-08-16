@@ -67,9 +67,9 @@ export const supabaseService = {
           verification_status: p.verificationStatus,
           badges: p.badges,
           is_banned: p.isBanned,
-          instagram: p.socialLinks?.instagram || null,
-          snapchat: p.socialLinks?.snapchat || null,
-          phone_whatsapp: p.socialLinks?.phoneWhatsApp || null,
+          instagram: p.instagramHandle || null,
+          snapchat: p.snapchatHandle || null,
+          phone_whatsapp: null,
         }));
 
         const { error: insertError } = await supabase.from('profiles').insert(rows);
@@ -85,7 +85,9 @@ export const supabaseService = {
         name: r.name,
         age: r.age,
         matricNumber: r.matric_number,
+        gender: r.gender || 'Prefer not to say',
         faculty: r.faculty,
+        course: r.course || r.department || 'Student',
         department: r.department,
         level: r.level,
         campusLocation: r.campus_location,
@@ -96,13 +98,14 @@ export const supabaseService = {
         mode: r.mode || 'normal',
         isVerified: r.is_verified,
         verificationStatus: r.verification_status || 'unverified',
+        icebreakerPrompts: Array.isArray(r.icebreaker_prompts) ? r.icebreaker_prompts : [],
         badges: r.badges || [],
         isBanned: r.is_banned || false,
-        socialLinks: {
-          instagram: r.instagram,
-          snapchat: r.snapchat,
-          phoneWhatsApp: r.phone_whatsapp,
-        },
+        portalSynced: r.portal_synced ?? false,
+        lastActive: r.last_active || 'Recently active',
+        isOnline: r.is_online ?? false,
+        instagramHandle: r.instagram || undefined,
+        snapchatHandle: r.snapchat || undefined,
       }));
     } catch (e) {
       console.warn('Supabase fetch error:', e);
@@ -132,9 +135,9 @@ export const supabaseService = {
         verification_status: profile.verificationStatus,
         badges: profile.badges,
         is_banned: profile.isBanned,
-        instagram: profile.socialLinks?.instagram || null,
-        snapchat: profile.socialLinks?.snapchat || null,
-        phone_whatsapp: profile.socialLinks?.phoneWhatsApp || null,
+        instagram: profile.instagramHandle || null,
+        snapchat: profile.snapchatHandle || null,
+        phone_whatsapp: null,
       };
 
       const { error } = await supabase.from('profiles').upsert(row);
@@ -315,10 +318,10 @@ export const supabaseService = {
         sender_id: message.senderId,
         text: message.text,
         image_url: message.imageUrl || null,
-        is_view_once: message.isViewOnce || false,
-        view_once_viewed: message.viewOnceViewed || false,
-        voice_note_url: message.voiceNoteUrl || null,
-        voice_duration_seconds: message.voiceDurationSeconds || null,
+        is_view_once: message.isPhotoViewOnce || false,
+        view_once_viewed: message.isPhotoViewed || false,
+        voice_note_url: null,
+        voice_duration_seconds: null,
         created_at: new Date(message.createdAt).toISOString(),
         read: message.read || false,
       };
