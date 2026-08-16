@@ -6,12 +6,14 @@ import {
   Check,
   Sparkles,
   Camera,
+  ImagePlus,
   GraduationCap,
   MapPin,
   Lock,
   Flame,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { supabaseService } from '../services/supabaseService';
 import { FACULTIES_AND_DEPARTMENTS, PROMPT_QUESTIONS } from '../data/mockData';
 import { UserProfile, Gender, LookingFor, StudentLevel, CampusLocation, AppMode } from '../types';
 
@@ -24,7 +26,8 @@ export const ProfileEditModal: React.FC = () => {
   } = useApp();
 
   const [formData, setFormData] = useState<UserProfile>({ ...currentUser });
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState('');
   const [newInterest, setNewInterest] = useState('');
   const [activePromptQuestion, setActivePromptQuestion] = useState(PROMPT_QUESTIONS[0]);
   const [activePromptAnswer, setActivePromptAnswer] = useState('');
@@ -36,13 +39,25 @@ export const ProfileEditModal: React.FC = () => {
   );
   const departments = currentFacultyObj ? currentFacultyObj.departments : [];
 
-  const handleAddPhoto = () => {
-    if (!newPhotoUrl.trim()) return;
+  const handlePhotoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setPhotoError('');
+    setIsUploadingPhoto(true);
+    const result = await supabaseService.uploadUserMedia(file, currentUser.id, 'profiles');
+    setIsUploadingPhoto(false);
+
+    if (!result.url) {
+      setPhotoError(result.error || 'Could not upload that photo.');
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      photos: [...prev.photos, newPhotoUrl.trim()],
+      photos: [...prev.photos, result.url as string],
     }));
-    setNewPhotoUrl('');
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -150,25 +165,27 @@ export const ProfileEditModal: React.FC = () => {
               ))}
 
               {formData.photos.length < 6 && (
-                <div className="h-28 rounded-2xl border-2 border-dashed border-purple-900/60 bg-purple-950/20 flex flex-col items-center justify-center p-2 text-center">
+                <label
+                  htmlFor="profile-photo-upload"
+                  className={`h-28 rounded-2xl border-2 border-dashed border-purple-900/60 bg-purple-950/20 flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-900/20 transition-colors ${isUploadingPhoto ? 'opacity-60 pointer-events-none' : ''}`}
+                >
+                  <ImagePlus className="w-6 h-6 text-purple-300 mb-1" />
+                  <span className="text-[10px] font-bold text-purple-200">
+                    {isUploadingPhoto ? 'Uploading...' : 'Add from gallery'}
+                  </span>
+                  <span className="text-[9px] text-neutral-500 mt-0.5">JPG, PNG up to 10 MB</span>
                   <input
-                    type="text"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    placeholder="Paste image URL..."
-                    className="w-full text-[10px] p-1 rounded bg-[#150826] border border-purple-900 text-white mb-1.5"
+                    id="profile-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoFileChange}
+                    className="sr-only"
+                    disabled={isUploadingPhoto}
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddPhoto}
-                    disabled={!newPhotoUrl.trim()}
-                    className="px-2 py-1 rounded bg-purple-600 text-white text-[10px] font-bold hover:bg-purple-500 disabled:opacity-30"
-                  >
-                    + Add
-                  </button>
-                </div>
+                </label>
               )}
             </div>
+            {photoError && <p className="mt-1.5 text-[10px] font-semibold text-rose-300">{photoError}</p>}
           </div>
 
           {/* Name & Age */}

@@ -20,6 +20,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { supabaseService } from '../services/supabaseService';
 import { GossipPost } from '../types';
 
 const GOSSIP_TAGS = [
@@ -63,8 +64,11 @@ export const CampusGossipBoard: React.FC = () => {
   const [tag, setTag] = useState('🔥 Hot Tea');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [anonymousAlias, setAnonymousAlias] = useState(ANON_ALIASES[0]);
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [showImageInput, setShowImageInput] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   // Active expanded comments per post ID
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
@@ -95,21 +99,61 @@ export const CampusGossipBoard: React.FC = () => {
     }));
   };
 
-  const handlePostSubmit = (e: React.FormEvent) => {
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setImageError('');
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please choose an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError('Images must be smaller than 10 MB.');
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setShowImageInput(true);
+  };
+
+  const clearSelectedImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview('');
+    setImageError('');
+  };
+
+  const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestAuthentication()) return;
-    if (!content.trim()) return;
+    if (!content.trim() || isUploadingImage) return;
+
+    let uploadedImageUrl: string | undefined;
+    if (imageFile) {
+      setImageError('');
+      setIsUploadingImage(true);
+      const upload = await supabaseService.uploadUserMedia(imageFile, currentUser.id, 'gossip');
+      setIsUploadingImage(false);
+      if (!upload.url) {
+        setImageError(upload.error || 'Could not upload that photo.');
+        return;
+      }
+      uploadedImageUrl = upload.url;
+    }
 
     addGossipPost(
       content.trim(),
       tag,
       isAnonymous,
       isAnonymous ? anonymousAlias : undefined,
-      imageUrl.trim() || undefined
+      uploadedImageUrl
     );
 
     setContent('');
-    setImageUrl('');
+    clearSelectedImage();
     setShowImageInput(false);
     setIsComposing(false);
     showToast('☕ Tea spilled on UniAbuja Gossip Board!');
@@ -229,7 +273,7 @@ export const CampusGossipBoard: React.FC = () => {
                 required
               />
 
-              {/* Tag Selector & Image URL */}
+              {/* Tag Selector & Gallery Photo */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {GOSSIP_TAGS.filter((t) => t !== 'All').map((t) => (
                   <button
@@ -248,13 +292,39 @@ export const CampusGossipBoard: React.FC = () => {
               </div>
 
               {showImageInput && (
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Paste Image URL (Optional photo evidence 📸)"
-                  className="w-full text-xs p-2 rounded-xl bg-black/40 border border-purple-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
-                />
+                <div className="space-y-2">
+                  {imagePreview ? (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-purple-700/60">
+                      <img src={imagePreview} alt="Selected attachment preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={clearSelectedImage}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-black/70 text-white hover:bg-rose-700"
+                        aria-label="Remove selected photo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-[11px] font-bold text-white">
+                          Uploading photo...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <label htmlFor="gossip-photo-upload" className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-purple-800/60 bg-black/30 text-xs font-semibold text-purple-200 cursor-pointer hover:border-purple-400">
+                      <ImageIcon className="w-4 h-4" />
+                      Choose a photo from your gallery
+                      <input
+                        id="gossip-photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                  )}
+                  {imageError && <p className="text-[10px] font-semibold text-rose-300">{imageError}</p>}
+                </div>
               )}
 
               {/* Identity selector & Post action */}
@@ -290,7 +360,7 @@ export const CampusGossipBoard: React.FC = () => {
                     type="button"
                     onClick={() => setShowImageInput(!showImageInput)}
                     className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                      showImageInput || imageUrl
+                      showImageInput || imageFile
                         ? 'bg-purple-900/60 border-purple-400 text-purple-200'
                         : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white'
                     }`}

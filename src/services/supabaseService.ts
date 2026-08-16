@@ -13,7 +13,47 @@ import {
 /**
  * Service for syncing UniAbuja MeetUps data with Supabase PostgreSQL
  */
+const USER_MEDIA_BUCKET = 'user-media';
+
+const getFileExtension = (file: File) => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  return extension && /^[a-z0-9]+$/.test(extension) ? extension : 'jpg';
+};
+
 export const supabaseService = {
+  async uploadUserMedia(file: File, userId: string, folder: 'profiles' | 'gossip' | 'verification') {
+    if (!file.type.startsWith('image/')) {
+      return { url: null, error: 'Please choose an image file.' };
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { url: null, error: 'Images must be smaller than 10 MB.' };
+    }
+
+    try {
+      const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '_') || 'anonymous';
+      const filePath = `${safeUserId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${getFileExtension(file)}`;
+      const supabase = getSupabase();
+      const { error: uploadError } = await supabase.storage.from(USER_MEDIA_BUCKET).upload(filePath, file, {
+        cacheControl: '3600',
+        contentType: file.type,
+        upsert: false,
+      });
+
+      if (uploadError) {
+        return { url: null, error: uploadError.message };
+      }
+
+      const { data } = supabase.storage.from(USER_MEDIA_BUCKET).getPublicUrl(filePath);
+      return { url: data.publicUrl, error: null };
+    } catch (error) {
+      return {
+        url: null,
+        error: error instanceof Error ? error.message : 'Image upload failed. Please try again.',
+      };
+    }
+  },
+
+
   // Test connection to Supabase
   async checkConnection(): Promise<{ connected: boolean; message: string }> {
     try {

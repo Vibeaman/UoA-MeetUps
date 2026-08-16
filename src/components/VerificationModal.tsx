@@ -11,6 +11,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { supabaseService } from '../services/supabaseService';
 
 export const VerificationModal: React.FC = () => {
   const {
@@ -22,6 +23,11 @@ export const VerificationModal: React.FC = () => {
 
   const [step, setStep] = useState<'camera' | 'preview' | 'success'>('camera');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [capturedSelfieFile, setCapturedSelfieFile] = useState<File | null>(null);
+  const [studentIdFile, setStudentIdFile] = useState<File | null>(null);
+  const [studentIdPreview, setStudentIdPreview] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [hasCameraError, setHasCameraError] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -92,17 +98,87 @@ export const VerificationModal: React.FC = () => {
 
   const handleSelectPresetSelfie = (url: string) => {
     setCapturedPhoto(url);
+    setCapturedSelfieFile(null);
     stopCamera();
     setStep('preview');
   };
 
-  const handleConfirmSubmit = () => {
-    if (!capturedPhoto) return;
-    submitVerification(
-      capturedPhoto,
-      'https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=600&q=80'
-    );
-    setStep('success');
+  const handleGallerySelfie = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setVerificationError('Please choose an image file for your selfie.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setVerificationError('Images must be smaller than 10 MB.');
+      return;
+    }
+
+    setVerificationError('');
+    setCapturedSelfieFile(file);
+    setCapturedPhoto(URL.createObjectURL(file));
+    stopCamera();
+    setStep('preview');
+  };
+
+  const handleStudentIdFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setVerificationError('Please choose an image file for your student ID.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setVerificationError('Images must be smaller than 10 MB.');
+      return;
+    }
+
+    setVerificationError('');
+    setStudentIdFile(file);
+    setStudentIdPreview(URL.createObjectURL(file));
+  };
+
+  const dataUrlToFile = async (dataUrl: string) => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], 'verification-selfie.jpg', { type: blob.type || 'image/jpeg' });
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!capturedPhoto || isUploading) return;
+    setVerificationError('');
+    setIsUploading(true);
+
+    try {
+      let selfieUrl = capturedPhoto;
+      if (capturedSelfieFile) {
+        const upload = await supabaseService.uploadUserMedia(capturedSelfieFile, currentUser.id, 'verification');
+        if (!upload.url) throw new Error(upload.error || 'Could not upload your selfie.');
+        selfieUrl = upload.url;
+      } else if (capturedPhoto.startsWith('data:')) {
+        const selfieFile = await dataUrlToFile(capturedPhoto);
+        const upload = await supabaseService.uploadUserMedia(selfieFile, currentUser.id, 'verification');
+        if (!upload.url) throw new Error(upload.error || 'Could not upload your selfie.');
+        selfieUrl = upload.url;
+      }
+
+      let studentIdUrl = 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=600&q=80';
+      if (studentIdFile) {
+        const upload = await supabaseService.uploadUserMedia(studentIdFile, currentUser.id, 'verification');
+        if (!upload.url) throw new Error(upload.error || 'Could not upload your student ID.');
+        studentIdUrl = upload.url;
+      }
+
+      submitVerification(selfieUrl, studentIdUrl);
+      setStep('success');
+    } catch (error) {
+      setVerificationError(error instanceof Error ? error.message : 'Could not submit verification photos.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!isVerificationModalOpen) return null;
@@ -191,7 +267,18 @@ export const VerificationModal: React.FC = () => {
               >
                 <Camera className="w-6 h-6" />
               </button>
+              <label htmlFor="verification-selfie-upload" className="p-4 rounded-full bg-white/10 border border-purple-500/50 text-purple-200 hover:bg-purple-900/40 cursor-pointer transition-all" title="Choose selfie from gallery">
+                <Upload className="w-6 h-6" />
+                <input
+                  id="verification-selfie-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleGallerySelfie}
+                  className="sr-only"
+                />
+              </label>
             </div>
+            {verificationError && <p className="text-[11px] font-semibold text-rose-300">{verificationError}</p>}
           </div>
         )}
 
@@ -211,9 +298,27 @@ export const VerificationModal: React.FC = () => {
               )}
             </div>
 
+            <div className="rounded-2xl border border-purple-800/50 bg-purple-950/20 p-3 text-left space-y-2">
+              <p className="text-[11px] font-bold text-purple-200">Student ID photo (optional)</p>
+              <label htmlFor="student-id-upload" className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-purple-800/70 text-[11px] text-purple-200 cursor-pointer hover:border-purple-400">
+                <Upload className="w-4 h-4" />
+                {studentIdFile ? studentIdFile.name : 'Choose from gallery'}
+                <input
+                  id="student-id-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleStudentIdFile}
+                  className="sr-only"
+                />
+              </label>
+              {studentIdPreview && <img src={studentIdPreview} alt="Student ID preview" className="w-full h-24 rounded-xl object-cover" />}
+            </div>
+            {verificationError && <p className="text-[11px] font-semibold text-rose-300">{verificationError}</p>}
+
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setStep('camera')}
+                disabled={isUploading}
                 className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-300 text-xs font-semibold flex items-center justify-center space-x-1.5"
               >
                 <RotateCw className="w-4 h-4" />
@@ -222,11 +327,12 @@ export const VerificationModal: React.FC = () => {
 
               <button
                 onClick={handleConfirmSubmit}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50 hover:brightness-110 flex items-center justify-center space-x-1.5"
+                disabled={isUploading}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50 hover:brightness-110 flex items-center justify-center space-x-1.5 disabled:opacity-50"
                 id="submit-verification-confirm-btn"
               >
                 <FileCheck className="w-4 h-4" />
-                <span>Submit to Admin</span>
+                <span>{isUploading ? 'Uploading...' : 'Submit to Admin'}</span>
               </button>
             </div>
           </div>
