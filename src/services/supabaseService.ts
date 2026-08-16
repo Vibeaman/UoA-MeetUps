@@ -4,6 +4,7 @@ import {
   VerificationRequest,
   UserReport,
   GossipPost,
+  GossipComment,
   CampusPoll,
   ChatMessage,
   MatchItem,
@@ -258,6 +259,47 @@ export const supabaseService = {
     }
   },
 
+  // Fetch gossip posts from Supabase
+  async fetchGossipPosts(): Promise<GossipPost[] | null> {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('gossip_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase gossip fetch notice:', error.message);
+        return null;
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        authorId: row.author_id,
+        authorName: row.author_name,
+        authorAvatar: row.author_avatar || undefined,
+        authorDepartment: row.author_department,
+        authorLevel: row.author_level,
+        isAnonymous: row.is_anonymous ?? true,
+        anonymousAlias: row.anonymous_alias || undefined,
+        tag: row.tag,
+        content: row.content,
+        imageUrl: row.image_url || undefined,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        timeAgo: row.created_at ? new Date(row.created_at).toLocaleString() : 'Recently',
+        spicyCount: row.spicy_count || 0,
+        capCount: row.cap_count || 0,
+        factsCount: row.facts_count || 0,
+        teaCount: row.tea_count || 0,
+        viewsCount: row.views_count || 0,
+        comments: [],
+      }));
+    } catch (error) {
+      console.warn('Supabase gossip fetch error:', error);
+      return null;
+    }
+  },
+
   // Create Gossip Post
   async createGossipPost(post: GossipPost): Promise<boolean> {
     try {
@@ -304,6 +346,115 @@ export const supabaseService = {
       }
       return true;
     } catch {
+      return false;
+    }
+  },
+
+  // Fetch campus polls from Supabase
+  async fetchCampusPolls(): Promise<CampusPoll[] | null> {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('campus_polls')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase polls fetch notice:', error.message);
+        return null;
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        question: row.question,
+        category: row.category,
+        options: Array.isArray(row.options) ? row.options : [],
+        totalVotes: row.total_votes || 0,
+      }));
+    } catch (error) {
+      console.warn('Supabase polls fetch error:', error);
+      return null;
+    }
+  },
+
+  // Save or update a campus poll
+  async upsertCampusPoll(poll: CampusPoll): Promise<boolean> {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('campus_polls').upsert({
+        id: poll.id,
+        question: poll.question,
+        category: poll.category,
+        options: poll.options,
+        total_votes: poll.totalVotes,
+      });
+
+      if (error) {
+        console.warn('Supabase poll upsert notice:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase poll upsert error:', error);
+      return false;
+    }
+  },
+
+  // Save a gossip comment
+  async createGossipComment(
+    postId: string,
+    comment: GossipComment,
+    authorId: string,
+    authorDepartment: string
+  ): Promise<boolean> {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('gossip_comments').insert({
+        id: comment.id,
+        post_id: postId,
+        author_id: authorId,
+        author_name: comment.authorName,
+        author_avatar: comment.authorAvatar || null,
+        author_department: authorDepartment,
+        is_anonymous: comment.isAnonymous,
+        anonymous_alias: comment.isAnonymous ? comment.authorName : null,
+        content: comment.content,
+        created_at: new Date(comment.createdAt).toISOString(),
+      });
+
+      if (error) {
+        console.warn('Supabase gossip comment notice:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase gossip comment error:', error);
+      return false;
+    }
+  },
+
+  // Persist the current gossip counters after a signed-in interaction
+  async updateGossipPostCounters(post: GossipPost): Promise<boolean> {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('gossip_posts')
+        .update({
+          spicy_count: post.spicyCount,
+          cap_count: post.capCount,
+          facts_count: post.factsCount,
+          tea_count: post.teaCount,
+          views_count: post.viewsCount,
+        })
+        .eq('id', post.id);
+
+      if (error) {
+        console.warn('Supabase gossip counter notice:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase gossip counter error:', error);
       return false;
     }
   },

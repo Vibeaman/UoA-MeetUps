@@ -24,13 +24,17 @@ import {
   INITIAL_GOSSIP_POSTS,
 } from '../data/mockData';
 import { supabaseService } from '../services/supabaseService';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AppContextType {
   currentUser: UserProfile;
   updateCurrentUser: (updates: Partial<UserProfile>) => void;
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
+  isAuthenticated: boolean;
+  authenticateUser: (userId?: string) => void;
+  signOut: () => void;
+  requestAuthentication: () => boolean;
   isAdminAuthenticated: boolean;
   unlockAdmin: (password: string) => boolean;
   logoutAdmin: () => void;
@@ -135,6 +139,7 @@ const STORAGE_KEYS = {
   VERIFICATIONS: 'uoa_verifications_v2',
   IS_PREMIUM: 'uoa_is_premium_v2',
   ACTIVE_PLAN: 'uoa_active_plan_v2',
+  IS_AUTHENTICATED: 'uoa_is_authenticated_v1',
 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -142,6 +147,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return saved ? JSON.parse(saved) : INITIAL_CURRENT_USER;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED) === 'true';
   });
 
   const [activeTab, setActiveTab] = useState<NavigationTab>(() => {
@@ -246,6 +254,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const authenticateUser = (userId?: string) => {
+    setIsAuthenticated(true);
+    if (userId) {
+      setCurrentUser((prev) => ({ ...prev, id: userId }));
+    }
+  };
+
+  const signOut = () => {
+    setIsAuthenticated(false);
+    void getSupabase().auth.signOut();
+  };
+
+  const requestAuthentication = () => {
+    if (isAuthenticated) return true;
+    setIsAuthModalOpen(true);
+    return false;
+  };
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
@@ -268,6 +294,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
   }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, String(isAuthenticated));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    let cancelled = false;
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      const userId = data.session?.user.id;
+      if (userId) {
+        authenticateUser(userId);
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const userId = session?.user.id;
+      if (userId) {
+        authenticateUser(userId);
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
@@ -365,31 +426,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('uoa_campus_polls_v3', JSON.stringify(campusPolls));
   }, [campusPolls]);
 
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    let cancelled = false;
+    void supabaseService.fetchCampusPolls().then((remotePolls) => {
+      if (!cancelled && remotePolls && remotePolls.length > 0) {
+        setCampusPolls(remotePolls);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const voteCampusPoll = (pollId: string, optionId: string) => {
-    setCampusPolls((prevPolls) =>
-      prevPolls.map((poll) => {
-        if (poll.id !== pollId) return poll;
-        if (poll.userVotedOptionId === optionId) return poll;
+    if (!requestAuthentication()) return;
 
-        const hadPrevious = !!poll.userVotedOptionId;
-        const updatedOptions = poll.options.map((opt) => {
-          if (opt.id === optionId) {
-            return { ...opt, votes: opt.votes + 1 };
-          }
-          if (hadPrevious && opt.id === poll.userVotedOptionId) {
-            return { ...opt, votes: Math.max(0, opt.votes - 1) };
-          }
-          return opt;
-        });
+    const existingPoll = campusPolls.find((poll) => poll.id === pollId);
+    if (!existingPoll || existingPoll.userVotedOptionId === optionId) return;
 
-        return {
-          ...poll,
-          totalVotes: hadPrevious ? poll.totalVotes : poll.totalVotes + 1,
-          options: updatedOptions,
-          userVotedOptionId: optionId,
-        };
-      })
-    );
+    const hadPrevious = !!existingPoll.userVotedOptionId;
+    const updatedPoll: CampusPoll = {
+      ...existingPoll,
+      totalVotes: hadPrevious ? existingPoll.totalVotes : existingPoll.totalVotes + 1,
+      options: existingPoll.options.map((opt) => {
+        if (opt.id === optionId) return { ...opt, votes: opt.votes + 1 };
+        if (hadPrevious && opt.id === existingPoll.userVotedOptionId) {
+          return { ...opt, votes: Math.max(0, opt.votes - 1) };
+        }
+        return opt;
+      }),
+      userVotedOptionId: optionId,
+    };
+
+    setCampusPolls((prevPolls) => prevPolls.map((poll) => (poll.id === pollId ? updatedPoll : poll)));
+    void supabaseService.upsertCampusPoll(updatedPoll);
 
     confetti({
       particleCount: 35,
@@ -400,6 +471,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addCampusPoll = (question: string, category: string, options: string[]) => {
+    if (!requestAuthentication()) return;
+
     const newPoll: CampusPoll = {
       id: `poll_${Date.now()}`,
       question,
@@ -413,6 +486,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     setCampusPolls((prev) => [newPoll, ...prev]);
     setActivePollIndex(0);
+    void supabaseService.upsertCampusPoll(newPoll);
     confetti({
       particleCount: 45,
       spread: 60,
@@ -430,6 +504,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('uoa_gossip_board_v3', JSON.stringify(gossipPosts));
   }, [gossipPosts]);
 
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    let cancelled = false;
+    void supabaseService.fetchGossipPosts().then((remotePosts) => {
+      if (!cancelled && remotePosts && remotePosts.length > 0) {
+        setGossipPosts(remotePosts);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const addGossipPost = (
     content: string,
     tag: string,
@@ -437,6 +524,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     anonymousAlias?: string,
     imageUrl?: string
   ) => {
+    if (!requestAuthentication()) return;
+
     const newPost: GossipPost = {
       id: `gossip_${Date.now()}`,
       authorId: currentUser.id,
@@ -460,6 +549,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setGossipPosts((prev) => [newPost, ...prev]);
+    void supabaseService.createGossipPost(newPost);
     confetti({
       particleCount: 60,
       spread: 70,
@@ -469,6 +559,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const reactToGossipPost = (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea') => {
+    if (!requestAuthentication()) return;
+
     setGossipPosts((prev) =>
       prev.map((post) => {
         if (post.id !== postId) return post;
@@ -501,6 +593,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addGossipComment = (postId: string, content: string, isAnonymous: boolean) => {
+    if (!requestAuthentication()) return;
+
     const newComment: GossipComment = {
       id: `comm_${Date.now()}`,
       authorName: isAnonymous
@@ -525,9 +619,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
       })
     );
+    void supabaseService.createGossipComment(postId, newComment, currentUser.id, currentUser.department);
   };
 
   const likeGossipComment = (postId: string, commentId: string) => {
+    if (!requestAuthentication()) return;
+
     setGossipPosts((prev) =>
       prev.map((post) => {
         if (post.id !== postId) return post;
@@ -548,6 +645,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const reportGossipPost = (postId: string) => {
+    if (!requestAuthentication()) return;
+
     setSparkToast({
       show: true,
       message: 'Gossip post flagged for campus moderation review. 🛡️',
@@ -1169,6 +1268,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateCurrentUser,
         activeTab,
         setActiveTab,
+        isAuthenticated,
+        authenticateUser,
+        signOut,
+        requestAuthentication,
         isAdminAuthenticated,
         unlockAdmin,
         logoutAdmin,

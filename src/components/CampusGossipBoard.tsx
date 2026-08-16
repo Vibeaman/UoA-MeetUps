@@ -53,6 +53,8 @@ export const CampusGossipBoard: React.FC = () => {
     likeGossipComment,
     reportGossipPost,
     currentUser,
+    isAuthenticated,
+    requestAuthentication,
   } = useApp();
 
   const [selectedTag, setSelectedTag] = useState<string>('All');
@@ -76,6 +78,10 @@ export const CampusGossipBoard: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handleAuthenticatedAction = (action: () => void) => {
+    if (requestAuthentication()) action();
+  };
+
   const filteredPosts = gossipPosts.filter((post) => {
     if (selectedTag === 'All') return true;
     return post.tag.toLowerCase().includes(selectedTag.replace(/[^a-zA-Z]/g, '').toLowerCase()) ||
@@ -91,6 +97,7 @@ export const CampusGossipBoard: React.FC = () => {
 
   const handlePostSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requestAuthentication()) return;
     if (!content.trim()) return;
 
     addGossipPost(
@@ -109,6 +116,7 @@ export const CampusGossipBoard: React.FC = () => {
   };
 
   const handleSendComment = (postId: string) => {
+    if (!requestAuthentication()) return;
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
@@ -168,12 +176,19 @@ export const CampusGossipBoard: React.FC = () => {
               <p className="text-[11px] text-purple-300/80">
                 Hostel drama, secret crushes & confessions across UniAbuja
               </p>
+              {!isAuthenticated && (
+                <p className="mt-1 text-[10px] font-semibold text-amber-300/90">
+                  Sign up to spill tea, react, comment, or flag a post.
+                </p>
+              )}
             </div>
           </div>
 
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsComposing(!isComposing)}
+            onClick={() => {
+              if (requestAuthentication()) setIsComposing(!isComposing);
+            }}
             className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold shadow-md shadow-purple-900/50 flex items-center space-x-1 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -397,7 +412,7 @@ export const CampusGossipBoard: React.FC = () => {
                   <div className="flex items-center space-x-1">
                     {/* Spicy */}
                     <button
-                      onClick={() => reactToGossipPost(post.id, 'spicy')}
+                      onClick={() => handleAuthenticatedAction(() => reactToGossipPost(post.id, 'spicy'))}
                       className={`px-2 py-1 rounded-lg text-[11px] font-semibold border flex items-center space-x-1 transition-all ${
                         post.userReaction === 'spicy'
                           ? 'bg-red-950/90 border-red-500 text-red-300 shadow-sm shadow-red-950'
@@ -410,7 +425,7 @@ export const CampusGossipBoard: React.FC = () => {
 
                     {/* Cap */}
                     <button
-                      onClick={() => reactToGossipPost(post.id, 'cap')}
+                      onClick={() => handleAuthenticatedAction(() => reactToGossipPost(post.id, 'cap'))}
                       className={`px-2 py-1 rounded-lg text-[11px] font-semibold border flex items-center space-x-1 transition-all ${
                         post.userReaction === 'cap'
                           ? 'bg-blue-950/90 border-blue-500 text-blue-300 shadow-sm shadow-blue-950'
@@ -423,7 +438,7 @@ export const CampusGossipBoard: React.FC = () => {
 
                     {/* Facts */}
                     <button
-                      onClick={() => reactToGossipPost(post.id, 'facts')}
+                      onClick={() => handleAuthenticatedAction(() => reactToGossipPost(post.id, 'facts'))}
                       className={`px-2 py-1 rounded-lg text-[11px] font-semibold border flex items-center space-x-1 transition-all ${
                         post.userReaction === 'facts'
                           ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-sm shadow-emerald-950'
@@ -436,7 +451,7 @@ export const CampusGossipBoard: React.FC = () => {
 
                     {/* Tea */}
                     <button
-                      onClick={() => reactToGossipPost(post.id, 'tea')}
+                      onClick={() => handleAuthenticatedAction(() => reactToGossipPost(post.id, 'tea'))}
                       className={`px-2 py-1 rounded-lg text-[11px] font-semibold border flex items-center space-x-1 transition-all ${
                         post.userReaction === 'tea'
                           ? 'bg-amber-950/90 border-amber-500 text-amber-300 shadow-sm shadow-amber-950'
@@ -468,7 +483,7 @@ export const CampusGossipBoard: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => reportGossipPost(post.id)}
+                      onClick={() => handleAuthenticatedAction(() => reportGossipPost(post.id))}
                       className="p-1.5 rounded-lg hover:bg-red-950/60 text-neutral-400 hover:text-red-400 transition-colors"
                       title="Flag post"
                     >
@@ -510,7 +525,7 @@ export const CampusGossipBoard: React.FC = () => {
                                 </div>
 
                                 <button
-                                  onClick={() => likeGossipComment(post.id, comment.id)}
+                                  onClick={() => handleAuthenticatedAction(() => likeGossipComment(post.id, comment.id))}
                                   className={`flex items-center space-x-1 text-[10px] ${
                                     comment.userLiked ? 'text-pink-400 font-bold' : 'text-neutral-400 hover:text-pink-300'
                                   }`}
@@ -533,12 +548,12 @@ export const CampusGossipBoard: React.FC = () => {
                       <div className="flex items-center space-x-1.5 pt-1">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => handleAuthenticatedAction(() =>
                             setCommentAnonMap((prev) => ({
                               ...prev,
                               [post.id]: !isAnonComment,
                             }))
-                          }
+                          )}
                           className={`p-1.5 rounded-xl border text-[10px] font-bold shrink-0 transition-colors ${
                             isAnonComment
                               ? 'bg-fuchsia-950 border-fuchsia-700 text-fuchsia-300'
@@ -561,13 +576,14 @@ export const CampusGossipBoard: React.FC = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSendComment(post.id);
                           }}
-                          placeholder="Drop a comment or confirm gist..."
+                          disabled={!isAuthenticated}
+                          placeholder={isAuthenticated ? 'Drop a comment or confirm gist...' : 'Sign up to comment'}
                           className="flex-1 text-xs p-2 rounded-xl bg-black/40 border border-purple-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
                         />
 
                         <button
                           type="button"
-                          onClick={() => handleSendComment(post.id)}
+                          onClick={() => handleAuthenticatedAction(() => handleSendComment(post.id))}
                           disabled={!currentInput.trim()}
                           className="p-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white hover:opacity-90 disabled:opacity-40 shrink-0"
                         >

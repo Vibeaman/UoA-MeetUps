@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { getSupabase } from '../lib/supabase';
 import { Logo } from './Logo';
 
 export const AuthModal: React.FC = () => {
@@ -20,15 +21,18 @@ export const AuthModal: React.FC = () => {
     currentUser,
     updateCurrentUser,
     syncStudentPortal,
+    authenticateUser,
   } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup' | 'onboarding'>('signup');
   const [matricInput, setMatricInput] = useState(currentUser.matricNumber || '21/104CS082');
+  const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState(currentUser.name || 'Tariro Adebayo');
   const [ageConfirmed, setAgeConfirmed] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState('');
+  const [authError, setAuthError] = useState('');
   const [onboardingSlide, setOnboardingSlide] = useState(0);
 
   if (!isAuthModalOpen) return null;
@@ -41,18 +45,47 @@ export const AuthModal: React.FC = () => {
     setSyncStatusMsg(res.message);
   };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
+
     if (!ageConfirmed) {
-      alert('You must confirm that you are at least 18 years old to use UoA MeetUps.');
+      setAuthError('You must confirm that you are at least 18 years old to use UoA MeetUps.');
+      return;
+    }
+
+    const email = emailInput.trim().toLowerCase();
+    const password = passwordInput.trim();
+    const supabase = getSupabase();
+    const result =
+      mode === 'signup'
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullNameInput.trim(),
+                matric_number: matricInput.trim().toUpperCase(),
+              },
+            },
+          })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+    if (result.error) {
+      setAuthError(result.error.message);
+      return;
+    }
+
+    if (!result.data.session) {
+      setAuthError('Check your email to confirm your account, then sign in to continue.');
       return;
     }
 
     updateCurrentUser({
       matricNumber: matricInput.trim().toUpperCase(),
-      name: fullNameInput,
+      name: fullNameInput.trim(),
     });
-
+    authenticateUser(result.data.user?.id);
     setMode('onboarding');
   };
 
@@ -178,6 +211,22 @@ export const AuthModal: React.FC = () => {
               </div>
             )}
 
+            {/* Email */}
+            <div>
+              <label className="block text-left text-[11px] font-bold text-purple-300 uppercase mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete={mode === 'signup' ? 'email' : 'username'}
+                className="w-full p-2.5 rounded-xl bg-[#150826] border border-purple-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
+              />
+            </div>
+
             {/* Matric Number Input + Portal Sync */}
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -219,12 +268,19 @@ export const AuthModal: React.FC = () => {
               <input
                 type="password"
                 required
+                minLength={6}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="At least 6 characters"
                 className="w-full p-2.5 rounded-xl bg-[#150826] border border-purple-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
               />
             </div>
+
+            {authError && (
+              <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-left text-[11px] font-semibold text-rose-300">
+                {authError}
+              </p>
+            )}
 
             {/* 18+ Age confirmation */}
             <div className="flex items-start space-x-2 text-left p-2 rounded-xl bg-[#140726] border border-purple-950">

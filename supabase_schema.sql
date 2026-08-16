@@ -131,3 +131,53 @@ CREATE TABLE IF NOT EXISTS campus_polls (
   total_votes INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+
+-- 9. Public read / authenticated write policies for community surfaces
+-- These policies allow signed-out visitors to observe content while requiring
+-- a Supabase Auth session for votes, poll suggestions, posts, comments, and edits.
+alter table campus_polls enable row level security;
+alter table gossip_posts enable row level security;
+alter table gossip_comments enable row level security;
+
+drop policy if exists "Public can read campus polls" on campus_polls;
+create policy "Public can read campus polls"
+  on campus_polls for select
+  using (true);
+
+drop policy if exists "Authenticated users can create campus polls" on campus_polls;
+create policy "Authenticated users can create campus polls"
+  on campus_polls for insert to authenticated
+  with check (true);
+
+drop policy if exists "Authenticated users can update campus polls" on campus_polls;
+create policy "Authenticated users can update campus polls"
+  on campus_polls for update to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Public can read gossip posts" on gossip_posts;
+create policy "Public can read gossip posts"
+  on gossip_posts for select
+  using (true);
+
+drop policy if exists "Authenticated users can create gossip posts" on gossip_posts;
+create policy "Authenticated users can create gossip posts"
+  on gossip_posts for insert to authenticated
+  with check (true);
+
+drop policy if exists "Authenticated users can update gossip posts" on gossip_posts;
+create policy "Authenticated users can update gossip posts"
+  on gossip_posts for update to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Public can read gossip comments" on gossip_comments;
+create policy "Public can read gossip comments"
+  on gossip_comments for select
+  using (true);
+
+drop policy if exists "Authenticated users can create gossip comments" on gossip_comments;
+create policy "Authenticated users can create gossip comments"
+  on gossip_comments for insert to authenticated
+  with check (true);

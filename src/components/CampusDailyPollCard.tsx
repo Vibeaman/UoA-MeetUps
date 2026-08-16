@@ -20,6 +20,8 @@ export const CampusDailyPollCard: React.FC = () => {
     setActivePollIndex,
     voteCampusPoll,
     addCampusPoll,
+    isAuthenticated,
+    requestAuthentication,
   } = useApp();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -43,6 +45,7 @@ export const CampusDailyPollCard: React.FC = () => {
 
   const handleCreatePollSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requestAuthentication()) return;
     if (!newQuestion.trim() || !newOpt1.trim() || !newOpt2.trim()) return;
 
     const opts = [newOpt1.trim(), newOpt2.trim()];
@@ -135,7 +138,9 @@ export const CampusDailyPollCard: React.FC = () => {
                   <motion.button
                     key={opt.id}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => voteCampusPoll(currentPoll.id, opt.id)}
+                    onClick={() => {
+                      if (requestAuthentication()) voteCampusPoll(currentPoll.id, opt.id);
+                    }}
                     className={`relative w-full text-left p-2.5 rounded-xl border transition-all overflow-hidden ${
                       isSelected
                         ? 'bg-purple-900/40 border-purple-400 ring-1 ring-purple-400/50'
@@ -182,14 +187,20 @@ export const CampusDailyPollCard: React.FC = () => {
             </span>
             <div className="flex items-center space-x-2">
               <span className="text-purple-300/80">
-                {hasVoted ? '✨ Your vote is counted' : 'Tap an option to vote'}
+                {isAuthenticated
+                  ? hasVoted
+                    ? '✨ Your vote is counted'
+                    : 'Tap an option to vote'
+                  : 'Sign up to vote'}
               </span>
               <button
-                onClick={() => setIsCreatingPoll(!isCreatingPoll)}
+                onClick={() => {
+                  if (requestAuthentication()) setIsCreatingPoll(!isCreatingPoll);
+                }}
                 className="text-purple-400 hover:text-purple-200 font-semibold flex items-center space-x-0.5"
               >
                 <PlusCircle className="w-3 h-3" />
-                <span>Suggest Poll</span>
+                <span>{isAuthenticated ? 'Suggest Poll' : 'Sign up to suggest'}</span>
               </button>
             </div>
           </div>
