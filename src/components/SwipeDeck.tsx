@@ -317,7 +317,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto flex flex-col justify-start items-center px-3 py-2 select-none min-h-[580px]">
+    <div className="relative w-full max-w-6xl mx-auto min-w-0 flex flex-col justify-start items-center px-0 sm:px-2 lg:px-4 py-2 select-none">
       {/* 1. Campus Stories Bar */}
       <CampusStoriesBar />
 
@@ -470,7 +470,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           )}
 
           {/* Swipe Cards Deck Area */}
-          <div className="relative w-full h-[530px] sm:h-[560px] rounded-3xl flex items-center justify-center mt-1">
+          <div className="relative w-full max-w-5xl min-h-[30rem] h-[clamp(30rem,68dvh,36rem)] rounded-3xl flex items-center justify-center mt-1">
         {deckProfiles.length === 0 ? (
           /* Empty Deck State */
           <motion.div

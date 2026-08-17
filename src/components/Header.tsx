@@ -60,12 +60,12 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#090410]/90 backdrop-blur-xl border-b border-purple-950/60 px-3 sm:px-4 py-2.5 transition-all">
-      <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+    <header className="sticky top-0 z-30 w-full min-w-0 bg-[#090410]/90 backdrop-blur-xl border-b border-purple-950/60 px-3 sm:px-4 py-2.5 transition-all">
+      <div className="w-full max-w-7xl mx-auto min-w-0 flex flex-wrap md:flex-nowrap items-center justify-between gap-2">
         {/* Left: Logo & Campus Tag */}
         <div
           onClick={handleLogoClick}
-          className="flex items-center space-x-2.5 cursor-pointer group"
+          className="flex min-w-0 shrink-0 items-center space-x-2.5 cursor-pointer group"
           id="header-logo-container"
         >
           <Logo size="sm" />
@@ -78,7 +78,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Center: Normal vs Lowkey Mode Switcher */}
-        <div className="relative">
+        <div className="relative order-3 flex w-full justify-center md:order-none md:w-auto md:shrink-0">
           <div
             className="flex items-center p-1 rounded-full bg-[#130920] border border-purple-900/40 shadow-inner"
             id="mode-switcher-container"
@@ -124,7 +124,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Right Action Icons: Boost, Premium, Filters, Admin */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2">
+        <div className="ml-auto flex shrink-0 items-center space-x-1.5 sm:space-x-2">
           {/* Boost Button */}
           <button
             onClick={isBoostActive ? undefined : triggerBoost}

@@ -53,7 +53,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
   }, [isAuthLoading, isAuthenticated]);
 
   return (
-    <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
       {/* Top Profile Card */}
       <div className="relative rounded-3xl overflow-hidden border border-purple-800/40 bg-gradient-to-b from-[#18092f] via-[#110520] to-[#090312] p-5 shadow-2xl">
         {/* Glow effect */}

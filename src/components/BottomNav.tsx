@@ -50,15 +50,15 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#090410]/95 backdrop-blur-2xl border-t border-purple-950/70 pb-safe shadow-[0_-10px_25px_rgba(0,0,0,0.8)]">
-      <div className="max-w-md mx-auto flex items-center justify-around px-2 py-1.5 sm:py-2">
+    <nav className="fixed inset-x-0 bottom-0 z-40 w-full min-w-0 bg-[#090410]/95 backdrop-blur-2xl border-t border-purple-950/70 pb-safe shadow-[0_-10px_25px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-around gap-1 px-2 py-1.5 sm:gap-2 sm:px-4 sm:py-2">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 ${
+              className={`relative flex min-w-0 flex-1 flex-col items-center justify-center py-1 px-1.5 sm:px-2.5 rounded-xl transition-all duration-200 ${
                 isActive
                   ? 'text-purple-300 font-bold scale-105'
                   : 'text-neutral-400 hover:text-neutral-200'

@@ -19,7 +19,7 @@ export const SafetyCenterView: React.FC<{
   const { setActiveTab } = useApp();
 
   return (
-    <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-5 overflow-y-auto custom-scrollbar pb-24">
+    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-5 overflow-y-auto custom-scrollbar pb-24">
       {/* Hero Header */}
       <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1d0933] via-[#130622] to-[#090312] border border-purple-800/40 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/20 rounded-full blur-3xl" />

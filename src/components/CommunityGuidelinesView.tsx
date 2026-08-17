@@ -3,7 +3,7 @@ import { ShieldAlert, ChevronLeft, CheckCircle2, AlertOctagon, Lock, Flame } fro
 
 export const CommunityGuidelinesView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
-    <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
       {/* Header */}
       <div className="flex items-center space-x-2.5 pb-2 border-b border-purple-950/80">
         <button

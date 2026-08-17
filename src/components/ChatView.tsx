@@ -94,7 +94,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     const expiryText = calculateExpiryDays(currentChatMatch.expiresAt);
 
     return (
-      <div className="relative w-full max-w-md mx-auto h-[calc(100vh-130px)] flex flex-col bg-[#0b0414] border border-purple-950/60 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-full max-w-5xl mx-auto min-w-0 min-h-0 h-[calc(100dvh-9rem)] sm:h-[calc(100dvh-10rem)] flex flex-col bg-[#0b0414] border border-purple-950/60 rounded-3xl overflow-hidden shadow-2xl">
         {/* Chat Header */}
         <div className="flex items-center justify-between p-3.5 bg-[#120722] border-b border-purple-900/40 z-20">
           <div className="flex items-center space-x-2.5">
@@ -397,7 +397,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
   // Matches & Conversations Directory View
   return (
-    <div className="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
       {/* Header Banner */}
       <div className="flex items-center justify-between">
         <div>
