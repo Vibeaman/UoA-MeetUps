@@ -116,3 +116,117 @@
   scrollbar-width: none;
 }
 
+
+/* UoA MeetUps editorial redesign tokens */
+:root {
+  --uoa-ink: #120b16;
+  --uoa-ink-soft: #231827;
+  --uoa-paper: #fbf8ff;
+  --uoa-paper-muted: #eee8f4;
+  --uoa-night: #0d0710;
+  --uoa-night-soft: #160d1c;
+  --uoa-plum: #6d28d9;
+  --uoa-violet: #8b5cf6;
+  --uoa-fuchsia: #c026d3;
+  --uoa-line: rgba(255, 255, 255, 0.12);
+}
+
+.uoa-app-shell {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(109, 40, 217, 0.16), transparent 34rem),
+    linear-gradient(180deg, #0d0710 0%, #100914 48%, #0a060c 100%);
+}
+
+.uoa-header {
+  background: rgba(13, 7, 16, 0.86);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 35px rgba(3, 1, 5, 0.22);
+}
+
+.uoa-surface {
+  background: rgba(23, 13, 29, 0.78);
+  border: 1px solid var(--uoa-line);
+  box-shadow: 0 18px 50px rgba(3, 1, 5, 0.14);
+}
+
+.uoa-surface-soft {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.uoa-section-kicker {
+  color: #d8c8e7;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.uoa-section-title {
+  color: #fffaff;
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(1.25rem, 2.7vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.uoa-muted-copy {
+  color: #b9acbf;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.uoa-primary-button {
+  background: linear-gradient(105deg, var(--uoa-plum), var(--uoa-fuchsia));
+  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.22);
+}
+
+.uoa-primary-button:hover {
+  filter: brightness(1.08);
+}
+
+.uoa-quiet-button {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f5edf9;
+}
+
+.uoa-quiet-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.uoa-bottom-nav {
+  background: rgba(13, 7, 16, 0.92);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -14px 40px rgba(3, 1, 5, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 3px;
+}
+
+button:not(:disabled) {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease, background-color 160ms ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.97);
+}

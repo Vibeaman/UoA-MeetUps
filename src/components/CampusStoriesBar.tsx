@@ -8,19 +8,19 @@ export const CampusStoriesBar: React.FC = () => {
   const { stories, setActiveStory, currentUser, addCampusStory } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCaption, setNewCaption] = useState('');
-  const [selectedTag, setSelectedTag] = useState('✨ Campus Vibe');
+  const [selectedTag, setSelectedTag] = useState('Campus Vibe');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [postError, setPostError] = useState('');
   const [isPosting, setIsPosting] = useState(false);
 
   const PRESET_TAGS = [
-    '✨ Campus Vibe',
-    '📖 Study Session',
-    '🥤 Senate Plaza',
-    '🎧 Afrotech & Music',
-    '🍢 Suya & Chill',
-    '💪 Gym Session',
-    '🎭 Arts & Drama',
+    'Campus Vibe',
+    'Study Session',
+    'Senate Plaza',
+    'Music',
+    'Suya & Chill',
+    'Gym Session',
+    'Arts & Drama',
   ];
 
   const handlePostStory = async (e: React.FormEvent) => {
@@ -46,15 +46,13 @@ export const CampusStoriesBar: React.FC = () => {
   };
 
   return (
-    <div className="w-full mb-3" id="campus-stories-section">
-      <div className="flex items-center justify-between px-1 mb-2">
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-xs font-bold font-display text-purple-200 uppercase tracking-wider">
-            Campus Pulse & Highlights
-          </span>
+    <div className="w-full pb-1" id="campus-stories-section">
+      <div className="mb-3 flex items-end justify-between px-1">
+        <div>
+          <p className="uoa-section-kicker">Campus stories</p>
+          <h2 className="mt-1 text-lg font-extrabold tracking-tight text-white">What’s happening on campus</h2>
         </div>
-        <span className="text-[10px] font-medium text-purple-400/80 bg-purple-950/60 px-2 py-0.5 rounded-full border border-purple-800/40">
+        <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold text-white/55 ring-1 ring-white/10">
           {stories.length > 0 ? 'Live stories' : 'No active stories'}
         </span>
       </div>
@@ -67,10 +65,10 @@ export const CampusStoriesBar: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAddModalOpen(true)}
-            className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-pink-500 shadow-md group"
+            className="relative h-14 w-14 rounded-full border border-violet-300/40 bg-violet-500/10 p-[2px] transition-transform group hover:scale-[1.03] sm:h-16 sm:w-16"
             id="btn-add-campus-story"
           >
-            <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090410] flex items-center justify-center text-purple-200 text-sm font-black">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-violet-100">
               {currentUser.photos[0] ? (
                 <img
                   src={currentUser.photos[0]}
@@ -81,12 +79,12 @@ export const CampusStoriesBar: React.FC = () => {
                 <Camera className="w-5 h-5 text-purple-300" />
               )}
             </div>
-            <div className="absolute bottom-0 right-0 p-1 rounded-full bg-gradient-to-tr from-purple-500 to-fuchsia-500 text-white border-2 border-[#090410] shadow-sm">
+            <div className="absolute bottom-0 right-0 rounded-full border-2 border-[#0d0710] bg-white p-1 text-[#29112e] shadow-sm">
               <Plus className="w-3 h-3 stroke-[3]" />
             </div>
           </motion.button>
-          <span className="text-[11px] font-semibold text-neutral-300 truncate max-w-[62px]">
-            Your Vibe
+          <span className="max-w-[62px] truncate text-[11px] font-semibold text-white/65">
+            Add story
           </span>
         </div>
 
@@ -100,10 +98,10 @@ export const CampusStoriesBar: React.FC = () => {
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveStory(story)}
-              className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2.5px] bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-amber-400 shadow-lg shadow-purple-950/50 group"
+              className="group relative h-14 w-14 rounded-full border border-violet-300/35 bg-violet-500/10 p-[2px] transition-transform hover:scale-[1.03] sm:h-16 sm:w-16"
               id={`story-btn-${story.id}`}
             >
-              <div className="w-full h-full rounded-full overflow-hidden bg-[#10061c] border-2 border-[#090410] flex items-center justify-center text-purple-200 text-sm font-black">
+              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-violet-100">
                 {story.avatar ? (
                   <img
                     src={story.avatar}
@@ -114,11 +112,8 @@ export const CampusStoriesBar: React.FC = () => {
                   story.userName.slice(0, 1).toUpperCase()
                 )}
               </div>
-              <div className="absolute -top-1 -right-1 px-1 rounded-full bg-purple-900/90 text-[8px] font-black text-purple-200 border border-purple-400/50">
-                {story.tag.split(' ')[0]}
-              </div>
             </motion.button>
-            <span className="text-[11px] font-medium text-neutral-200 truncate max-w-[64px]">
+            <span className="max-w-[64px] truncate text-[11px] font-medium text-white/70">
               {story.userName}
             </span>
           </div>

@@ -122,7 +122,6 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showTagline = false, cl
           </span>
           <span className={`font-serif italic font-medium text-purple-200 tracking-normal ${dim.textClass} flex items-center`}>
             MeetUps
-            <span className="inline-block ml-0.5 text-purple-400 text-xs animate-pulse">💜</span>
           </span>
         </div>
 

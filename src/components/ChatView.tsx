@@ -111,7 +111,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     const expiryText = calculateExpiryDays(currentChatMatch.expiresAt);
 
     return (
-      <div className="relative w-full max-w-5xl mx-auto min-w-0 min-h-0 h-[calc(100dvh-9rem)] sm:h-[calc(100dvh-10rem)] flex flex-col bg-[#0b0414] border border-purple-950/60 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="uoa-surface relative mx-auto flex h-[calc(100dvh-9rem)] min-h-0 w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-[28px] sm:h-[calc(100dvh-10rem)]">
         {/* Chat Header */}
         <div className="flex items-center justify-between p-3.5 bg-[#120722] border-b border-purple-900/40 z-20">
           <div className="flex items-center space-x-2.5">
@@ -316,7 +316,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
         {/* Icebreaker suggestions floating picker */}
         {showIcebreakerPicker && (
-          <div className="bg-[#150727] border-t border-purple-800/60 p-3 space-y-1.5 animate-fadeIn">
+          <div className="border-t border-white/10 bg-white/[0.035] p-3 space-y-1.5 animate-fadeIn">
             <div className="flex items-center justify-between text-xs text-purple-300 font-bold mb-1">
               <span>Send a Quick Campus Icebreaker:</span>
               <button onClick={() => setShowIcebreakerPicker(false)} className="text-neutral-400 hover:text-white">
@@ -324,9 +324,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               </button>
             </div>
             {[
-              `What's your favourite meal around the student arcade? 🍝`,
-              `Surviving 8 AM lectures or sleeping in? 😂`,
-              `Are you free for suya at the campus spot this evening? 🍢`,
+              `What's your favourite meal around the student arcade?`,
+              `Surviving 8 AM lectures or sleeping in?`,
+              `Are you free for suya at the campus spot this evening?`,
             ].map((prompt, i) => (
               <button
                 key={i}
@@ -341,7 +341,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
         {/* Real gallery photo picker */}
         {showPhotoPicker && (
-          <div className="bg-[#150727] border-t border-purple-800/60 p-3 space-y-2 animate-fadeIn">
+          <div className="border-t border-white/10 bg-white/[0.035] p-3 space-y-2 animate-fadeIn">
             <div className="flex items-center justify-between text-xs text-purple-300 font-bold">
               <span>Attach a photo from your gallery</span>
               <div className="flex items-center space-x-2">
@@ -391,11 +391,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         )}
 
         {/* Input Bar */}
-        <div className="p-3 bg-[#110620] border-t border-purple-900/40 flex items-center space-x-2">
+        <div className="border-t border-white/10 bg-black/10 p-3 flex items-center space-x-2">
           {/* Photos Button */}
           <button
             onClick={() => setShowPhotoPicker(!showPhotoPicker)}
-            className="p-2 rounded-xl bg-purple-950/60 text-purple-300 hover:text-white hover:bg-purple-900/60 transition-all border border-purple-900/40"
+            className="uoa-quiet-button rounded-xl p-2 text-violet-200 transition-all"
             title="Attach Photo"
           >
             <ImageIcon className="w-4 h-4" />
@@ -404,7 +404,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           {/* Icebreaker button */}
           <button
             onClick={() => setShowIcebreakerPicker(!showIcebreakerPicker)}
-            className="p-2 rounded-xl bg-purple-950/60 text-purple-300 hover:text-white hover:bg-purple-900/60 transition-all border border-purple-900/40"
+            className="uoa-quiet-button rounded-xl p-2 text-violet-200 transition-all"
             title="Send Icebreaker"
           >
             <Sparkles className="w-4 h-4" />
@@ -419,14 +419,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               if (e.key === 'Enter') handleSend();
             }}
             placeholder={`Message ${matched.name.split(' ')[0]}...`}
-            className="flex-1 py-2.5 px-3.5 rounded-2xl bg-[#17092c] border border-purple-800/40 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
+            className="flex-1 rounded-2xl border border-white/10 bg-white/[0.045] px-3.5 py-2.5 text-xs text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
           />
 
           {/* Send */}
           <button
             onClick={handleSend}
             disabled={!inputMessage.trim()}
-            className="p-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white disabled:opacity-40 hover:brightness-110 transition-all shadow-md"
+            className="uoa-primary-button rounded-2xl p-2.5 text-white transition-all disabled:opacity-40 hover:brightness-110"
             id="chat-send-btn"
           >
             <Send className="w-4 h-4" />
@@ -450,7 +450,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           </p>
         </div>
 
-        <div className="px-3 py-1 rounded-full bg-purple-950 border border-purple-800/60 text-purple-300 text-xs font-bold flex items-center space-x-1">
+        <div className="uoa-surface-soft flex items-center space-x-1 rounded-full px-3 py-1 text-xs font-bold text-violet-200">
           <Flame className="w-3.5 h-3.5 text-purple-400" />
           <span>7-Day Expiry</span>
         </div>
@@ -499,7 +499,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         </span>
 
         {matches.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-[#120722] border border-purple-950/80">
+          <div className="uoa-surface-soft rounded-2xl p-8 text-center">
             <MessageCircle className="w-10 h-10 text-purple-400 mx-auto mb-2 opacity-60" />
             <h4 className="text-sm font-bold text-white">No chat history yet</h4>
             <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
@@ -517,8 +517,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                 onClick={() => setCurrentChatMatch(match)}
                 className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center space-x-3 group ${
                   match.hasUnread
-                    ? 'bg-[#190a2c] border-purple-700/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                    : 'bg-[#120620] border-purple-950 hover:border-purple-800'
+                    ? 'bg-violet-500/10 border-violet-300/30'
+                    : 'bg-white/[0.035] border-white/10 hover:border-white/20'
                 }`}
               >
                 {/* Avatar */}
@@ -554,7 +554,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                       )}
                     </div>
                     <span className="text-[10px] text-purple-400/80 font-medium">
-                      ⏱️ {expiryText}
+                      {expiryText} remaining
                     </span>
                   </div>
 
@@ -568,7 +568,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
                 {/* Unread indicator */}
                 {match.hasUnread && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-fuchsia-500 shadow-[0_0_8px_#d946ef] shrink-0" />
+                  <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-violet-300" />
                 )}
               </div>
             );

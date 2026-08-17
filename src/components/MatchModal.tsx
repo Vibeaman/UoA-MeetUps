@@ -23,9 +23,9 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
   if (!matchedProfile) return null;
 
   const quickStarters = [
-    `Hey ${matchedProfile.name.split(' ')[0]}! How's ${matchedProfile.department} going? 👋`,
-    `Saw your profile and had to connect! Are you around campus today? ✨`,
-    `Best secret spot on campus? I need recommendations! 🍕`,
+    `Hey ${matchedProfile.name.split(' ')[0]}! How's ${matchedProfile.department} going?`,
+    `Saw your profile and had to connect! Are you around campus today?`,
+    `Best secret spot on campus? I need recommendations!`,
   ];
 
   const handleSendAndOpenChat = () => {
@@ -69,7 +69,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-black font-display text-gradient-purple tracking-tight">
-            IT’S A MATCH! 🔥
+            IT’S A MATCH!
           </h2>
           <p className="text-xs text-neutral-300 mt-1 max-w-xs">
             You and <span className="font-bold text-white">{matchedProfile.name}</span> both swiped right on each other.
@@ -140,7 +140,6 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
 
         {/* Expiration Note */}
         <div className="text-[11px] text-neutral-400 mb-4 flex items-center justify-center space-x-1">
-          <span>⏱️</span>
           <span>Matches expire after 7 days if no conversation starts.</span>
         </div>
 

@@ -3,12 +3,8 @@ import {
   SlidersHorizontal,
   Crown,
   Zap,
-  ShieldCheck,
-  EyeOff,
-  Sparkles,
   Lock,
   Flame,
-  ShieldAlert,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Logo } from './Logo';
@@ -60,8 +56,8 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full min-w-0 bg-[#090410]/90 backdrop-blur-xl border-b border-purple-950/60 px-3 sm:px-4 py-2.5 transition-all">
-      <div className="w-full max-w-7xl mx-auto min-w-0 flex flex-wrap md:flex-nowrap items-center justify-between gap-2">
+    <header className="uoa-header sticky top-0 z-30 w-full min-w-0 border-b px-3 py-3 transition-all sm:px-5">
+      <div className="mx-auto flex w-full max-w-[1400px] min-w-0 flex-wrap items-center justify-between gap-3 md:flex-nowrap">
         {/* Left: Logo & Campus Tag */}
         <div
           onClick={handleLogoClick}
@@ -70,24 +66,24 @@ export const Header: React.FC = () => {
         >
           <Logo size="sm" />
           <div className="hidden sm:flex flex-col">
-            <span className="text-[10px] font-bold tracking-widest text-purple-400 uppercase">
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-violet-300/85">
               UniAbuja Campus
             </span>
-            <span className="text-[9px] text-neutral-400">Exclusive Student Network</span>
+            <span className="text-[9px] text-white/45">Student network for UniAbuja</span>
           </div>
         </div>
 
         {/* Center: Normal vs Lowkey Mode Switcher */}
         <div className="relative order-3 flex w-full justify-center md:order-none md:w-auto md:shrink-0">
           <div
-            className="flex items-center p-1 rounded-full bg-[#130920] border border-purple-900/40 shadow-inner"
+            className="uoa-surface-soft flex items-center rounded-full p-1"
             id="mode-switcher-container"
           >
             <button
               onClick={() => toggleAppMode('normal')}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                 currentMode === 'normal'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]'
+                  ? 'uoa-primary-button text-white'
                   : 'text-neutral-400 hover:text-neutral-200'
               }`}
               id="mode-normal-btn"
@@ -100,9 +96,9 @@ export const Header: React.FC = () => {
               onClick={() => toggleAppMode('lowkey')}
               onMouseEnter={() => setShowModeTooltip(true)}
               onMouseLeave={() => setShowModeTooltip(false)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                 currentMode === 'lowkey'
-                  ? 'bg-gradient-to-r from-violet-800 to-fuchsia-900 text-purple-100 shadow-[0_0_15px_rgba(216,70,239,0.5)] border border-purple-400/40'
+                  ? 'bg-white/10 text-white ring-1 ring-white/15'
                   : 'text-neutral-400 hover:text-neutral-200'
               }`}
               id="mode-lowkey-btn"
@@ -118,7 +114,7 @@ export const Header: React.FC = () => {
           {/* Lowkey Mode Floating Badge */}
           {currentMode === 'lowkey' && (
             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-fuchsia-300 bg-fuchsia-950/80 px-2 py-0.5 rounded-full border border-fuchsia-800/40 shadow-sm animate-pulse">
-              🔒 Discreet Lowkey Active
+              Lowkey mode active
             </div>
           )}
         </div>
@@ -128,10 +124,10 @@ export const Header: React.FC = () => {
           {/* Boost Button */}
           <button
             onClick={isBoostActive ? undefined : triggerBoost}
-            className={`relative p-2 rounded-xl border transition-all ${
+            className={`relative rounded-xl border p-2 transition-all ${
               isBoostActive
-                ? 'bg-purple-900/60 border-purple-500 text-purple-200 animate-pulse'
-                : 'bg-purple-950/30 border-purple-900/40 text-purple-300 hover:bg-purple-900/40 hover:text-purple-100'
+                ? 'bg-violet-500/15 border-violet-300/40 text-violet-100'
+                : 'uoa-quiet-button text-violet-200'
             }`}
             title={isBoostActive ? `Boost Active (${formatBoostTime(boostTimeLeft)})` : 'Boost Profile (5x Matches)'}
             id="boost-header-btn"
@@ -147,10 +143,10 @@ export const Header: React.FC = () => {
           {/* Premium VIP Crown */}
           <button
             onClick={() => setIsPremiumModalOpen(true)}
-            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center space-x-1 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all ${
               isPremium
-                ? 'bg-gradient-to-r from-amber-500/20 to-purple-600/20 text-amber-300 border border-amber-500/40 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-                : 'bg-gradient-to-r from-purple-950/60 to-purple-900/40 text-purple-200 border border-purple-800/50 hover:border-purple-600'
+                ? 'bg-white/10 text-amber-200 ring-1 ring-amber-300/25'
+                : 'uoa-quiet-button text-white/75'
             }`}
             id="vip-header-btn"
           >
@@ -161,7 +157,7 @@ export const Header: React.FC = () => {
           {/* Filters Toggle */}
           <button
             onClick={() => setIsFiltersModalOpen(true)}
-            className="relative p-2 rounded-xl bg-purple-950/30 border border-purple-900/40 text-neutral-300 hover:text-white hover:bg-purple-900/40 transition-all"
+            className="uoa-quiet-button relative rounded-xl p-2 transition-all"
             id="filters-header-btn"
             title="Filter Profiles"
           >

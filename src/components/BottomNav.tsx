@@ -50,8 +50,8 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 w-full min-w-0 bg-[#090410]/95 backdrop-blur-2xl border-t border-purple-950/70 pb-safe shadow-[0_-10px_25px_rgba(0,0,0,0.8)]">
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-around gap-1 px-2 py-1.5 sm:gap-2 sm:px-4 sm:py-2">
+    <nav className="uoa-bottom-nav fixed inset-x-0 bottom-0 z-40 w-full min-w-0 border-t pb-safe backdrop-blur-2xl">
+      <div className="mx-auto flex w-full max-w-[900px] items-center justify-around gap-1 px-2 py-2 sm:gap-2 sm:px-4 sm:py-2.5">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -60,26 +60,26 @@ export const BottomNav: React.FC = () => {
               onClick={() => setActiveTab(item.id)}
               className={`relative flex min-w-0 flex-1 flex-col items-center justify-center py-1 px-1.5 sm:px-2.5 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'text-purple-300 font-bold scale-105'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  ? 'text-violet-200 font-bold'
+                  : 'text-white/45 hover:text-white/80'
               }`}
               id={`bottom-nav-${item.id}`}
             >
               {/* Active Indicator Top Dot */}
               {isActive && (
-                <span className="absolute -top-1.5 w-1 h-1 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]"></span>
+                <span className="absolute -top-2 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-violet-300"></span>
               )}
 
               <div className="relative">
                 {item.icon}
                 {item.badge && item.badge > 0 ? (
-                  <span className="absolute -top-1 -right-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[16px] text-center border border-[#090410]">
+                  <span className="absolute -right-2 -top-1 min-w-[16px] rounded-full border border-[#0d0710] bg-violet-500 px-1.5 py-0.2 text-center text-[9px] font-black text-white">
                     {item.badge}
                   </span>
                 ) : null}
               </div>
 
-              <span className={`text-[10px] mt-0.5 tracking-tight ${isActive ? 'text-purple-300' : 'text-neutral-400'}`}>
+              <span className={`text-[10px] mt-1 tracking-tight ${isActive ? 'text-violet-200' : 'text-white/45'}`}>
                 {item.label}
               </span>
             </button>

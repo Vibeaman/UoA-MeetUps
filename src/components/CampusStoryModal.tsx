@@ -53,7 +53,7 @@ export const CampusStoryModal: React.FC = () => {
   const handleQuickLike = () => {
     if (authorProfile) {
       swipeRight(authorProfile);
-      sendDirectSpark(authorProfile, `Liked your campus story: "${activeStory.tag}" 🔥`);
+      sendDirectSpark(authorProfile, `Liked your campus story: "${activeStory.tag}"`);
       setActiveStory(null);
     }
   };

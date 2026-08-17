@@ -61,7 +61,7 @@ export const CampusDailyPollCard: React.FC = () => {
 
   if (!currentPoll) {
     return (
-      <div className="w-full mb-3 p-4 rounded-2xl bg-gradient-to-r from-[#17082a] to-[#110520] border border-purple-800/40 shadow-lg text-left">
+      <div className="uoa-surface-soft mb-3 w-full rounded-2xl p-4 text-left">
         <div className="flex items-center space-x-2 text-purple-300">
           <MessageSquareQuote className="w-4 h-4" />
           <span className="text-xs font-extrabold uppercase tracking-wider">Campus polls</span>
@@ -82,18 +82,18 @@ export const CampusDailyPollCard: React.FC = () => {
 
   return (
     <div
-      className="w-full mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-[#17082a] to-[#110520] border border-purple-800/40 shadow-lg text-left transition-all"
+      className="uoa-surface-soft mb-3 w-full rounded-2xl p-3.5 text-left transition-all"
       id="campus-daily-poll-card"
     >
       {/* Poll Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="p-1.5 rounded-lg bg-purple-900/60 text-purple-300 border border-purple-700/50">
+          <div className="rounded-lg bg-white/[0.07] p-1.5 text-violet-200 ring-1 ring-white/10">
             <MessageSquareQuote className="w-3.5 h-3.5" />
           </div>
           <div>
             <div className="flex items-center space-x-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-purple-300">
+              <span className="uoa-section-kicker">
                 {currentPoll.category || 'Campus Vibe Poll'}
               </span>
               <span className="text-[10px] text-purple-400/80 font-semibold">
@@ -160,10 +160,10 @@ export const CampusDailyPollCard: React.FC = () => {
                     onClick={() => {
                       if (requestAuthentication()) voteCampusPoll(currentPoll.id, opt.id);
                     }}
-                    className={`relative w-full text-left p-2.5 rounded-xl border transition-all overflow-hidden ${
+                    className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
                       isSelected
-                        ? 'bg-purple-900/40 border-purple-400 ring-1 ring-purple-400/50'
-                        : 'bg-[#0d0417] border-purple-950 hover:border-purple-800/60'
+                        ? 'bg-violet-500/10 border-violet-300/50 ring-1 ring-violet-300/25'
+                        : 'bg-white/[0.035] border-white/10 hover:border-white/20'
                     }`}
                   >
                     {/* Percentage fill bar if voted */}
@@ -174,8 +174,8 @@ export const CampusDailyPollCard: React.FC = () => {
                         transition={{ duration: 0.45, ease: 'easeOut' }}
                         className={`absolute inset-y-0 left-0 ${
                           isSelected
-                            ? 'bg-gradient-to-r from-purple-700/60 to-fuchsia-600/60'
-                            : 'bg-purple-950/40'
+                            ? 'bg-violet-500/25'
+                            : 'bg-white/[0.06]'
                         }`}
                       />
                     )}
@@ -202,13 +202,13 @@ export const CampusDailyPollCard: React.FC = () => {
 
           <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 px-1">
             <span>
-              🗳️ {currentPoll.totalVotes.toLocaleString()} UniAbuja votes
+              {currentPoll.totalVotes.toLocaleString()} UniAbuja votes
             </span>
             <div className="flex items-center space-x-2">
               <span className="text-purple-300/80">
                 {isAuthenticated
                   ? hasVoted
-                    ? '✨ Your vote is counted'
+                    ? 'Your vote is counted'
                     : 'Tap an option to vote'
                   : 'Sign up to vote'}
               </span>

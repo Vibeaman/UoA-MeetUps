@@ -56,8 +56,8 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
   if (isAuthLoading || !isAuthenticated || !hasProfile) {
     return (
-      <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
-        <div className="p-6 rounded-3xl bg-gradient-to-b from-[#18092f] via-[#110520] to-[#090312] border border-purple-800/40 shadow-2xl text-center">
+      <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col space-y-5 overflow-y-auto px-3 pb-24 pt-4 custom-scrollbar sm:px-5 sm:pt-6">
+        <div className="uoa-surface rounded-[28px] p-6 text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-purple-950/70 border border-purple-700/50 flex items-center justify-center text-purple-300">
             {isAuthLoading ? <Sparkles className="w-7 h-7 animate-pulse" /> : <LogIn className="w-7 h-7" />}
           </div>
@@ -85,9 +85,9 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+    <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col space-y-5 overflow-y-auto px-3 pb-24 pt-4 custom-scrollbar sm:px-5 sm:pt-6">
       {/* Top Profile Card */}
-      <div className="relative rounded-3xl overflow-hidden border border-purple-800/40 bg-gradient-to-b from-[#18092f] via-[#110520] to-[#090312] p-5 shadow-2xl">
+      <div className="uoa-surface relative overflow-hidden rounded-[28px] p-5">
         {/* Glow effect */}
         <div className="absolute top-0 right-0 w-36 h-36 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -144,7 +144,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             </h2>
             {currentUser.isVerified && (
               <span className="px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-[10px] font-bold">
-                🛡️ Verified
+                Verified
               </span>
             )}
           </div>
@@ -190,7 +190,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       </div>
 
       {/* Mode Switcher Interactive Card */}
-      <div className="p-4 rounded-3xl bg-[#120620] border border-purple-950 space-y-3">
+      <div className="uoa-surface-soft space-y-3 rounded-3xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {appMode === 'lowkey' ? (
@@ -227,7 +227,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       </div>
 
       {/* VIP Subscription Card */}
-      <div className="p-4 rounded-3xl bg-gradient-to-r from-[#230a3d] to-[#140624] border border-purple-700/60 relative overflow-hidden shadow-lg">
+      <div className="uoa-surface relative overflow-hidden rounded-3xl p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2.5">
             <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300">
@@ -247,7 +247,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
           <button
             onClick={() => setIsPremiumModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow hover:brightness-110"
+            className="uoa-quiet-button rounded-xl px-3 py-1.5 text-xs font-extrabold transition-colors hover:text-amber-100"
           >
             {isPremium ? 'Manage' : 'Upgrade'}
           </button>
@@ -255,7 +255,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       </div>
 
       {/* Settings Actions */}
-      <div className="space-y-1.5 rounded-3xl bg-[#120620] border border-purple-950 p-2 text-xs">
+      <div className="uoa-surface-soft space-y-1.5 rounded-3xl p-2 text-xs">
         {/* Community Guidelines */}
         <button
           onClick={onOpenGuidelines}

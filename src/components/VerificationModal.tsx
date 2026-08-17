@@ -323,7 +323,7 @@ export const VerificationModal: React.FC = () => {
               Verification Submitted!
             </h3>
             <p className="text-xs text-neutral-300 max-w-xs mx-auto leading-relaxed">
-              Your live selfie and UniAbuja matric status are now queued for review in the Admin Console. You will receive your official <strong>🛡️ Verified Student</strong> badge shortly!
+              Your live selfie and UniAbuja matric status are now queued for review in the Admin Console. You will receive your official <strong>Verified Student</strong> badge shortly!
             </p>
 
             <button

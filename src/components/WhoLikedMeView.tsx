@@ -17,13 +17,13 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
   } = useApp();
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+    <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col space-y-5 overflow-y-auto px-3 pb-24 pt-4 custom-scrollbar sm:px-5 sm:pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black font-display text-white tracking-tight flex items-center space-x-2">
             <span>Who Liked You</span>
-            <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-purple-900/80 text-purple-200 border border-purple-700/50">
+            <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-sm font-bold text-violet-100 ring-1 ring-white/10">
               {whoLikedMeProfiles.length}
             </span>
           </h2>
@@ -35,7 +35,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
         {!isPremium && (
           <button
             onClick={() => setIsPremiumModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 text-black font-extrabold text-xs shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:brightness-110"
+            className="uoa-quiet-button flex items-center space-x-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold text-amber-200 transition-colors hover:bg-white/10"
           >
             <Crown className="w-3.5 h-3.5 fill-black" />
             <span>Unlock All</span>
@@ -45,7 +45,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
 
       {/* Paystack VIP Promo Banner if not premium */}
       {!isPremium && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#21093a] to-[#140624] border border-purple-700/60 shadow-lg relative overflow-hidden">
+        <div className="uoa-surface relative overflow-hidden rounded-2xl p-4">
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-purple-600/30 rounded-full blur-2xl pointer-events-none" />
           <div className="flex items-start space-x-3">
             <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300">
@@ -60,7 +60,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
               </p>
               <button
                 onClick={() => setIsPremiumModalOpen(true)}
-                className="mt-2.5 py-1.5 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-md hover:brightness-110"
+                className="uoa-primary-button mt-2.5 rounded-xl px-3.5 py-1.5 text-xs font-bold text-white hover:brightness-110"
               >
                 Upgrade to VIP Pass (From ₦1,500)
               </button>
@@ -71,7 +71,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
 
       {/* Live inbound likes */}
       {whoLikedMeProfiles.length === 0 ? (
-        <div className="p-8 text-center rounded-2xl bg-[#120722] border border-purple-950/80">
+        <div className="uoa-surface-soft rounded-2xl p-8 text-center">
           <Heart className="w-10 h-10 text-purple-400 mx-auto mb-2 opacity-60" />
           <h4 className="text-sm font-bold text-white">No one has liked your profile yet</h4>
           <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
@@ -83,7 +83,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
           {whoLikedMeProfiles.map((profile) => (
           <div
             key={profile.id}
-            className="relative h-60 rounded-2xl overflow-hidden border border-purple-900/50 bg-[#120622] group shadow-md flex flex-col justify-end"
+            className="uoa-surface relative flex h-60 flex-col justify-end overflow-hidden rounded-2xl group"
           >
             {/* Background photo */}
             <img
@@ -132,7 +132,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
                   </button>
                   <button
                     onClick={() => swipeRight(profile)}
-                    className="flex-1 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-md hover:brightness-110 flex items-center justify-center space-x-1"
+                    className="uoa-primary-button flex-1 rounded-xl py-1.5 text-xs font-bold text-white hover:brightness-110 flex items-center justify-center space-x-1"
                   >
                     <Heart className="w-3 h-3 fill-white" />
                     <span>Match</span>

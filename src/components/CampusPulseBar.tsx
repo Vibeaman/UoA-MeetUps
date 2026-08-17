@@ -13,18 +13,18 @@ export const CampusPulseBar: React.FC = () => {
   const topFaculty = Object.entries(facultyCounts).sort(([, countA], [, countB]) => Number(countB) - Number(countA))[0]?.[0];
 
   const VIBE_FILTERS = [
-    { id: 'all', label: 'All Profiles', icon: '⚡' },
-    { id: 'science', label: 'Science & Engineering', icon: '💻' },
-    { id: 'law', label: 'Law & Arts', icon: '⚖️' },
-    { id: 'med', label: 'Health Sciences', icon: '🩺' },
-    { id: 'verified', label: 'Verified Students', icon: '🛡️' },
-    { id: 'dating', label: 'Dating Intent', icon: '❤️' },
+    { id: 'all', label: 'All profiles' },
+    { id: 'science', label: 'Science & engineering' },
+    { id: 'law', label: 'Law & arts' },
+    { id: 'med', label: 'Health sciences' },
+    { id: 'verified', label: 'Verified students' },
+    { id: 'dating', label: 'Dating intent' },
   ];
 
   return (
-    <div className="w-full mb-3 space-y-2" id="campus-pulse-bar">
+    <div className="w-full space-y-3 pb-1" id="campus-pulse-bar">
       {/* Live Campus Pulse Banner */}
-      <div className="w-full p-2 rounded-xl bg-[#120622]/90 border border-purple-900/50 flex items-center justify-between text-[11px] text-purple-200">
+      <div className="uoa-surface-soft flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-[11px] text-violet-100">
         <div className="flex items-center space-x-2 truncate">
           <span className="flex h-2 w-2 relative shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -38,7 +38,7 @@ export const CampusPulseBar: React.FC = () => {
             {topFaculty ? `Most represented: ${topFaculty}` : 'Live activity will appear as students join'}
           </span>
         </div>
-        <span className="text-[10px] font-extrabold text-purple-300 bg-purple-950/60 border border-purple-500/40 px-2 py-0.5 rounded-full shrink-0 ml-1">
+        <span className="ml-1 shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold text-white/65">
           {profiles.length > 0 ? `${profiles.length} profiles` : 'No live profiles'}
         </span>
       </div>
@@ -52,13 +52,12 @@ export const CampusPulseBar: React.FC = () => {
               key={chip.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedVibeFilter(chip.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-1.5 ${
+              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-950/60 border border-purple-400/60 font-bold'
-                  : 'bg-[#120620] text-neutral-300 border border-purple-950 hover:border-purple-800 hover:text-white'
+                  ? 'bg-white text-[#1a0d20] border-white font-bold'
+                  : 'bg-white/[0.04] text-white/65 border-white/10 hover:border-white/25 hover:text-white'
               }`}
             >
-              <span>{chip.icon}</span>
               <span>{chip.label}</span>
             </motion.button>
           );

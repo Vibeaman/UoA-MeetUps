@@ -312,7 +312,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto min-w-0 flex flex-col justify-start items-center px-0 sm:px-2 lg:px-4 py-2 select-none">
+    <div className="relative mx-auto flex w-full max-w-[1080px] min-w-0 flex-col items-center justify-start px-0 py-4 sm:px-3 sm:py-6 lg:px-5">
       {/* 1. Campus Stories Bar */}
       <CampusStoriesBar />
 
@@ -323,12 +323,12 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       <CampusDailyPollCard />
 
       {/* Discover Sub-Tab Segmented Control */}
-      <div className="w-full flex items-center p-1 rounded-2xl bg-[#140624] border border-purple-900/50 mb-3 shadow-inner">
+      <div className="uoa-surface-soft mb-4 flex w-full items-center rounded-2xl p-1">
         <button
           onClick={() => setDiscoverTab('matches')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
             discoverTab === 'matches'
-              ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-900/50'
+              ? 'uoa-primary-button text-white'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
@@ -341,13 +341,13 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
         <button
           onClick={() => setDiscoverTab('gossip')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
             discoverTab === 'gossip'
-              ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-900/50'
+              ? 'uoa-primary-button text-white'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <span>☕ Gossip & Tea</span>
+          <span>Campus conversation</span>
           <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-fuchsia-950 text-fuchsia-300 font-extrabold border border-fuchsia-800/40">
             {gossipPosts.length}
           </span>
@@ -368,7 +368,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             filters.onlyMyDepartment ||
             filters.onlyVerified ||
             filters.searchQuery.trim() !== '') && (
-            <div className="w-full mb-2.5 p-2 rounded-2xl bg-[#130722] border border-purple-800/40 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar shadow-inner">
+            <div className="uoa-surface-soft mb-3 flex w-full items-center justify-between gap-2 overflow-x-auto rounded-2xl p-2">
               <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar text-[11px]">
                 <span className="text-[10px] font-extrabold uppercase text-purple-400 shrink-0 ml-1">
                   Active:
@@ -449,7 +449,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     onClick={() => setFilters({ ...filters, onlyVerified: false })}
                     className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-600/50 text-purple-200 shrink-0 hover:bg-purple-800"
                   >
-                    <span>Verified 🛡️</span>
+                    <span>Verified</span>
                     <X className="w-3 h-3" />
                   </button>
                 )}
@@ -472,7 +472,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#10061c]/90 border border-purple-900/30 rounded-3xl backdrop-blur-xl"
+            className="uoa-surface flex h-full w-full flex-col items-center justify-center rounded-[28px] p-6 text-center backdrop-blur-xl"
           >
             <motion.div
               animate={{
@@ -480,11 +480,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 rotate: [0, 5, -5, 0],
               }}
               transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="w-20 h-20 rounded-full bg-purple-950/60 border border-purple-800/40 flex items-center justify-center mb-4 text-purple-400"
+              className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10 text-violet-200 ring-1 ring-violet-300/25"
             >
               <Sparkles className="w-10 h-10" />
             </motion.div>
-            <h3 className="text-xl font-bold font-display text-purple-100">
+            <h3 className="uoa-section-title text-center">
               No More Profiles in {currentMode === 'lowkey' ? 'Lowkey Mode' : 'UniAbuja Feed'}
             </h3>
             <p className="text-sm text-neutral-400 mt-2 max-w-xs leading-relaxed">
@@ -497,7 +497,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setIsFiltersModalOpen(true)}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-purple-900/40 border border-purple-700/50 text-purple-200 text-sm font-semibold hover:bg-purple-800/50 transition-all"
+                className="uoa-quiet-button flex-1 flex items-center justify-center space-x-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 <span>Adjust Filters</span>
@@ -508,7 +508,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 whileTap={{ scale: 0.96 }}
                 onClick={handleRewindClick}
                 disabled={!canRewind}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-sm font-bold shadow-lg shadow-purple-900/50 disabled:opacity-40"
+                className="uoa-primary-button flex-1 flex items-center justify-center space-x-2 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-40"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Rewind Last</span>
@@ -859,7 +859,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                       {currentProfile.voiceNoteText && (
                         <div className="space-y-1">
                           <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider">
-                            Campus Voice Bio 🎙️
+                            Campus Voice Bio
                           </h4>
                           <VoiceNotePlayer
                             text={currentProfile.voiceNoteText}
@@ -997,10 +997,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileTap={{ scale: canRewind ? 0.9 : 1 }}
           onClick={handleRewindClick}
           disabled={!canRewind || isAnimatingOut}
-          className={`p-3 rounded-full border transition-colors duration-200 ${
+          className={`rounded-full border p-3 transition-colors duration-200 ${
             canRewind
-              ? 'bg-[#150a24] border-purple-900/60 text-amber-400 hover:border-amber-500 shadow-md'
-              : 'bg-[#10061c]/40 border-neutral-900 text-neutral-600 opacity-40 cursor-not-allowed'
+              ? 'uoa-quiet-button text-amber-300'
+              : 'bg-white/[0.03] border-white/5 text-white/20 opacity-40 cursor-not-allowed'
           }`}
           title="Rewind Last Swipe (VIP Feature)"
           id="btn-swipe-rewind"
@@ -1014,7 +1014,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileTap={{ scale: currentProfile ? 0.88 : 1 }}
           onClick={() => handleManualSwipe('left')}
           disabled={!currentProfile || isAnimatingOut}
-          className="p-4 sm:p-4.5 rounded-full bg-[#180924] border-2 border-rose-600/40 text-rose-400 hover:text-white hover:bg-rose-600 hover:border-rose-500 transition-colors shadow-[0_0_15px_rgba(244,63,94,0.2)] disabled:opacity-40"
+          className="rounded-full border border-rose-300/35 bg-rose-500/10 p-4 text-rose-200 transition-colors hover:border-rose-200 hover:bg-rose-500/20 disabled:opacity-40 sm:p-4.5"
           title="Pass Profile"
           id="btn-swipe-nope"
         >
@@ -1027,7 +1027,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileTap={{ scale: currentProfile ? 0.88 : 1 }}
           onClick={() => handleManualSwipe('super')}
           disabled={!currentProfile || isAnimatingOut}
-          className="p-3 sm:p-3.5 rounded-full bg-[#180924] border-2 border-cyan-500/40 text-cyan-400 hover:text-white hover:bg-cyan-600 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(6,182,212,0.25)] disabled:opacity-40"
+          className="rounded-full border border-sky-300/35 bg-sky-500/10 p-3 text-sky-200 transition-colors hover:border-sky-200 hover:bg-sky-500/20 disabled:opacity-40 sm:p-3.5"
           title="Super Like"
           id="btn-swipe-superlike"
         >
@@ -1040,7 +1040,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileTap={{ scale: currentProfile ? 0.88 : 1 }}
           onClick={() => handleManualSwipe('right')}
           disabled={!currentProfile || isAnimatingOut}
-          className="p-4 sm:p-4.5 rounded-full bg-gradient-to-tr from-purple-700 to-fuchsia-600 text-white border-2 border-purple-400/50 transition-colors shadow-[0_0_25px_rgba(168,85,247,0.5)] disabled:opacity-40"
+          className="uoa-primary-button rounded-full border border-violet-200/60 p-4 text-white transition-colors disabled:opacity-40 sm:p-4.5"
           title="Like Profile"
           id="btn-swipe-like"
         >
@@ -1052,10 +1052,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
           onClick={triggerBoost}
-          className={`p-3 rounded-full border transition-colors duration-200 ${
+          className={`rounded-full border p-3 transition-colors duration-200 ${
             isBoostActive
-              ? 'bg-purple-900 border-purple-400 text-purple-200 animate-pulse shadow-[0_0_15px_#a855f7]'
-              : 'bg-[#150a24] border-purple-900/60 text-purple-400 hover:border-purple-500'
+              ? 'bg-violet-500/20 border-violet-200/40 text-violet-100'
+              : 'uoa-quiet-button text-violet-200'
           }`}
           title="Boost Profile for 30 Mins"
           id="btn-swipe-boost"
@@ -1070,16 +1070,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           onClick={() => setDiscoverTab('gossip')}
-          className="w-full mt-4 p-3 rounded-2xl bg-gradient-to-r from-purple-950/60 via-[#190729] to-fuchsia-950/50 border border-purple-800/40 text-left flex items-center justify-between group shadow-lg"
+          className="uoa-surface-soft group mt-4 flex w-full items-center justify-between rounded-2xl p-3 text-left transition-colors hover:bg-white/[0.08]"
         >
           <div className="flex items-center space-x-2.5 overflow-hidden">
-            <span className="text-base">☕</span>
             <div className="truncate">
               <div className="flex items-center space-x-1.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-300">
-                  Trending Campus Tea
+                <span className="uoa-section-kicker">
+                  Campus conversation
                 </span>
-                <span className="text-[10px] text-fuchsia-400 font-bold">• {gossipPosts[0].tag}</span>
+                <span className="text-[10px] text-fuchsia-400 font-bold">• {gossipPosts[0].tag.replace(/^[^A-Za-z0-9]+\s*/, '')}</span>
               </div>
               <p className="text-xs text-neutral-300 truncate max-w-[260px]">
                 "{gossipPosts[0].content}"

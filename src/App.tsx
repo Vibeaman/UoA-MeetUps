@@ -58,16 +58,16 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden bg-[#07020d] text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-purple-500 selection:text-white">
-      {/* Background Ambient Glows */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-96 bg-purple-900/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-96 bg-fuchsia-950/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="uoa-app-shell relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-purple-500 selection:text-white">
+      {/* Quiet ambient depth */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-violet-700/[0.05] blur-3xl" />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-72 bg-fuchsia-700/[0.04] blur-3xl" />
 
       {/* Top Header */}
       <Header />
 
       {/* Main Content Area */}
-      <main className="w-full min-w-0 flex-1 max-w-7xl mx-auto flex flex-col justify-start relative z-10 pb-24 sm:pb-28 px-3 sm:px-4 lg:px-6">
+      <main className="relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-8">
         {showGuidelines ? (
           <CommunityGuidelinesView onBack={() => setShowGuidelines(false)} />
         ) : showTips ? (
