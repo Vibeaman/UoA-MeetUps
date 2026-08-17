@@ -117,7 +117,24 @@ export const supabaseService = {
       const { data, error } = await getSupabase().functions.invoke('username-login', {
         body: { username: username.trim().toLowerCase(), password },
       });
-      if (error) return { session: null, user: null, error: error.message };
+      if (error) {
+        let details: { error?: string; code?: string; email?: string } | null = null;
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          try {
+            details = await response.clone().json();
+          } catch {
+            details = null;
+          }
+        }
+        return {
+          session: null,
+          user: null,
+          email: details?.email,
+          code: details?.code,
+          error: details?.error || error.message,
+        };
+      }
       return data || { session: null, user: null, error: 'Username login failed.' };
     } catch (error) {
       return {

@@ -65,15 +65,59 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: profile, error: profileError } = await adminClient
+    let { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id, username")
       .eq("username", username)
       .maybeSingle();
 
-    if (profileError || !profile) {
+    if (profileError) {
       rateLimitState.count += 1;
       return invalidCredentials();
+    }
+
+    if (!profile) {
+      const { data: usersResult, error: usersError } = await adminClient.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      const authUser = usersResult?.users.find(
+        (candidate) => normalizeUsername(candidate.user_metadata?.username) === username,
+      );
+
+      if (usersError || !authUser) {
+        rateLimitState.count += 1;
+        return invalidCredentials();
+      }
+
+      const { error: bootstrapError } = await adminClient.from("profiles").upsert({
+        id: authUser.id,
+        name: typeof authUser.user_metadata?.full_name === "string"
+          ? authUser.user_metadata.full_name.trim() || username
+          : username,
+        age: 0,
+        username,
+        faculty: "",
+        department: "",
+        level: "100L",
+        campus_location: "Main Campus",
+        bio: "",
+        photos: [],
+        interests: [],
+        looking_for: "both",
+        mode: "normal",
+        is_verified: false,
+        verification_status: "unverified",
+        badges: [],
+        is_banned: false,
+      }, { onConflict: "id" });
+
+      if (bootstrapError) {
+        rateLimitState.count += 1;
+        return invalidCredentials();
+      }
+
+      profile = { id: authUser.id, username };
     }
 
     const { data: userResult, error: userError } = await adminClient.auth.admin.getUserById(profile.id);
@@ -90,14 +134,6 @@ Deno.serve(async (request) => {
 
     if (signInError || !sessionResult.session || !sessionResult.user) {
       rateLimitState.count += 1;
-      if (/email not confirmed/i.test(signInError?.message || "")) {
-        return json({
-          ok: false,
-          code: "email_not_confirmed",
-          email: authEmail,
-          error: "Your email has not been confirmed yet. Check your inbox before signing in.",
-        }, 403);
-      }
       return invalidCredentials();
     }
 

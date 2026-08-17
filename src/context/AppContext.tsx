@@ -27,10 +27,9 @@ interface AppContextType {
   isAuthenticated: boolean;
   isAuthLoading: boolean;
   isEmailVerified: boolean;
-  authenticateUser: (userId?: string) => void;
+  authenticateUser: (userId?: string, emailVerified?: boolean) => void;
   signOut: () => void;
   refreshAuthentication: () => Promise<{ isAuthenticated: boolean; isEmailVerified: boolean; hasSession: boolean; userId?: string }>;
-  resendVerificationEmail: (email: string) => Promise<{ success: boolean; message: string }>;
   requestAuthentication: () => boolean;
   isAdminAuthenticated: boolean;
   authenticateAdmin: (password: string) => Promise<boolean>;
@@ -251,9 +250,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setIsAuthModalOpen(true);
   };
 
-  const authenticateUser = (userId?: string) => {
+  const authenticateUser = (userId?: string, emailVerified = false) => {
     setIsAuthenticated(true);
-    setIsEmailVerified(true);
+    setIsEmailVerified(emailVerified);
     if (userId) {
       setCurrentUser((prev) => ({ ...prev, id: userId }));
     }
@@ -285,8 +284,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const refreshedUser = refreshedSession.session?.user;
     const { data, error } = await supabase.auth.getUser();
     const user = data.user || refreshedUser;
-      const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
-      const authenticated = !error && Boolean(user) && verified;
+    const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
+    const authenticated = !error && Boolean(user);
 
     setIsAuthenticated(authenticated);
     setIsEmailVerified(verified);
@@ -295,13 +294,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     return { isAuthenticated: authenticated, isEmailVerified: verified, hasSession: true, userId: user?.id };
-  };
-
-  const resendVerificationEmail = async (email: string) => {
-    const { error } = await getSupabase().auth.resend({ type: 'signup', email: email.trim().toLowerCase() });
-    return error
-      ? { success: false, message: error.message }
-      : { success: true, message: 'Verification email sent. Check your inbox and spam folder.' };
   };
 
   const requestAuthentication = () => {
@@ -349,9 +341,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (cancelled) return;
       const user = data.session?.user;
       const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
-      setIsAuthenticated(Boolean(user) && verified);
+      setIsAuthenticated(Boolean(user));
       setIsEmailVerified(verified);
-      if (user && verified) {
+      if (user) {
         setCurrentUser((prev) => ({ ...prev, id: user.id }));
       }
       setIsAuthLoading(false);
@@ -364,9 +356,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
       const verified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
-      setIsAuthenticated(Boolean(user) && verified);
+      setIsAuthenticated(Boolean(user));
       setIsEmailVerified(verified);
-      if (user && verified) {
+      if (user) {
         setCurrentUser((prev) => ({ ...prev, id: user.id }));
       }
       setIsAuthLoading(false);
@@ -1251,7 +1243,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         authenticateUser,
         signOut,
         refreshAuthentication,
-        resendVerificationEmail,
         requestAuthentication,
         isAdminAuthenticated,
         authenticateAdmin,
