@@ -178,6 +178,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [currentMode, setCurrentMode] = useState<AppMode>(currentUser.mode || 'normal');
 
+  useEffect(() => {
+    setCurrentMode(currentUser.mode || 'normal');
+  }, [currentUser.mode]);
+
   const authenticateAdmin = async (password: string) => {
     try {
       const { data, error } = await getSupabase().functions.invoke('admin-auth', {
@@ -827,6 +831,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const nextMode = mode || (currentMode === 'normal' ? 'lowkey' : 'normal');
     setCurrentMode(nextMode);
     updateCurrentUser({ mode: nextMode });
+
+    if (isAuthenticated && currentUser.id && isSupabaseConfigured()) {
+      void supabaseService.upsertProfile({ ...currentUser, mode: nextMode });
+    }
   };
 
   // Reset Filters

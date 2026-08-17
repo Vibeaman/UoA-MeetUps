@@ -45,8 +45,8 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     openAuthModal,
     signOut,
     refreshAuthentication,
-    toggleMode,
-    appMode,
+    toggleAppMode,
+    currentMode,
   } = useApp();
 
   useEffect(() => {
@@ -282,17 +282,17 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       <div className="uoa-surface-soft space-y-3 rounded-3xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            {appMode === 'lowkey' ? (
+            {currentMode === 'lowkey' ? (
               <Lock className="w-5 h-5 text-orange-400" />
             ) : (
               <Flame className="w-5 h-5 text-orange-400" />
             )}
             <div>
               <span className="text-xs font-black uppercase tracking-wider text-white block">
-                Active Campus Mode: {appMode === 'lowkey' ? 'Lowkey 🔒' : 'Normal 💜'}
+                Active Campus Mode: {currentMode === 'lowkey' ? 'Lowkey 🔒' : 'Normal 💜'}
               </span>
               <span className="text-[10px] text-neutral-400">
-                {appMode === 'lowkey'
+                {currentMode === 'lowkey'
                   ? 'Only visible to students in Lowkey Mode'
                   : 'Visible to everyone in public campus discovery'}
               </span>
@@ -300,15 +300,21 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           </div>
 
           <button
-            onClick={toggleMode}
-            className={`w-12 h-7 rounded-full transition-all relative ${
-              appMode === 'lowkey' ? 'bg-orange-600' : 'bg-orange-600'
+            type="button"
+            onClick={() => toggleAppMode()}
+            role="switch"
+            aria-checked={currentMode === 'lowkey'}
+            aria-label="Toggle campus mode"
+            className={`relative h-7 w-12 rounded-full border transition-all ${
+              currentMode === 'lowkey'
+                ? 'border-orange-400/60 bg-orange-600'
+                : 'border-white/15 bg-white/10'
             }`}
             id="toggle-mode-profile-btn"
           >
             <span
               className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
-                appMode === 'lowkey' ? 'translate-x-5' : 'translate-x-0'
+                currentMode === 'lowkey' ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
