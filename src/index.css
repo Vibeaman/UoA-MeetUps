@@ -134,6 +134,13 @@
   --uoa-line: rgba(255, 255, 255, 0.13);
 }
 
+.uoa-logo-image {
+  mix-blend-mode: screen;
+  opacity: 0.98;
+  filter: saturate(1.14) contrast(1.05) drop-shadow(0 0 16px rgba(255, 23, 127, 0.16));
+  transform: translateZ(0);
+}
+
 .uoa-app-shell {
   background:
     radial-gradient(circle at 12% -12%, rgba(255, 23, 127, 0.2), transparent 30rem),

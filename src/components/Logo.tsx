@@ -23,8 +23,9 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
       alt="UoA MeetUps — Connect, Meet, Belong"
       width={dimension.width}
       height={dimension.height}
+      style={{ width: dimension.width, height: dimension.height }}
       decoding="async"
-      className={`block h-auto w-auto max-w-full select-none object-contain ${className}`}
+      className={`uoa-logo-image block max-w-full select-none object-contain ${className}`}
       draggable={false}
     />
   );
