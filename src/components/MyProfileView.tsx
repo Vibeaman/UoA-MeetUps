@@ -76,7 +76,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
               onClick={() => (isAuthenticated ? onOpenEditProfile() : openAuthModal('signup'))}
               className="mt-5 w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50"
             >
-              {isAuthenticated ? 'Complete Profile' : 'Sign In'}
+              {isAuthenticated ? 'Complete Profile' : 'Sign Up Or Log In'}
             </button>
           )}
         </div>
