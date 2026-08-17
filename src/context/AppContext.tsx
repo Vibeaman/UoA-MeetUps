@@ -176,6 +176,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return pathname === '/admin' ? 'admin' : 'discover';
   });
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminProof, setAdminProof] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<AppMode>(currentUser.mode || 'normal');
 
   useEffect(() => {
@@ -187,22 +188,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { data, error } = await getSupabase().functions.invoke('admin-auth', {
         body: { password: password.trim().toUpperCase() },
       });
+      const proof = typeof data?.proof === 'string' ? data.proof : '';
 
-      if (error || !data?.authenticated) {
+      if (error || !data?.authenticated || !proof) {
+        setAdminProof(null);
         setIsAdminAuthenticated(false);
         return false;
       }
 
+      setAdminProof(proof);
       setIsAdminAuthenticated(true);
+      const requests = await supabaseService.fetchAdminVerificationRequests(proof);
+      if (requests) setVerificationRequests(requests);
       return true;
     } catch (error) {
       console.warn(`Admin authorization request failed for ${SUPABASE_URL_DISPLAY}:`, error);
+      setAdminProof(null);
       setIsAdminAuthenticated(false);
       return false;
     }
   };
 
   const logoutAdmin = () => {
+    setAdminProof(null);
     setIsAdminAuthenticated(false);
   };
 
@@ -1032,6 +1040,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setVerificationRequests((prev) =>
       prev.map((req) => (req.id === requestId ? { ...req, status: 'approved' } : req))
     );
+    if (adminProof) void supabaseService.updateAdminVerification(adminProof, requestId, 'approved');
 
     const req = verificationRequests.find((r) => r.id === requestId);
     if (req && req.userId === currentUser.id) {
@@ -1058,11 +1067,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Admin: Reject Verification
   const rejectVerification = (requestId: string, note?: string) => {
+    const adminNote = note || 'Photo mismatch or unclear selfie.';
     setVerificationRequests((prev) =>
       prev.map((req) =>
-        req.id === requestId ? { ...req, status: 'rejected', adminNote: note || 'Photo mismatch or unclear selfie.' } : req
+        req.id === requestId ? { ...req, status: 'rejected', adminNote } : req
       )
     );
+    if (adminProof) void supabaseService.updateAdminVerification(adminProof, requestId, 'rejected', adminNote);
 
     const req = verificationRequests.find((r) => r.id === requestId);
     if (req && req.userId === currentUser.id) {

@@ -318,6 +318,57 @@ export const supabaseService = {
     }
   },
 
+  async fetchAdminVerificationRequests(proof: string): Promise<VerificationRequest[] | null> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'list_verifications', proof },
+      });
+      if (error || !data?.authenticated || !Array.isArray(data.requests)) {
+        console.warn('Supabase admin verification fetch notice:', error?.message || data?.message || 'No verification queue returned.');
+        return null;
+      }
+
+      return data.requests.map((row: any) => ({
+        id: row.id,
+        userId: row.user_id,
+        userName: row.user_name,
+        username: row.username || '',
+        faculty: row.faculty,
+        department: row.department,
+        profilePhoto: row.profile_photo || '',
+        liveSelfiePhoto: row.live_selfie_photo,
+        studentIdPhoto: row.student_id_photo || undefined,
+        submittedAt: row.submitted_at ? new Date(row.submitted_at).getTime() : Date.now(),
+        status: row.status as VerificationRequest['status'],
+        adminNote: row.admin_note || undefined,
+      }));
+    } catch (error) {
+      console.warn('Supabase admin verification fetch error:', error);
+      return null;
+    }
+  },
+
+  async updateAdminVerification(
+    proof: string,
+    requestId: string,
+    status: 'approved' | 'rejected',
+    adminNote?: string,
+  ): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'update_verification', proof, requestId, status, adminNote: adminNote || '' },
+      });
+      if (error || !data?.authenticated || !data.request) {
+        console.warn('Supabase admin verification update notice:', error?.message || data?.message || 'Update failed.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase admin verification update error:', error);
+      return false;
+    }
+  },
+
   // Submit Verification Request
   async submitVerification(req: VerificationRequest): Promise<boolean> {
     try {
