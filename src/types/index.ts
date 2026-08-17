@@ -108,6 +108,7 @@ export interface UserProfile {
   badges: string[];
   isIncognito?: boolean;
   isBoosted?: boolean;
+  boostExpiresAt?: string;
   isBanned?: boolean;
   instagramHandle?: string;
   snapchatHandle?: string;

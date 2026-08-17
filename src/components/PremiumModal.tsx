@@ -78,7 +78,7 @@ export const PremiumModal: React.FC = () => {
                 Unlock Total Campus Dominance
               </h2>
               <p className="text-xs text-orange-200/80 mt-1 max-w-xs mx-auto">
-                Get 5x more matches, unmask who liked you, and browse campus in Incognito.
+                Use a 30-minute Profile Boost, unmask who liked you, and browse campus in Incognito.
               </p>
             </div>
 

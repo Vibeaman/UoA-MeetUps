@@ -123,13 +123,13 @@ export const Header: React.FC = () => {
         <div className="ml-auto flex shrink-0 items-center space-x-1.5 sm:space-x-2">
           {/* Boost Button */}
           <button
-            onClick={isBoostActive ? undefined : triggerBoost}
+            onClick={triggerBoost}
             className={`relative rounded-xl border p-2 transition-all ${
               isBoostActive
                 ? 'bg-pink-500/15 border-pink-300/40 text-pink-100'
                 : 'uoa-quiet-button text-pink-200'
             }`}
-            title={isBoostActive ? `Boost Active (${formatBoostTime(boostTimeLeft)})` : 'Boost Profile (5x Matches)'}
+            title={isBoostActive ? `Boost Active (${formatBoostTime(boostTimeLeft)})` : 'Boost Profile (30 min)'}
             id="boost-header-btn"
           >
             <Zap className="w-4 h-4 text-orange-400" />

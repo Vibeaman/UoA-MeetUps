@@ -128,6 +128,23 @@ export const supabaseService = {
     }
   },
 
+  async activateProfileBoost(): Promise<{ expiresAt: string | null; error?: string }> {
+    try {
+      const { data, error } = await getSupabase().rpc('activate_profile_boost', {
+        p_duration_seconds: 1800,
+      });
+      if (error || !data?.[0]?.boost_expires_at) {
+        return { expiresAt: null, error: error?.message || 'Could not activate Boost.' };
+      }
+      return { expiresAt: data[0].boost_expires_at };
+    } catch (error) {
+      return {
+        expiresAt: null,
+        error: error instanceof Error ? error.message : 'Could not activate Boost.',
+      };
+    }
+  },
+
   // Fetch only real profiles; empty Supabase results remain empty.
   async fetchProfiles(): Promise<UserProfile[] | null> {
     try {
@@ -160,6 +177,8 @@ export const supabaseService = {
         isBanned: Boolean(r.is_banned),
         lastActive: r.last_active ? new Date(r.last_active).toLocaleString() : '',
         isOnline: Boolean(r.is_online),
+        boostExpiresAt: r.boost_expires_at || undefined,
+        isBoosted: Boolean(r.boost_expires_at && new Date(r.boost_expires_at).getTime() > Date.now()),
         instagramHandle: r.instagram || undefined,
         snapchatHandle: r.snapchat || undefined,
       }));
@@ -265,6 +284,7 @@ export const supabaseService = {
         verification_status: profile.verificationStatus,
         badges: profile.badges,
         is_banned: profile.isBanned,
+        boost_expires_at: profile.boostExpiresAt || null,
         instagram: profile.instagramHandle || null,
         snapchat: profile.snapchatHandle || null,
         phone_whatsapp: null,

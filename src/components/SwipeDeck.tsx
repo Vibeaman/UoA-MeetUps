@@ -63,6 +63,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     setIsPremiumModalOpen,
     triggerBoost,
     isBoostActive,
+    boostTimeLeft,
     selectedVibeFilter,
     sendDirectSpark,
     gossipPosts,
@@ -74,7 +75,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
   // Filter available profiles
   const deckProfiles = useMemo(() => {
-    return profiles.filter((p) => {
+    const eligibleProfiles = profiles.filter((p) => {
       // Don't show already swiped
       if (swipedProfileIds.includes(p.id)) return false;
 
@@ -139,7 +140,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
       return true;
     });
-  }, [profiles, swipedProfileIds, currentMode, filters, selectedVibeFilter, currentUser]);
+
+    const now = Date.now();
+    return eligibleProfiles.sort((a, b) => {
+      const aBoosted = Boolean(a.boostExpiresAt && new Date(a.boostExpiresAt).getTime() > now);
+      const bBoosted = Boolean(b.boostExpiresAt && new Date(b.boostExpiresAt).getTime() > now);
+      return Number(bBoosted) - Number(aBoosted);
+    });
+  }, [profiles, swipedProfileIds, currentMode, filters, selectedVibeFilter, currentUser, boostTimeLeft]);
 
   // Current top, next, and 3rd cards in deck
   const currentProfile = deckProfiles[0];
@@ -646,6 +654,13 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     <div className="mt-auto relative z-20 bg-gradient-to-t from-[#090410] via-[#090410]/95 to-transparent pt-16 pb-3.5 px-4 sm:px-5 flex flex-col justify-end">
                       {/* Active, Verified & Campus Status Badges */}
                       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                        {currentProfile.boostExpiresAt && new Date(currentProfile.boostExpiresAt).getTime() > Date.now() && (
+                          <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-pink-900/80 border border-orange-300/60 text-orange-100 text-[10px] font-black shadow-[0_0_14px_rgba(255,23,127,0.35)] backdrop-blur-md">
+                            <Zap className="w-3.5 h-3.5 text-orange-300" />
+                            <span>Boosted</span>
+                          </span>
+                        )}
+
                         {currentProfile.isVerified && (
                           <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-orange-900/80 border border-orange-400/50 text-orange-200 text-[10px] font-bold shadow-sm backdrop-blur-md">
                             <ShieldCheck className="w-3.5 h-3.5 text-orange-300" />

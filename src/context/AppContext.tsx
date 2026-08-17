@@ -452,21 +452,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [activePlan]);
 
+  // Hydrate Boost from the server-issued expiration timestamp.
+  useEffect(() => {
+    const expiresAt = currentUser.boostExpiresAt ? new Date(currentUser.boostExpiresAt).getTime() : 0;
+    const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+    setBoostTimeLeft(remaining);
+    setIsBoostActive(remaining > 0);
+  }, [currentUser.boostExpiresAt]);
+
   // Boost timer countdown
   useEffect(() => {
-    let interval: any;
-    if (isBoostActive && boostTimeLeft > 0) {
-      interval = setInterval(() => {
-        setBoostTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsBoostActive(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
+    if (!isBoostActive || boostTimeLeft <= 0) return;
+    const interval = window.setInterval(() => {
+      setBoostTimeLeft((prev) => {
+        if (prev <= 1) {
+          setIsBoostActive(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
   }, [isBoostActive, boostTimeLeft]);
 
   // Stories & Highlights State (live Supabase rows only)
@@ -1196,13 +1202,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Profile Boost
   const triggerBoost = () => {
-    setIsBoostActive(true);
-    setBoostTimeLeft(1800); // 30 minutes in seconds
-    confetti({
-      particleCount: 60,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#a855f7', '#38bdf8', '#ffffff'],
+    if (!requestAuthentication()) return;
+    if (isBoostActive) {
+      setSparkToast({ show: true, message: 'Your Boost is already active.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return;
+    }
+
+    void supabaseService.activateProfileBoost().then(({ expiresAt, error }) => {
+      if (!expiresAt) {
+        const message = error?.includes('boost_already_active')
+          ? 'Your Boost is already active.'
+          : 'Boost could not be activated. Please try again.';
+        setSparkToast({ show: true, message });
+        setTimeout(() => setSparkToast(null), 3500);
+        return;
+      }
+
+      const expiresAtMs = new Date(expiresAt).getTime();
+      const remaining = Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+      setCurrentUser((prev) => ({ ...prev, boostExpiresAt: expiresAt, isBoosted: true }));
+      setIsBoostActive(remaining > 0);
+      setBoostTimeLeft(remaining);
+      setSparkToast({ show: true, message: 'Boost is live for 30 minutes. Active profiles move to the front of discovery.' });
+      setTimeout(() => setSparkToast(null), 4500);
+      confetti({
+        particleCount: 60,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#ff177f', '#ff8b36', '#ffffff'],
+      });
     });
   };
 

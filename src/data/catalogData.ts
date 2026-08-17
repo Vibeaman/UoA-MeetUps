@@ -85,7 +85,7 @@ export const PREMIUM_PLANS: PremiumPlan[] = [
     features: [
       'All Weekly Pass features included',
       'Incognito Mode (Browse unseen on campus)',
-      '1x Free Profile Boost every week (5x matches)',
+      '30-minute Profile Boost access',
       'Priority DM delivery & Read Receipts',
       'Exclusive VIP Crown Badge on profile',
     ],
