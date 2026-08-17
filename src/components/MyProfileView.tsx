@@ -12,6 +12,7 @@ import {
   LogIn,
   LogOut,
   ChevronRight,
+  Menu,
   Sliders,
   ShieldAlert,
   HelpCircle,
@@ -19,7 +20,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { Logo } from './Logo';
 import { UserProfile } from '../types';
 
 interface MyProfileViewProps {
@@ -54,6 +54,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
   }, [isAuthLoading, isAuthenticated]);
 
   const hasProfile = Boolean(currentUser.name.trim() && currentUser.matricNumber.trim());
+  const [isLandingMenuOpen, setIsLandingMenuOpen] = useState(false);
 
   if (isAuthLoading) {
     return (
@@ -68,49 +69,86 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
   if (!isAuthenticated) {
     return (
-      <div className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#0d0710] px-5 pb-8 pt-6 sm:px-8 sm:pt-8">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-violet-700/[0.08] blur-3xl" />
-        <div className="relative z-10 flex items-center justify-between">
-          <Logo size="sm" />
-          <button
-            type="button"
-            onClick={() => openAuthModal('login')}
-            className="uoa-quiet-button rounded-full px-4 py-2.5 text-xs font-semibold text-white/75"
-          >
-            Log in
-          </button>
+      <div className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#fbf9fb] px-6 pb-7 pt-7 text-[#2b1e30] sm:px-12 sm:pt-10">
+        <div className="mx-auto flex w-full max-w-[1120px] items-start justify-between">
+          <div className="flex items-baseline gap-2 leading-none">
+            <span className="font-display text-3xl font-black tracking-[-0.08em] text-[#6b1f72] sm:text-4xl">UoA</span>
+            <span className="font-serif text-3xl italic tracking-[-0.04em] text-[#302333] sm:text-4xl">MeetUps</span>
+          </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsLandingMenuOpen((open) => !open)}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efebef] text-[#6b1f72] transition-colors hover:bg-[#e6e0e7]"
+              aria-label="Open account menu"
+              aria-expanded={isLandingMenuOpen}
+            >
+              <Menu className="h-6 w-6" strokeWidth={2.5} />
+            </button>
+            {isLandingMenuOpen && (
+              <div className="absolute right-0 top-[4.5rem] z-20 w-44 rounded-2xl bg-white p-2 text-left shadow-[0_18px_45px_rgba(48,35,51,0.16)] ring-1 ring-[#e4dfe5]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLandingMenuOpen(false);
+                    openAuthModal('signup');
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#302333] hover:bg-[#f4f0f4]"
+                >
+                  Create account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLandingMenuOpen(false);
+                    openAuthModal('login');
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#6b1f72] hover:bg-[#f4f0f4]"
+                >
+                  Log in
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-14 sm:py-20">
-          <p className="uoa-section-kicker">UniAbuja student network</p>
-          <h1 className="mt-4 max-w-[14ch] font-display text-5xl font-black leading-[0.95] tracking-[-0.065em] text-white sm:text-7xl">
-            Meet your people on campus.
+        <div className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
+          <h1 className="max-w-[10ch] font-serif text-[4.4rem] font-semibold leading-[0.86] tracking-[-0.065em] text-[#c51e22] sm:text-[7.5rem]">
+            It starts
+            <br />
+            with a
+            <br />
+            hello.
           </h1>
-          <p className="uoa-muted-copy mt-6 max-w-md text-sm sm:text-base">
-            Create a real student profile, find genuine connections, and make campus feel a little smaller.
-          </p>
 
-          <div className="mt-9 flex w-full max-w-sm flex-col gap-3">
+          <div className="mt-14 flex w-full max-w-sm flex-col gap-3">
             <button
               type="button"
               onClick={() => openAuthModal('signup')}
-              className="uoa-primary-button w-full rounded-full px-5 py-4 text-sm font-bold text-white"
+              className="w-full rounded-full bg-[#21151f] px-5 py-4 text-base font-bold text-white shadow-[0_10px_20px_rgba(33,21,31,0.12)] transition-colors hover:bg-[#362338]"
             >
               Create account
             </button>
             <button
               type="button"
               onClick={() => openAuthModal('login')}
-              className="uoa-quiet-button w-full rounded-full px-5 py-4 text-sm font-semibold"
+              className="w-full rounded-full bg-[#e9e5ea] px-5 py-4 text-base font-bold text-[#2b1e30] transition-colors hover:bg-[#dfd9e1]"
             >
               Log in
             </button>
           </div>
 
-          <p className="mt-8 text-xs leading-relaxed text-white/35">
-            Built for University of Abuja students. Email confirmation is required before you join.
+          <p className="mt-14 text-center text-base leading-snug text-[#4d4550] sm:text-lg">
+            Someone at UniAbuja might make you smile.
+            <br />
+            Find out who <span aria-hidden="true">↓</span>
           </p>
         </div>
+
+        <p className="mx-auto mt-auto w-full max-w-[1120px] text-center text-xs text-[#6d6570] sm:text-sm">
+          For verified University of Abuja students only.
+        </p>
       </div>
     );
   }
