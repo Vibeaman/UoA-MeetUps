@@ -28,6 +28,8 @@ const MainAppContent: React.FC = () => {
     activeTab,
     setActiveTab,
     setIsProfileEditModalOpen,
+    recentMatch,
+    setRecentMatch,
     isAdminAuthenticated,
     logoutAdmin,
   } = useApp();
@@ -122,7 +124,7 @@ const MainAppContent: React.FC = () => {
         profile={selectedProfile}
         isOpen={!!selectedProfile}
         onClose={() => setSelectedProfile(null)}
-        onReport={handleOpenReport}
+        onOpenReport={handleOpenReport}
       />
 
       <ReportModal
@@ -131,7 +133,10 @@ const MainAppContent: React.FC = () => {
         onClose={() => setReportingUser(null)}
       />
 
-      <MatchModal />
+      <MatchModal
+        matchedProfile={recentMatch}
+        onClose={() => setRecentMatch(null)}
+      />
       <FiltersModal />
       <PremiumModal />
       <VerificationModal />

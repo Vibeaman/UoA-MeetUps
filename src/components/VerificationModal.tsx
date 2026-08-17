@@ -34,12 +34,6 @@ export const VerificationModal: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Sample verified selfie fallback if camera not allowed in iframe
-  const sampleSelfieOptions = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-  ];
-
   useEffect(() => {
     if (isVerificationModalOpen && step === 'camera') {
       startCamera();
@@ -89,18 +83,9 @@ export const VerificationModal: React.FC = () => {
         setStep('preview');
       }
     } else {
-      // Fallback
-      setCapturedPhoto(sampleSelfieOptions[0]);
-      setStep('preview');
+      setVerificationError('Camera capture is unavailable. Choose a real selfie from your gallery instead.');
     }
     setIsCapturing(false);
-  };
-
-  const handleSelectPresetSelfie = (url: string) => {
-    setCapturedPhoto(url);
-    setCapturedSelfieFile(null);
-    stopCamera();
-    setStep('preview');
   };
 
   const handleGallerySelfie = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +150,7 @@ export const VerificationModal: React.FC = () => {
         selfieUrl = upload.url;
       }
 
-      let studentIdUrl = 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=600&q=80';
+      let studentIdUrl: string | undefined;
       if (studentIdFile) {
         const upload = await supabaseService.uploadUserMedia(studentIdFile, currentUser.id, 'verification');
         if (!upload.url) throw new Error(upload.error || 'Could not upload your student ID.');
@@ -230,19 +215,8 @@ export const VerificationModal: React.FC = () => {
                 <div className="p-4 text-center space-y-3">
                   <Camera className="w-10 h-10 text-purple-400 mx-auto opacity-70" />
                   <p className="text-xs text-neutral-300">
-                    Live camera stream unavailable in current browser frame. Choose a photo to verify:
+                    Live camera stream unavailable in this browser. Use the gallery upload button below to choose a real selfie.
                   </p>
-                  <div className="flex justify-center gap-2">
-                    {sampleSelfieOptions.map((opt, i) => (
-                      <img
-                        key={i}
-                        src={opt}
-                        alt="option"
-                        onClick={() => handleSelectPresetSelfie(opt)}
-                        className="w-14 h-14 rounded-full object-cover border-2 border-purple-500 cursor-pointer hover:scale-110 transition-transform"
-                      />
-                    ))}
-                  </div>
                 </div>
               )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Plus,
@@ -31,6 +31,19 @@ export const ProfileEditModal: React.FC = () => {
   const [newInterest, setNewInterest] = useState('');
   const [activePromptQuestion, setActivePromptQuestion] = useState(PROMPT_QUESTIONS[0]);
   const [activePromptAnswer, setActivePromptAnswer] = useState('');
+
+  useEffect(() => {
+    if (!isProfileEditModalOpen) return;
+    setFormData({
+      ...currentUser,
+      photos: [...currentUser.photos],
+      interests: [...(currentUser.interests || [])],
+      icebreakerPrompts: [...(currentUser.icebreakerPrompts || [])],
+    });
+    setPhotoError('');
+    setNewInterest('');
+    setActivePromptAnswer('');
+  }, [isProfileEditModalOpen, currentUser]);
 
   if (!isProfileEditModalOpen) return null;
 
@@ -104,8 +117,9 @@ export const ProfileEditModal: React.FC = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     updateCurrentUser(formData);
+    await supabaseService.upsertProfile(formData);
     setIsProfileEditModalOpen(false);
   };
 

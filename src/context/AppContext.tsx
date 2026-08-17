@@ -611,35 +611,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const reactToGossipPost = (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea') => {
     if (!requestAuthentication()) return;
 
-    setGossipPosts((prev) =>
-      prev.map((post) => {
-        if (post.id !== postId) return post;
-        const currentReaction = post.userReaction;
+    const existingPost = gossipPosts.find((post) => post.id === postId);
+    if (!existingPost) return;
 
-        // If clicking the same reaction, toggle off
-        if (currentReaction === reactionType) {
-          const countKey = `${reactionType}Count` as keyof GossipPost;
-          return {
-            ...post,
-            [countKey]: Math.max(0, (post[countKey] as number) - 1),
-            userReaction: undefined,
-          };
-        }
+    const currentReaction = existingPost.userReaction;
+    const counts = {
+      spicy: existingPost.spicyCount,
+      cap: existingPost.capCount,
+      facts: existingPost.factsCount,
+      tea: existingPost.teaCount,
+    };
 
-        // If switching reactions
-        let updatedPost = { ...post };
-        if (currentReaction) {
-          const prevKey = `${currentReaction}Count` as keyof GossipPost;
-          updatedPost[prevKey] = Math.max(0, (updatedPost[prevKey] as number) - 1) as never;
-        }
+    if (currentReaction) {
+      counts[currentReaction] = Math.max(0, counts[currentReaction] - 1);
+    }
 
-        const newKey = `${reactionType}Count` as keyof GossipPost;
-        updatedPost[newKey] = ((updatedPost[newKey] as number) + 1) as never;
-        updatedPost.userReaction = reactionType;
+    const nextReaction = currentReaction === reactionType ? undefined : reactionType;
+    if (nextReaction) {
+      counts[nextReaction] += 1;
+    }
 
-        return updatedPost;
-      })
-    );
+    const updatedPost: GossipPost = {
+      ...existingPost,
+      spicyCount: counts.spicy,
+      capCount: counts.cap,
+      factsCount: counts.facts,
+      teaCount: counts.tea,
+      userReaction: nextReaction,
+    };
+
+    setGossipPosts((prev) => prev.map((post) => (post.id === postId ? updatedPost : post)));
+    void supabaseService.updateGossipPostCounters(updatedPost);
   };
 
   const addGossipComment = (postId: string, content: string, isAnonymous: boolean) => {
@@ -955,8 +957,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setReports((prev) => [newReport, ...prev]);
-    // Automatically block & remove from swiped/matches
-    blockUser(targetUser.id);
+    void supabaseService.submitReport(newReport);
   };
 
   // Block user
@@ -994,6 +995,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setVerificationRequests((prev) => [newReq, ...prev]);
+    void supabaseService.submitVerification(newReq);
     updateCurrentUser({
       verificationStatus: 'pending',
       selfieUrl,

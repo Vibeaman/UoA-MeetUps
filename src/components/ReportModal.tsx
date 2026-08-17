@@ -10,7 +10,7 @@ interface ReportModalProps {
 }
 
 export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, onClose }) => {
-  const { fileReport, blockUser } = useApp();
+  const { submitReport, blockUser } = useApp();
   const [reason, setReason] = useState<ReportReason>('fake_profile');
   const [details, setDetails] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -19,7 +19,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fileReport(targetUser.id, targetUser.name, targetUser.matricNumber, reason, details);
+    submitReport(targetUser, reason, details);
     setIsSubmitted(true);
   };
 

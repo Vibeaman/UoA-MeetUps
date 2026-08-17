@@ -60,10 +60,9 @@ export const supabaseService = {
       const supabase = getSupabase();
       const { data, error } = await supabase.from('profiles').select('id').limit(1);
       if (error) {
-        // Table might not exist yet if schema hasn't been run
         return {
-          connected: true,
-          message: `Connected to Supabase (Database active, note: ${error.message})`,
+          connected: false,
+          message: `Supabase database check failed: ${error.message}`,
         };
       }
       return {
@@ -347,7 +346,7 @@ export const supabaseService = {
         id: post.id,
         author_id: post.authorId,
         author_name: post.authorName,
-        author_avatar: post.authorAvatar,
+        author_avatar: post.authorAvatar || '',
         author_department: post.authorDepartment,
         author_level: post.authorLevel,
         is_anonymous: post.isAnonymous,
@@ -453,7 +452,7 @@ export const supabaseService = {
         post_id: postId,
         author_id: authorId,
         author_name: comment.authorName,
-        author_avatar: comment.authorAvatar || null,
+        author_avatar: comment.authorAvatar || '',
         author_department: authorDepartment,
         is_anonymous: comment.isAnonymous,
         anonymous_alias: comment.isAnonymous ? comment.authorName : null,
