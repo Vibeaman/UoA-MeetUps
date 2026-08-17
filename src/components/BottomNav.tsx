@@ -50,7 +50,7 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="uoa-bottom-nav fixed inset-x-0 bottom-0 z-40 w-full min-w-0 border-t pb-safe backdrop-blur-2xl">
+    <nav className="uoa-bottom-nav fixed inset-x-0 bottom-0 z-40 w-full min-w-0 border-t pb-safe backdrop-blur-2xl lg:hidden">
       <div className="mx-auto flex w-full max-w-[900px] items-center justify-around gap-1 px-2 py-2 sm:gap-2 sm:px-4 sm:py-2.5">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;

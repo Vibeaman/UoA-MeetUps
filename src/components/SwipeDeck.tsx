@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   motion,
   useMotionValue,
@@ -38,11 +38,15 @@ import { CampusGossipBoard } from './CampusGossipBoard';
 interface SwipeDeckProps {
   onOpenProfileDetails: (profile: UserProfile) => void;
   onOpenReport?: (profile: UserProfile) => void;
+  openCampusConversation?: boolean;
+  onCampusConversationOpened?: () => void;
 }
 
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   onOpenProfileDetails,
   onOpenReport,
+  openCampusConversation = false,
+  onCampusConversationOpened,
 }) => {
   const {
     profiles,
@@ -72,6 +76,13 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const [isCampusHubOpen, setIsCampusHubOpen] = useState(false);
   const [sparkText, setSparkText] = useState('');
   const [isSparkInputOpen, setIsSparkInputOpen] = useState(false);
+
+  useEffect(() => {
+    if (!openCampusConversation) return;
+    setDiscoverTab('gossip');
+    setIsCampusHubOpen(true);
+    onCampusConversationOpened?.();
+  }, [openCampusConversation, onCampusConversationOpened]);
 
   // Filter available profiles
   const deckProfiles = useMemo(() => {

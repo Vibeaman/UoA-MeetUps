@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
+import { DesktopSidebar } from './components/DesktopSidebar';
+import { DesktopCampusRail } from './components/DesktopCampusRail';
 import { SwipeDeck } from './components/SwipeDeck';
 import { WhoLikedMeView } from './components/WhoLikedMeView';
 import { ChatView } from './components/ChatView';
@@ -44,6 +46,8 @@ const MainAppContent: React.FC = () => {
   const [reportingUser, setReportingUser] = useState<UserProfile | null>(null);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  const [shouldOpenCampusConversation, setShouldOpenCampusConversation] = useState(false);
+  const handleCampusConversationOpened = useCallback(() => setShouldOpenCampusConversation(false), []);
 
   const handleOpenProfileDetails = (profile: UserProfile) => {
     setSelectedProfile(profile);
@@ -61,6 +65,9 @@ const MainAppContent: React.FC = () => {
     }
   };
 
+  const showDesktopWorkspace = !isStandaloneSignedOutProfile && activeTab !== 'admin';
+  const showDesktopCampusRail = showDesktopWorkspace && activeTab === 'discover' && !showGuidelines && !showTips;
+
   return (
     <div className="uoa-app-shell relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-pink-500 selection:text-white">
       {/* Quiet ambient depth */}
@@ -75,7 +82,7 @@ const MainAppContent: React.FC = () => {
         className={
           isStandaloneSignedOutProfile
             ? 'relative z-10 flex w-full flex-1 flex-col'
-            : 'relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-8'
+            : 'relative z-10 mx-auto flex w-full min-w-0 max-w-[1440px] flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-6 lg:pb-10'
         }
       >
         {showGuidelines ? (
@@ -83,49 +90,70 @@ const MainAppContent: React.FC = () => {
         ) : showTips ? (
           <TipsView onBack={() => setShowTips(false)} />
         ) : (
-          <>
-            {activeTab === 'discover' && (
-              <SwipeDeck
-                onOpenProfileDetails={handleOpenProfileDetails}
-                onOpenReport={handleOpenReport}
-              />
-            )}
+          <div
+            className={
+              showDesktopWorkspace
+                ? 'mx-auto grid w-full min-w-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_280px] xl:gap-6'
+                : 'w-full min-w-0'
+            }
+          >
+            {showDesktopWorkspace && <DesktopSidebar />}
 
-            {activeTab === 'likes' && (
-              <WhoLikedMeView onOpenProfileDetails={handleOpenProfileDetails} />
-            )}
-
-            {activeTab === 'matches' && (
-              <ChatAccessGate>
-                <ChatView
+            <section className="min-w-0">
+              {activeTab === 'discover' && (
+                <SwipeDeck
                   onOpenProfileDetails={handleOpenProfileDetails}
                   onOpenReport={handleOpenReport}
+                  openCampusConversation={shouldOpenCampusConversation}
+                  onCampusConversationOpened={handleCampusConversationOpened}
                 />
-              </ChatAccessGate>
-            )}
+              )}
 
-            {activeTab === 'safety' && (
-              <SafetyCenterView
-                onOpenGuidelines={() => setShowGuidelines(true)}
-                onOpenTips={() => setShowTips(true)}
+              {activeTab === 'likes' && (
+                <WhoLikedMeView onOpenProfileDetails={handleOpenProfileDetails} />
+              )}
+
+              {activeTab === 'matches' && (
+                <ChatAccessGate>
+                  <ChatView
+                    onOpenProfileDetails={handleOpenProfileDetails}
+                    onOpenReport={handleOpenReport}
+                  />
+                </ChatAccessGate>
+              )}
+
+              {activeTab === 'safety' && (
+                <SafetyCenterView
+                  onOpenGuidelines={() => setShowGuidelines(true)}
+                  onOpenTips={() => setShowTips(true)}
+                />
+              )}
+
+              {activeTab === 'profile' && (
+                <MyProfileView
+                  onOpenEditProfile={() => setIsProfileEditModalOpen(true)}
+                  onOpenGuidelines={() => setShowGuidelines(true)}
+                  onOpenTips={() => setShowTips(true)}
+                />
+              )}
+
+              {activeTab === 'admin' &&
+                (isAdminAuthenticated ? (
+                  <AdminDashboard onExit={handleExitAdmin} />
+                ) : (
+                  <AdminAccessGate onBack={handleExitAdmin} />
+                ))}
+            </section>
+
+            {showDesktopCampusRail && (
+              <DesktopCampusRail
+                onOpenConversation={() => {
+                  setActiveTab('discover');
+                  setShouldOpenCampusConversation(true);
+                }}
               />
             )}
-
-            {activeTab === 'profile' && (
-              <MyProfileView
-                onOpenEditProfile={() => setIsProfileEditModalOpen(true)}
-                onOpenGuidelines={() => setShowGuidelines(true)}
-                onOpenTips={() => setShowTips(true)}
-              />
-            )}
-
-            {activeTab === 'admin' &&
-              (isAdminAuthenticated ? (
-                <AdminDashboard onExit={handleExitAdmin} />
-              ) : (
-                <AdminAccessGate onBack={handleExitAdmin} />
-              ))}
-          </>
+          </div>
         )}
       </main>
 
