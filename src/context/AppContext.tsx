@@ -13,6 +13,7 @@ import {
   CampusPoll,
   GossipPost,
   GossipComment,
+  AdminMetrics,
 } from '../types';
 import { supabaseService } from '../services/supabaseService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/supabase';
@@ -34,6 +35,8 @@ interface AppContextType {
   isAdminAuthenticated: boolean;
   authenticateAdmin: (password: string) => Promise<boolean>;
   logoutAdmin: () => void;
+  adminMetrics: AdminMetrics | null;
+  refreshAdminMetrics: () => Promise<boolean>;
   currentMode: AppMode;
   toggleAppMode: (mode?: AppMode) => void;
   profiles: UserProfile[];
@@ -177,6 +180,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminProof, setAdminProof] = useState<string | null>(null);
+  const [adminMetrics, setAdminMetrics] = useState<AdminMetrics | null>(null);
   const [currentMode, setCurrentMode] = useState<AppMode>(currentUser.mode || 'normal');
 
   useEffect(() => {
@@ -192,18 +196,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       if (error || !data?.authenticated || !proof) {
         setAdminProof(null);
+        setAdminMetrics(null);
         setIsAdminAuthenticated(false);
         return false;
       }
 
       setAdminProof(proof);
       setIsAdminAuthenticated(true);
-      const requests = await supabaseService.fetchAdminVerificationRequests(proof);
+      const [requests, metrics] = await Promise.all([
+        supabaseService.fetchAdminVerificationRequests(proof),
+        supabaseService.fetchAdminMetrics(proof),
+      ]);
       if (requests) setVerificationRequests(requests);
+      if (metrics) setAdminMetrics(metrics);
       return true;
     } catch (error) {
       console.warn(`Admin authorization request failed for ${SUPABASE_URL_DISPLAY}:`, error);
       setAdminProof(null);
+      setAdminMetrics(null);
       setIsAdminAuthenticated(false);
       return false;
     }
@@ -211,7 +221,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logoutAdmin = () => {
     setAdminProof(null);
+    setAdminMetrics(null);
     setIsAdminAuthenticated(false);
+  };
+
+  const refreshAdminMetrics = async () => {
+    if (!adminProof) return false;
+    const metrics = await supabaseService.fetchAdminMetrics(adminProof);
+    if (!metrics) return false;
+    setAdminMetrics(metrics);
+    return true;
   };
 
   // Profiles
@@ -449,6 +468,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.IS_PREMIUM, JSON.stringify(isPremium));
   }, [isPremium]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    const anonymousIdKey = 'uoa_anonymous_id_v1';
+    const anonymousId = localStorage.getItem(anonymousIdKey) || `anon_${crypto.randomUUID()}`;
+    localStorage.setItem(anonymousIdKey, anonymousId);
+    const sessionId = `session_${crypto.randomUUID()}`;
+    const startedAt = Date.now();
+
+    const flushSession = (ended = false) => {
+      const now = Date.now();
+      void supabaseService.upsertSiteSession({
+        id: sessionId,
+        userId: currentUser.id || undefined,
+        anonymousId,
+        startedAt: new Date(startedAt).toISOString(),
+        lastSeenAt: new Date(now).toISOString(),
+        durationSeconds: Math.max(0, (now - startedAt) / 1000),
+        endedAt: ended ? new Date(now).toISOString() : undefined,
+      });
+    };
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== 'hidden') flushSession();
+    }, 30_000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushSession(true);
+    };
+    const handlePageHide = () => flushSession(true);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    flushSession();
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      flushSession(true);
+    };
+  }, [currentUser.id]);
 
   useEffect(() => {
     if (activePlan) {
@@ -780,6 +840,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Direct Spark Message Toast
   const [sparkToast, setSparkToast] = useState<{ show: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser.id || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') !== 'callback') return;
+
+    const reference = params.get('reference') || params.get('trxref');
+    const cleanUrl = `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState({}, '', cleanUrl || '/');
+    if (!reference) {
+      setSparkToast({ show: true, message: 'Payment callback received without a transaction reference.' });
+      setTimeout(() => setSparkToast(null), 5000);
+      return;
+    }
+
+    let cancelled = false;
+    void supabaseService.verifyPaystackTransaction(reference).then(({ data, error }) => {
+      if (cancelled) return;
+      if (data?.paid && (data.planId === 'weekly' || data.planId === 'monthly' || data.planId === 'semester')) {
+        activatePremium(data.planId);
+      } else {
+        setSparkToast({ show: true, message: error || 'Payment was not verified. Premium access was not activated.' });
+        setTimeout(() => setSparkToast(null), 6000);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, currentUser.id]);
 
   const sendDirectSpark = (profile: UserProfile, text: string) => {
     const existingMatch = matches.find((m) => m.matchedUser.id === profile.id);
@@ -1266,6 +1356,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isAdminAuthenticated,
         authenticateAdmin,
         logoutAdmin,
+        adminMetrics,
+        refreshAdminMetrics,
         currentMode,
         toggleAppMode,
         profiles,

@@ -10,6 +10,7 @@ import {
   CampusPoll,
   ChatMessage,
   MatchItem,
+  AdminMetrics,
 } from '../types';
 
 /**
@@ -365,6 +366,80 @@ export const supabaseService = {
       return true;
     } catch (error) {
       console.warn('Supabase admin verification update error:', error);
+      return false;
+    }
+  },
+
+  async initializePaystackTransaction(planId: 'weekly' | 'monthly' | 'semester') {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('paystack-init', {
+        body: { planId },
+      });
+      if (error || !data?.ok || !data.authorizationUrl) {
+        return { data: null, error: error?.message || data?.error || 'Could not initialize Paystack payment.' };
+      }
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Could not initialize Paystack payment.' };
+    }
+  },
+
+  async verifyPaystackTransaction(reference: string) {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('paystack-verify', {
+        body: { reference },
+      });
+      if (error || !data?.ok) {
+        return { data: null, error: error?.message || data?.error || 'Could not verify Paystack payment.' };
+      }
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Could not verify Paystack payment.' };
+    }
+  },
+
+  async fetchAdminMetrics(proof: string): Promise<AdminMetrics | null> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'admin_metrics', proof },
+      });
+      if (error || !data?.authenticated || !data.metrics) {
+        console.warn('Supabase admin metrics fetch notice:', error?.message || data?.message || 'No metrics returned.');
+        return null;
+      }
+      return data.metrics as AdminMetrics;
+    } catch (error) {
+      console.warn('Supabase admin metrics fetch error:', error);
+      return null;
+    }
+  },
+
+  async upsertSiteSession(session: {
+    id: string;
+    userId?: string;
+    anonymousId?: string;
+    startedAt: string;
+    lastSeenAt: string;
+    durationSeconds: number;
+    endedAt?: string;
+  }): Promise<boolean> {
+    try {
+      const { error } = await getSupabase().from('site_sessions').upsert({
+        id: session.id,
+        user_id: session.userId || null,
+        anonymous_id: session.anonymousId || null,
+        started_at: session.startedAt,
+        last_seen_at: session.lastSeenAt,
+        duration_seconds: Math.max(0, Math.round(session.durationSeconds)),
+        ended_at: session.endedAt || null,
+      });
+      if (error) {
+        console.warn('Supabase site session upsert notice:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase site session upsert error:', error);
       return false;
     }
   },

@@ -732,3 +732,50 @@ delete from public.campus_stories where id in ('story_01', 'story_02', 'story_03
 delete from public.user_reports where id in ('report_01', 'report_02');
 delete from public.verification_requests where id in ('ver_01', 'ver_02');
 delete from public.profiles where id in ('user_me_01', 'user_01', 'user_02', 'user_03', 'user_04', 'user_05', 'user_06', 'user_07', 'user_08');
+
+
+-- 17. Admin payment and engagement telemetry
+CREATE TABLE IF NOT EXISTS public.payment_transactions (
+  id TEXT PRIMARY KEY,
+  provider TEXT NOT NULL DEFAULT 'paystack',
+  provider_reference TEXT NOT NULL UNIQUE,
+  user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
+  plan_id TEXT,
+  amount_kobo BIGINT NOT NULL CHECK (amount_kobo >= 0),
+  currency TEXT NOT NULL DEFAULT 'NGN',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'success', 'failed', 'abandoned', 'refunded')),
+  paid_at TIMESTAMP WITH TIME ZONE,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.site_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
+  anonymous_id TEXT,
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  duration_seconds INTEGER NOT NULL DEFAULT 0 CHECK (duration_seconds >= 0),
+  ended_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
+  CHECK (user_id IS NOT NULL OR anonymous_id IS NOT NULL)
+);
+
+ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_sessions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own payment transactions" ON public.payment_transactions;
+CREATE POLICY "Users can read own payment transactions"
+  ON public.payment_transactions FOR SELECT TO authenticated
+  USING (auth.uid()::text = user_id OR public.is_admin());
+
+DROP POLICY IF EXISTS "Users can insert own site sessions" ON public.site_sessions;
+CREATE POLICY "Users can insert own site sessions"
+  ON public.site_sessions FOR INSERT TO anon, authenticated
+  WITH CHECK (user_id IS NULL OR auth.uid()::text = user_id);
+
+DROP POLICY IF EXISTS "Users can update own site sessions" ON public.site_sessions;
+CREATE POLICY "Users can update own site sessions"
+  ON public.site_sessions FOR UPDATE TO anon, authenticated
+  USING (user_id IS NULL OR auth.uid()::text = user_id)
+  WITH CHECK (user_id IS NULL OR auth.uid()::text = user_id);

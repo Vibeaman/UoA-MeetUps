@@ -205,6 +205,27 @@ export interface PremiumPlan {
   features: string[];
 }
 
+export interface AdminPaymentMetrics {
+  currency: string;
+  totalRevenueKobo: number;
+  successfulPayments: number;
+  failedPayments: number;
+  lastPaymentAt: number | null;
+}
+
+export interface AdminEngagementMetrics {
+  totalSessions: number;
+  activeSessions: number;
+  totalTrackedSeconds: number;
+  averageSessionSeconds: number;
+  lastSeenAt: number | null;
+}
+
+export interface AdminMetrics {
+  payments: AdminPaymentMetrics;
+  engagement: AdminEngagementMetrics;
+}
+
 export type NavigationTab = 
   | 'discover'
   | 'likes'

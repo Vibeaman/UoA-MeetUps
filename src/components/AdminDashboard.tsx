@@ -7,13 +7,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Search,
-  Filter,
   Eye,
   UserX,
   UserCheck,
-  Lock,
-  Flame,
   Award,
   RefreshCw,
   Megaphone,
@@ -23,6 +19,9 @@ import {
   ArrowLeft,
   MessageSquare,
   BarChart2,
+  CreditCard,
+  Clock3,
+  Activity,
   X,
   ExternalLink,
   ChevronRight,
@@ -41,6 +40,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const {
     profiles,
     currentUser,
+    adminMetrics,
+    refreshAdminMetrics,
     reports,
     verificationRequests,
     approveVerification,
@@ -52,7 +53,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     deleteGossipPost,
     deleteCampusPoll,
     broadcastCampusAlert,
-    clearLocalCache,
     gossipPosts,
     campusPolls,
     matches,
@@ -66,8 +66,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   // Sub-filters
   const [verificationFilter, setVerificationFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [reportFilter, setReportFilter] = useState<'all' | 'pending' | 'resolved' | 'banned'>('pending');
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'banned' | 'lowkey'>('all');
-  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   // Modals inside Admin
   const [inspectPhotoUrl, setInspectPhotoUrl] = useState<{ url: string; title: string } | null>(null);
@@ -90,6 +88,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const pendingVerifications = verificationRequests.filter((v) => v.status === 'pending').length;
   const pendingReports = reports.filter((r) => r.status === 'pending').length;
   const bannedCount = profiles.filter((p) => p.isBanned).length;
+  const formatRevenue = (amountKobo: number, currency: string) =>
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amountKobo / 100);
+  const formatDuration = (seconds: number) => {
+    const totalMinutes = Math.floor(seconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes}m`;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
 
   // Filtered Verification Requests
   const filteredVerifications = verificationRequests.filter((req) => {
@@ -101,26 +108,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const filteredReports = reports.filter((rep) => {
     if (reportFilter === 'all') return true;
     return rep.status === reportFilter;
-  });
-
-  // Filtered Student Directory
-  const filteredUsers = profiles.filter((p) => {
-    // Search query
-    const matchesSearch =
-      p.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      p.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      p.department.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      p.faculty.toLowerCase().includes(userSearchQuery.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    // Status filter
-    if (userStatusFilter === 'verified') return p.isVerified;
-    if (userStatusFilter === 'unverified') return !p.isVerified;
-    if (userStatusFilter === 'banned') return p.isBanned;
-    if (userStatusFilter === 'lowkey') return p.mode === 'lowkey';
-
-    return true;
   });
 
   // Handle Submit Rejection
@@ -176,7 +163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-lg sm:text-xl font-black font-display text-white">
-                UniAbuja Admin Console
+                UoA MeetUps Partner Console
               </h2>
               <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 text-[10px] font-extrabold flex items-center space-x-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -184,7 +171,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               </span>
             </div>
             <p className="text-[11px] text-orange-300">
-              Identity verification, disciplinary reports & campus moderation
+              Verification, reports, payments & platform health
             </p>
           </div>
         </div>
@@ -200,8 +187,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           </button>
 
           <button
-            onClick={clearLocalCache}
-            title="Clear Local Cache"
+            onClick={() => {
+              void refreshAdminMetrics().then((refreshed) => {
+                showToast(refreshed ? 'Live operations metrics refreshed.' : 'Metrics could not be refreshed.');
+              });
+            }}
+            title="Refresh live operations metrics"
             className="p-2 rounded-xl bg-orange-950/80 border border-orange-800/40 text-orange-300 hover:text-white transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -235,6 +226,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           <span className="text-[10px] uppercase font-bold text-rose-400 block">Open Reports</span>
           <p className="text-xl font-black text-rose-400 mt-0.5">{pendingReports}</p>
           <span className="text-[9px] text-neutral-400">{bannedCount} suspended</span>
+        </div>
+      </div>
+
+      {/* Operations Metrics */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="rounded-2xl border border-emerald-900/50 bg-emerald-950/20 p-3 shadow-inner">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Verified revenue</span>
+            <CreditCard className="h-4 w-4 text-emerald-300" />
+          </div>
+          <p className="mt-1 text-xl font-black text-white">
+            {adminMetrics ? formatRevenue(adminMetrics.payments.totalRevenueKobo, adminMetrics.payments.currency) : '—'}
+          </p>
+          <span className="text-[9px] text-neutral-400">
+            {adminMetrics ? `${adminMetrics.payments.successfulPayments} successful payment events` : 'Partner metrics loading'}
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-900/50 bg-cyan-950/20 p-3 shadow-inner">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Tracked site time</span>
+            <Clock3 className="h-4 w-4 text-cyan-300" />
+          </div>
+          <p className="mt-1 text-xl font-black text-white">
+            {adminMetrics ? formatDuration(adminMetrics.engagement.totalTrackedSeconds) : '—'}
+          </p>
+          <span className="text-[9px] text-neutral-400">
+            {adminMetrics ? `${adminMetrics.engagement.totalSessions} sessions · ${adminMetrics.engagement.activeSessions} active now` : 'Partner metrics loading'}
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-violet-900/50 bg-violet-950/20 p-3 shadow-inner">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Average session</span>
+            <Activity className="h-4 w-4 text-violet-300" />
+          </div>
+          <p className="mt-1 text-xl font-black text-white">
+            {adminMetrics ? formatDuration(adminMetrics.engagement.averageSessionSeconds) : '—'}
+          </p>
+          <span className="text-[9px] text-neutral-400">
+            {adminMetrics?.engagement.lastSeenAt
+              ? `Last activity ${new Date(adminMetrics.engagement.lastSeenAt).toLocaleTimeString()}`
+              : 'No session data recorded yet'}
+          </span>
         </div>
       </div>
 
@@ -644,50 +679,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
       {/* ========================================================================= */}
       {activeAdminTab === 'users' && (
         <div className="space-y-3">
-          {/* Search bar */}
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
-            <input
-              type="text"
-              value={userSearchQuery}
-              onChange={(e) => setUserSearchQuery(e.target.value)}
-              placeholder="Search by name, username, department, or faculty..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#1c0b25] border border-orange-900/60 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500 shadow-inner"
-            />
-            {userSearchQuery && (
-              <button
-                onClick={() => setUserSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          <div className="flex items-center justify-between rounded-2xl border border-orange-950 bg-[#120620] px-3 py-2.5">
+            <div>
+              <p className="text-xs font-bold text-white">Student directory</p>
+              <p className="text-[10px] text-neutral-400">Review accounts and apply moderation actions.</p>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-orange-300">{profiles.length} records</span>
           </div>
 
-          {/* Quick status filters */}
-          <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar text-xs pb-1">
-            {(['all', 'verified', 'unverified', 'banned', 'lowkey'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setUserStatusFilter(st)}
-                className={`px-3 py-1 rounded-xl font-bold capitalize transition-all ${
-                  userStatusFilter === st
-                    ? 'bg-orange-900/90 text-white border border-orange-500/50 shadow-sm'
-                    : 'bg-[#1c0b25] text-neutral-400 hover:text-neutral-200 border border-orange-950'
-                }`}
-              >
-                {st === 'lowkey' ? 'Lowkey Mode 🔒' : st}
-              </button>
-            ))}
-          </div>
-
-          {filteredUsers.length === 0 ? (
+          {profiles.length === 0 ? (
             <div className="p-8 text-center bg-[#120620] rounded-3xl border border-orange-950 text-neutral-400 text-xs">
-              No students found matching your search.
+              No student profiles are available yet.
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredUsers.map((user) => (
+              {profiles.map((user) => (
                 <motion.div
                   key={user.id}
                   initial={{ opacity: 0 }}
@@ -715,14 +721,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                             title="Verified Student"
                           >
                             <ShieldCheck className="w-3 h-3" />
-                          </span>
-                        )}
-                        {user.mode === 'lowkey' && (
-                          <span
-                            className="p-0.5 rounded-full bg-orange-950 text-orange-400 border border-orange-800"
-                            title="Lowkey Mode Active"
-                          >
-                            <Lock className="w-3 h-3" />
                           </span>
                         )}
                         {user.isBanned && (

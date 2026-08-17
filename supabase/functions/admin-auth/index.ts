@@ -116,6 +116,62 @@ const listVerificationRequests = async () => {
   return data || [];
 };
 
+const getAdminMetrics = async () => {
+  const adminClient = getAdminClient();
+  const [{ data: paymentRows, error: paymentError }, { data: sessionRows, error: sessionError }] = await Promise.all([
+    adminClient
+      .from("payment_transactions")
+      .select("amount_kobo, currency, status, paid_at")
+      .limit(10000),
+    adminClient
+      .from("site_sessions")
+      .select("duration_seconds, last_seen_at, ended_at")
+      .limit(10000),
+  ]);
+
+  if (paymentError) throw paymentError;
+  if (sessionError) throw sessionError;
+
+  const payments = paymentRows || [];
+  const sessions = sessionRows || [];
+  const successfulPayments = payments.filter((row) => row.status === "success");
+  const failedPayments = payments.filter((row) => row.status === "failed" || row.status === "abandoned");
+  const refundedPayments = payments.filter((row) => row.status === "refunded");
+  const totalRevenueKobo = successfulPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0)
+    - refundedPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0);
+  const lastPaymentAt = successfulPayments.reduce<number | null>((latest, row) => {
+    const timestamp = row.paid_at ? new Date(row.paid_at).getTime() : null;
+    return timestamp && (!latest || timestamp > latest) ? timestamp : latest;
+  }, null);
+  const now = Date.now();
+  const activeSessions = sessions.filter((row) => {
+    const lastSeenAt = row.last_seen_at ? new Date(row.last_seen_at).getTime() : 0;
+    return lastSeenAt > now - 5 * 60 * 1000;
+  }).length;
+  const totalTrackedSeconds = sessions.reduce((total, row) => total + Number(row.duration_seconds || 0), 0);
+  const lastSeenAt = sessions.reduce<number | null>((latest, row) => {
+    const timestamp = row.last_seen_at ? new Date(row.last_seen_at).getTime() : null;
+    return timestamp && (!latest || timestamp > latest) ? timestamp : latest;
+  }, null);
+
+  return {
+    payments: {
+      currency: payments[0]?.currency || "NGN",
+      totalRevenueKobo,
+      successfulPayments: successfulPayments.length,
+      failedPayments: failedPayments.length,
+      lastPaymentAt,
+    },
+    engagement: {
+      totalSessions: sessions.length,
+      activeSessions,
+      totalTrackedSeconds,
+      averageSessionSeconds: sessions.length ? Math.round(totalTrackedSeconds / sessions.length) : 0,
+      lastSeenAt,
+    },
+  };
+};
+
 const updateVerificationRequest = async (body: Record<string, unknown>) => {
   const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
   const status = body.status === "approved" || body.status === "rejected" ? body.status : null;
@@ -171,13 +227,17 @@ Deno.serve(async (request) => {
   try {
     const body = await request.json() as Record<string, unknown>;
 
-    if (body.action === "list_verifications" || body.action === "update_verification") {
+    if (body.action === "list_verifications" || body.action === "update_verification" || body.action === "admin_metrics") {
       if (!(await verifyProof(body.proof))) {
         return json({ authenticated: false, message: "Admin proof is invalid or expired." }, 403);
       }
 
       if (body.action === "list_verifications") {
         return json({ authenticated: true, requests: await listVerificationRequests() });
+      }
+
+      if (body.action === "admin_metrics") {
+        return json({ authenticated: true, metrics: await getAdminMetrics() });
       }
 
       return json({ authenticated: true, request: await updateVerificationRequest(body) });

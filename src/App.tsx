@@ -75,7 +75,7 @@ const MainAppContent: React.FC = () => {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 h-72 bg-orange-700/[0.04] blur-3xl" />
 
       {/* Top Header */}
-      {!isStandaloneSignedOutProfile && <Header />}
+      {!isStandaloneSignedOutProfile && activeTab !== 'admin' && <Header />}
 
       {/* Main Content Area */}
       <main
@@ -178,8 +178,8 @@ const MainAppContent: React.FC = () => {
         matchedProfile={recentMatch}
         onClose={() => setRecentMatch(null)}
       />
-      <FiltersModal />
-      <PremiumModal />
+      {activeTab !== 'admin' && <FiltersModal />}
+      {activeTab !== 'admin' && <PremiumModal />}
       <VerificationModal />
       <AuthModal />
       <ProfileEditModal />
