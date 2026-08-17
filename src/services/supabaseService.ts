@@ -1,6 +1,7 @@
 import { getSupabase } from '../lib/supabase';
 import {
   UserProfile,
+  CampusStory,
   VerificationRequest,
   UserReport,
   GossipPost,
@@ -21,7 +22,7 @@ const getFileExtension = (file: File) => {
 };
 
 export const supabaseService = {
-  async uploadUserMedia(file: File, userId: string, folder: 'profiles' | 'gossip' | 'verification') {
+  async uploadUserMedia(file: File, userId: string, folder: 'profiles' | 'gossip' | 'verification' | 'chat') {
     if (!file.type.startsWith('image/')) {
       return { url: null, error: 'Please choose an image file.' };
     }
@@ -77,77 +78,117 @@ export const supabaseService = {
     }
   },
 
-  // Seed / Sync initial profiles
-  async seedProfilesIfEmpty(initialProfiles: UserProfile[]): Promise<UserProfile[] | null> {
+  // Fetch only real profiles; empty Supabase results remain empty.
+  async fetchProfiles(): Promise<UserProfile[] | null> {
     try {
-      const supabase = getSupabase();
-      const { data: existing, error } = await supabase.from('profiles').select('*');
+      const { data, error } = await getSupabase().from('profiles').select('*').order('created_at', { ascending: false });
       if (error) {
         console.warn('Supabase profiles query notice:', error.message);
         return null;
       }
 
-      if (!existing || existing.length === 0) {
-        // Seed initial profiles
-        const rows = initialProfiles.map((p) => ({
-          id: p.id,
-          name: p.name,
-          age: p.age,
-          matric_number: p.matricNumber,
-          faculty: p.faculty,
-          department: p.department,
-          level: p.level,
-          campus_location: p.campusLocation,
-          bio: p.bio,
-          photos: p.photos,
-          interests: p.interests,
-          looking_for: p.lookingFor,
-          mode: p.mode,
-          is_verified: p.isVerified,
-          verification_status: p.verificationStatus,
-          badges: p.badges,
-          is_banned: p.isBanned,
-          instagram: p.instagramHandle || null,
-          snapchat: p.snapchatHandle || null,
-          phone_whatsapp: null,
-        }));
-
-        const { error: insertError } = await supabase.from('profiles').insert(rows);
-        if (insertError) {
-          console.warn('Supabase profiles seeding notice:', insertError.message);
-        }
-        return initialProfiles;
-      }
-
-      // Map rows back to UserProfile format
-      return existing.map((r: any) => ({
+      return (data || []).map((r: any) => ({
         id: r.id,
         name: r.name,
         age: r.age,
         matricNumber: r.matric_number,
         gender: r.gender || 'Prefer not to say',
         faculty: r.faculty,
-        course: r.course || r.department || 'Student',
+        course: r.course || r.department || '',
         department: r.department,
         level: r.level,
         campusLocation: r.campus_location,
-        bio: r.bio,
-        photos: r.photos || [],
-        interests: r.interests || [],
+        bio: r.bio || '',
+        photos: Array.isArray(r.photos) ? r.photos : [],
+        interests: Array.isArray(r.interests) ? r.interests : [],
         lookingFor: r.looking_for,
         mode: r.mode || 'normal',
-        isVerified: r.is_verified,
+        isVerified: Boolean(r.is_verified),
         verificationStatus: r.verification_status || 'unverified',
         icebreakerPrompts: Array.isArray(r.icebreaker_prompts) ? r.icebreaker_prompts : [],
-        badges: r.badges || [],
-        isBanned: r.is_banned || false,
-        lastActive: r.last_active || 'Recently active',
-        isOnline: r.is_online ?? false,
+        badges: Array.isArray(r.badges) ? r.badges : [],
+        isBanned: Boolean(r.is_banned),
+        lastActive: r.last_active ? new Date(r.last_active).toLocaleString() : '',
+        isOnline: Boolean(r.is_online),
         instagramHandle: r.instagram || undefined,
         snapchatHandle: r.snapchat || undefined,
       }));
-    } catch (e) {
-      console.warn('Supabase fetch error:', e);
+    } catch (error) {
+      console.warn('Supabase profiles fetch error:', error);
+      return null;
+    }
+  },
+
+  async fetchProfile(userId: string): Promise<UserProfile | null> {
+    const profiles = await this.fetchProfiles();
+    return profiles?.find((profile) => profile.id === userId) || null;
+  },
+
+  async fetchCampusStories(): Promise<CampusStory[] | null> {
+    try {
+      const supabase = getSupabase();
+      const { data: storyRows, error } = await supabase
+        .from('campus_stories')
+        .select('id, user_id, story_image, caption, tag, created_at, expires_at')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('Supabase stories fetch notice:', error.message);
+        return null;
+      }
+
+      const userIds = [...new Set((storyRows || []).map((row: any) => row.user_id).filter(Boolean))];
+      const { data: profileRows, error: profileError } = userIds.length
+        ? await supabase.from('profiles').select('id, name, photos, department, level').in('id', userIds)
+        : { data: [], error: null };
+      if (profileError) {
+        console.warn('Supabase story author fetch notice:', profileError.message);
+      }
+      const profileMap = new Map((profileRows || []).map((profile: any) => [profile.id, profile]));
+
+      return (storyRows || []).flatMap((row: any) => {
+        const profile = profileMap.get(row.user_id);
+        if (!profile) return [];
+        return [{
+          id: row.id,
+          userId: row.user_id,
+          userName: profile.name,
+          avatar: Array.isArray(profile.photos) ? profile.photos[0] || '' : '',
+          storyImage: row.story_image,
+          caption: row.caption,
+          tag: row.tag,
+          postedAt: row.created_at ? new Date(row.created_at).toLocaleString() : '',
+          department: profile.department || '',
+          level: profile.level || '',
+        } satisfies CampusStory];
+      });
+    } catch (error) {
+      console.warn('Supabase stories fetch error:', error);
+      return null;
+    }
+  },
+
+  async createCampusStory(story: CampusStory): Promise<CampusStory | null> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('campus_stories')
+        .insert({
+          id: story.id,
+          user_id: story.userId,
+          story_image: story.storyImage,
+          caption: story.caption,
+          tag: story.tag,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .select('id, user_id, story_image, caption, tag, created_at, expires_at')
+        .single();
+      if (error || !data) {
+        console.warn('Supabase story insert error:', error?.message || 'No story returned.');
+        return null;
+      }
+      return { ...story, id: data.id, postedAt: data.created_at ? new Date(data.created_at).toLocaleString() : '' };
+    } catch (error) {
+      console.warn('Supabase story insert exception:', error);
       return null;
     }
   },

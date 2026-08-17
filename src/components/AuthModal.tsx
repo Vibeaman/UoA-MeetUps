@@ -25,11 +25,11 @@ export const AuthModal: React.FC = () => {
   } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup' | 'verification' | 'onboarding'>('signup');
-  const [matricInput, setMatricInput] = useState(currentUser.matricNumber || '21/104CS082');
+  const [matricInput, setMatricInput] = useState(currentUser.matricNumber || '');
   const [emailInput, setEmailInput] = useState('');
   const [verificationEmail, setVerificationEmail] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [fullNameInput, setFullNameInput] = useState(currentUser.name || 'Tariro Adebayo');
+  const [fullNameInput, setFullNameInput] = useState(currentUser.name || '');
   const [ageConfirmed, setAgeConfirmed] = useState(true);
   const [authError, setAuthError] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
@@ -195,7 +195,7 @@ export const AuthModal: React.FC = () => {
           <ShieldCheck className="w-9 h-9" />
         </div>
       ),
-      desc: 'All accounts verify their student status via live selfie facial recognition and matric directory sync.',
+      desc: 'Accounts can submit a real selfie and optional student ID for manual campus verification review.',
     },
   ];
 
@@ -330,7 +330,7 @@ export const AuthModal: React.FC = () => {
                   required
                   value={fullNameInput}
                   onChange={(e) => setFullNameInput(e.target.value)}
-                  placeholder="e.g. Tariro Adebayo"
+                  placeholder="Enter your full name"
                   className="w-full p-2.5 rounded-xl bg-[#150826] border border-purple-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
                 />
               </div>

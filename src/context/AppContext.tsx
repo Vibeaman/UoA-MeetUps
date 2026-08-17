@@ -14,15 +14,6 @@ import {
   GossipPost,
   GossipComment,
 } from '../types';
-import {
-  INITIAL_CURRENT_USER,
-  INITIAL_PROFILES,
-  INITIAL_REPORTS,
-  INITIAL_VERIFICATIONS,
-  CAMPUS_STORIES,
-  INITIAL_CAMPUS_POLLS,
-  INITIAL_GOSSIP_POSTS,
-} from '../data/mockData';
 import { supabaseService } from '../services/supabaseService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/supabase';
 
@@ -82,7 +73,7 @@ interface AppContextType {
   deleteGossipPost: (postId: string) => void;
   deleteCampusPoll: (pollId: string) => void;
   broadcastCampusAlert: (headline: string, message: string) => void;
-  resetDemoData: () => void;
+  clearLocalCache: () => void;
   // Modals
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
@@ -101,8 +92,8 @@ interface AppContextType {
   stories: CampusStory[];
   activeStory: CampusStory | null;
   setActiveStory: (story: CampusStory | null) => void;
-  addCampusStory: (caption: string, tag: string, storyImageUrl?: string) => void;
-  campusPoll: CampusPoll;
+  addCampusStory: (caption: string, tag: string, storyImageUrl?: string) => Promise<boolean>;
+  campusPoll?: CampusPoll;
   campusPolls: CampusPoll[];
   activePollIndex: number;
   setActivePollIndex: (idx: number) => void;
@@ -131,23 +122,47 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  CURRENT_USER: 'uoa_current_user_v2',
-  PROFILES: 'uoa_profiles_v2',
-  SWIPED_IDS: 'uoa_swiped_ids_v2',
-  MATCHES: 'uoa_matches_v2',
-  MESSAGES: 'uoa_messages_v2',
-  REPORTS: 'uoa_reports_v2',
-  VERIFICATIONS: 'uoa_verifications_v2',
+  CURRENT_USER: 'uoa_current_user_v3',
+  PROFILES: 'uoa_profiles_v3',
+  SWIPED_IDS: 'uoa_swiped_ids_v3',
+  MATCHES: 'uoa_matches_v3',
+  MESSAGES: 'uoa_messages_v3',
+  REPORTS: 'uoa_reports_v3',
+  VERIFICATIONS: 'uoa_verifications_v3',
   IS_PREMIUM: 'uoa_is_premium_v2',
   ACTIVE_PLAN: 'uoa_active_plan_v2',
   IS_AUTHENTICATED: 'uoa_is_authenticated_v1',
+};
+
+const EMPTY_CURRENT_USER: UserProfile = {
+  id: '',
+  name: '',
+  age: 0,
+  matricNumber: '',
+  gender: 'Prefer not to say',
+  faculty: '',
+  department: '',
+  course: '',
+  level: '100L',
+  campusLocation: 'Main Campus',
+  bio: '',
+  photos: [],
+  lookingFor: 'both',
+  mode: 'normal',
+  icebreakerPrompts: [],
+  isVerified: false,
+  verificationStatus: 'unverified',
+  lastActive: '',
+  isOnline: false,
+  badges: [],
+  interests: [],
 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Current user state
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return saved ? JSON.parse(saved) : INITIAL_CURRENT_USER;
+    return saved ? JSON.parse(saved) : EMPTY_CURRENT_USER;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -185,10 +200,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Profiles
-  const [profiles, setProfiles] = useState<UserProfile[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PROFILES);
-    return saved ? JSON.parse(saved) : INITIAL_PROFILES;
-  });
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
 
   const [swipedProfileIds, setSwipedProfileIds] = useState<string[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SWIPED_IDS);
@@ -198,45 +210,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [lastSwipedId, setLastSwipedId] = useState<string | null>(null);
 
   // Matches (7 days expiration timestamp = 7 * 24 * 60 * 60 * 1000)
-  const [matches, setMatches] = useState<MatchItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MATCHES);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    // Initial demo match with Zainab Bello
-    const firstMatchUser = INITIAL_PROFILES[0];
-    const initialMatch: MatchItem = {
-      id: 'match_init_01',
-      matchedUser: firstMatchUser,
-      createdAt: Date.now() - 3600000 * 12, // 12 hours ago
-      expiresAt: Date.now() + 3600000 * 24 * 6.5, // 6.5 days remaining
-      lastMessage: 'Hey Tariro! How was your exam today? 😊',
-      lastMessageTime: Date.now() - 3600000 * 2,
-      hasUnread: true,
-      isLowkeyMatch: false,
-    };
-    return [initialMatch];
-  });
+  const [matches, setMatches] = useState<MatchItem[]>([]);
 
   // Messages per matchId
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return {
-      match_init_01: [
-        {
-          id: 'm1',
-          matchId: 'match_init_01',
-          senderId: 'user_01',
-          text: 'Hey Tariro! How was your exam today? 😊',
-          createdAt: Date.now() - 3600000 * 2,
-          read: false,
-        },
-      ],
-    };
-  });
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
 
   const [currentChatMatch, setCurrentChatMatch] = useState<MatchItem | null>(null);
   const [recentMatch, setRecentMatch] = useState<UserProfile | null>(null);
@@ -256,16 +233,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [boostTimeLeft, setBoostTimeLeft] = useState<number>(0);
 
   // Reports
-  const [reports, setReports] = useState<UserReport[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.REPORTS);
-    return saved ? JSON.parse(saved) : INITIAL_REPORTS;
-  });
+  const [reports, setReports] = useState<UserReport[]>([]);
 
   // Verifications
-  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.VERIFICATIONS);
-    return saved ? JSON.parse(saved) : INITIAL_VERIFICATIONS;
-  });
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
 
   // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -281,7 +252,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const signOut = () => {
     setIsAuthenticated(false);
     setIsEmailVerified(false);
+    setCurrentUser(EMPTY_CURRENT_USER);
+    setProfiles([]);
+    setMatches([]);
+    setMessages({});
     localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     void getSupabase().auth.signOut();
   };
 
@@ -393,8 +369,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
-  }, [profiles]);
+    if (!isSupabaseConfigured()) return;
+    let cancelled = false;
+    void supabaseService.fetchProfiles().then((remoteProfiles) => {
+      if (!cancelled && remoteProfiles) setProfiles(remoteProfiles);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) return;
+    let cancelled = false;
+    void supabaseService.fetchProfile(currentUser.id).then((profile) => {
+      if (!cancelled && profile) setCurrentUser(profile);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, currentUser.id]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SWIPED_IDS, JSON.stringify(swipedProfileIds));
@@ -443,58 +437,59 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => clearInterval(interval);
   }, [isBoostActive, boostTimeLeft]);
 
-  // Stories & Highlights State
-  const [stories, setStories] = useState<CampusStory[]>(() => {
-    const saved = localStorage.getItem('uoa_stories_v2');
-    return saved ? JSON.parse(saved) : CAMPUS_STORIES;
-  });
+  // Stories & Highlights State (live Supabase rows only)
+  const [stories, setStories] = useState<CampusStory[]>([]);
   const [activeStory, setActiveStory] = useState<CampusStory | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('uoa_stories_v2', JSON.stringify(stories));
-  }, [stories]);
+    if (!isSupabaseConfigured()) return;
+    let cancelled = false;
+    void supabaseService.fetchCampusStories().then((remoteStories) => {
+      if (!cancelled && remoteStories) setStories(remoteStories);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const addCampusStory = (caption: string, tag: string, storyImageUrl?: string) => {
+  const addCampusStory = async (caption: string, tag: string, storyImageUrl?: string): Promise<boolean> => {
+    if (!requestAuthentication() || !storyImageUrl || !currentUser.photos.length) return false;
+
     const newStory: CampusStory = {
-      id: `story_${Date.now()}`,
+      id: crypto.randomUUID(),
       userId: currentUser.id,
-      userName: currentUser.name.split(' ')[0],
-      avatar: currentUser.photos[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      storyImage: storyImageUrl || currentUser.photos[0],
+      userName: currentUser.name,
+      avatar: currentUser.photos[0],
+      storyImage: storyImageUrl,
       caption,
-      tag: tag || '✨ Campus Vibe',
-      postedAt: 'Just now',
+      tag: tag || 'Campus Vibe',
+      postedAt: '',
       department: currentUser.department,
       level: currentUser.level,
     };
-    setStories((prev) => [newStory, ...prev]);
+    const createdStory = await supabaseService.createCampusStory(newStory);
+    if (!createdStory) return false;
+
+    setStories((prev) => [createdStory, ...prev]);
     confetti({
       particleCount: 50,
       spread: 60,
       origin: { y: 0.6 },
     });
+    return true;
   };
 
-  // Campus Daily Polls State
-  const [campusPolls, setCampusPolls] = useState<CampusPoll[]>(() => {
-    const saved = localStorage.getItem('uoa_campus_polls_v3');
-    return saved ? JSON.parse(saved) : INITIAL_CAMPUS_POLLS;
-  });
+  // Campus Daily Polls State (live Supabase rows only)
+  const [campusPolls, setCampusPolls] = useState<CampusPoll[]>([]);
   const [activePollIndex, setActivePollIndex] = useState<number>(0);
 
   const campusPoll = campusPolls[activePollIndex] || campusPolls[0];
 
   useEffect(() => {
-    localStorage.setItem('uoa_campus_polls_v3', JSON.stringify(campusPolls));
-  }, [campusPolls]);
-
-  useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
     void supabaseService.fetchCampusPolls().then((remotePolls) => {
-      if (!cancelled && remotePolls && remotePolls.length > 0) {
-        setCampusPolls(remotePolls);
-      }
+      if (!cancelled && remotePolls) setCampusPolls(remotePolls);
     });
     return () => {
       cancelled = true;
@@ -571,21 +566,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  // Gossip Board State
-  const [gossipPosts, setGossipPosts] = useState<GossipPost[]>(() => {
-    const saved = localStorage.getItem('uoa_gossip_board_v3');
-    return saved ? JSON.parse(saved) : INITIAL_GOSSIP_POSTS;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('uoa_gossip_board_v3', JSON.stringify(gossipPosts));
-  }, [gossipPosts]);
+  // Gossip Board State (live Supabase rows only)
+  const [gossipPosts, setGossipPosts] = useState<GossipPost[]>([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
     void supabaseService.fetchGossipPosts().then((remotePosts) => {
-      if (!cancelled && remotePosts && remotePosts.length > 0) {
+      if (!cancelled && remotePosts) {
         setGossipPosts(remotePosts);
       }
     });
@@ -617,11 +605,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       imageUrl,
       createdAt: Date.now(),
       timeAgo: 'Just now',
-      spicyCount: 1,
+      spicyCount: 0,
       capCount: 0,
       factsCount: 0,
-      teaCount: 1,
-      viewsCount: 1,
+      teaCount: 0,
+      viewsCount: 0,
       comments: [],
     };
 
@@ -922,7 +910,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       [matchId]: [...(prev[matchId] || []), newMsg],
     }));
 
-    // Update match preview
+    // Update the local preview and persist the real message remotely.
     setMatches((prev) =>
       prev.map((m) =>
         m.id === matchId
@@ -935,48 +923,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           : m
       )
     );
-
-    // Simulated responsive auto-reply after 2.5 seconds for engaging real-time feel
-    setTimeout(() => {
-      const match = matches.find((m) => m.id === matchId);
-      if (match) {
-        const replies = [
-          `Hey Tariro! That’s so true haha 😄`,
-          `Are you at Giri campus right now or off-campus?`,
-          `Love your vibe! Have you had lunch around the arcade?`,
-          `Haha totally! Which lecturer do you have tomorrow morning?`,
-          `Smooth! Let’s link up near the Senate building plaza later today ✨`,
-        ];
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
-
-        const replyMsg: ChatMessage = {
-          id: `msg_reply_${Date.now()}`,
-          matchId,
-          senderId: match.matchedUser.id,
-          text: randomReply,
-          createdAt: Date.now(),
-          read: false,
-        };
-
-        setMessages((curr) => ({
-          ...curr,
-          [matchId]: [...(curr[matchId] || []), replyMsg],
-        }));
-
-        setMatches((currMatches) =>
-          currMatches.map((m) =>
-            m.id === matchId
-              ? {
-                  ...m,
-                  lastMessage: randomReply,
-                  lastMessageTime: Date.now(),
-                  hasUnread: true,
-                }
-              : m
-          )
-        );
-      }
-    }, 2500);
+    void supabaseService.sendMessage(newMsg);
   };
 
   // Submit Report
@@ -1164,99 +1111,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Admin: Delete Campus Poll
   const deleteCampusPoll = (pollId: string) => {
-    setCampusPolls((prev) => {
-      const remaining = prev.filter((p) => p.id !== pollId);
-      return remaining.length > 0 ? remaining : INITIAL_CAMPUS_POLLS;
-    });
+    setCampusPolls((prev) => prev.filter((p) => p.id !== pollId));
     setActivePollIndex(0);
   };
 
-  // Admin: Broadcast Campus Alert Announcement
+  // Admin announcements must be persisted by a dedicated server-authorized workflow.
+  // Do not inject a fabricated local post into the shared feed.
   const broadcastCampusAlert = (headline: string, message: string) => {
     setSparkToast({
       show: true,
-      message: `📢 [CAMPUS BROADCAST] ${headline}: ${message}`,
+      message: `Public announcement unavailable: ${headline}. A server-persisted publishing workflow is required.`,
     });
-
-    const adminAnnouncement: GossipPost = {
-      id: `gossip_broadcast_${Date.now()}`,
-      authorId: 'admin_security_01',
-      authorName: 'UniAbuja Admin & Safety 🛡️',
-      authorAvatar: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=150',
-      authorDepartment: 'Dean of Student Affairs',
-      authorLevel: '500L',
-      isAnonymous: false,
-      tag: '📢 Campus Notice',
-      content: `[OFFICIAL ANNOUNCEMENT] ${headline}\n\n${message}`,
-      createdAt: Date.now(),
-      timeAgo: 'Just now',
-      spicyCount: 0,
-      capCount: 0,
-      factsCount: 45,
-      teaCount: 8,
-      viewsCount: 500,
-      comments: [],
-    };
-    setGossipPosts((prev) => [adminAnnouncement, ...prev]);
-
-    confetti({
-      particleCount: 80,
-      spread: 75,
-      origin: { y: 0.5 },
-      colors: ['#a855f7', '#38bdf8', '#fbbf24', '#ffffff'],
-    });
-
-    setTimeout(() => {
-      setSparkToast(null);
-    }, 6000);
+    setTimeout(() => setSparkToast(null), 6000);
   };
 
-  // Admin: Reset / Restore Demo Data
-  const resetDemoData = () => {
-    localStorage.removeItem(STORAGE_KEYS.PROFILES);
-    localStorage.removeItem(STORAGE_KEYS.SWIPED_IDS);
-    localStorage.removeItem(STORAGE_KEYS.MATCHES);
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
-    localStorage.removeItem(STORAGE_KEYS.REPORTS);
-    localStorage.removeItem(STORAGE_KEYS.VERIFICATIONS);
-    localStorage.removeItem('uoa_gossip_board_v3');
+  // Admin: Clear browser cache without restoring any demo records.
+  const clearLocalCache = () => {
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    localStorage.removeItem('uoa_stories_v2');
     localStorage.removeItem('uoa_campus_polls_v2');
-
-    const defaultMatch: MatchItem = {
-      id: 'match_init_01',
-      matchedUser: INITIAL_PROFILES[0],
-      createdAt: Date.now() - 3600000 * 12,
-      expiresAt: Date.now() + 3600000 * 24 * 6.5,
-      lastMessage: 'Hey Tariro! How was your exam today? 😊',
-      lastMessageTime: Date.now() - 3600000 * 2,
-      hasUnread: true,
-      isLowkeyMatch: false,
-    };
-
-    setProfiles(INITIAL_PROFILES);
+    localStorage.removeItem('uoa_campus_polls_v3');
+    localStorage.removeItem('uoa_gossip_board_v3');
+    setProfiles([]);
     setSwipedProfileIds([]);
-    setMatches([defaultMatch]);
-    setMessages({
-      match_init_01: [
-        {
-          id: 'm1',
-          matchId: 'match_init_01',
-          senderId: 'user_01',
-          text: 'Hey Tariro! How was your exam today? 😊',
-          createdAt: Date.now() - 3600000 * 2,
-          read: false,
-        },
-      ],
-    });
-    setReports(INITIAL_REPORTS);
-    setVerificationRequests(INITIAL_VERIFICATIONS);
-    setGossipPosts(INITIAL_GOSSIP_POSTS);
-    setCampusPolls(INITIAL_CAMPUS_POLLS);
+    setMatches([]);
+    setMessages({});
+    setReports([]);
+    setVerificationRequests([]);
+    setStories([]);
+    setCampusPolls([]);
+    setGossipPosts([]);
     setActivePollIndex(0);
-
     setSparkToast({
       show: true,
-      message: 'Demo dataset restored to initial state ✨',
+      message: 'Browser cache cleared. Live Supabase data was not changed.',
     });
     setTimeout(() => setSparkToast(null), 3000);
   };
@@ -1286,10 +1174,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  // Who Liked Me profiles (Profiles that swiped right on Tariro)
-  const whoLikedMeProfiles = profiles.filter(
-    (p) => !swipedProfileIds.includes(p.id) && (p.id === 'user_02' || p.id === 'user_04' || p.id === 'user_06' || p.id === 'user_08')
-  );
+  // Inbound likes are populated from live user actions when that data is available.
+  const whoLikedMeProfiles: UserProfile[] = [];
 
   return (
     <AppContext.Provider
@@ -1348,7 +1234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteGossipPost,
         deleteCampusPoll,
         broadcastCampusAlert,
-        resetDemoData,
+        clearLocalCache,
         isAuthModalOpen,
         setIsAuthModalOpen,
         isVerificationModalOpen,

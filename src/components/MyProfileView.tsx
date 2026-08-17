@@ -52,6 +52,38 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     void refreshAuthentication();
   }, [isAuthLoading, isAuthenticated]);
 
+  const hasProfile = Boolean(currentUser.name.trim() && currentUser.matricNumber.trim());
+
+  if (isAuthLoading || !isAuthenticated || !hasProfile) {
+    return (
+      <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
+        <div className="p-6 rounded-3xl bg-gradient-to-b from-[#18092f] via-[#110520] to-[#090312] border border-purple-800/40 shadow-2xl text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-purple-950/70 border border-purple-700/50 flex items-center justify-center text-purple-300">
+            {isAuthLoading ? <Sparkles className="w-7 h-7 animate-pulse" /> : <LogIn className="w-7 h-7" />}
+          </div>
+          <h2 className="mt-4 text-xl font-black font-display text-white">
+            {isAuthLoading ? 'Checking your session' : isAuthenticated ? 'Complete your student profile' : 'Create your student profile'}
+          </h2>
+          <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+            {isAuthLoading
+              ? 'We are checking your secure Supabase session.'
+              : isAuthenticated
+                ? 'Add your real student details and photos before appearing in the campus feed.'
+                : 'Sign in to add real photos, publish stories, and manage your UniAbuja profile.'}
+          </p>
+          {!isAuthLoading && (
+            <button
+              onClick={() => (isAuthenticated ? onOpenEditProfile() : setIsAuthModalOpen(true))}
+              className="mt-5 w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50"
+            >
+              {isAuthenticated ? 'Complete Profile' : 'Sign In'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto min-w-0 flex-1 flex flex-col p-3 sm:p-4 space-y-4 overflow-y-auto custom-scrollbar pb-24">
       {/* Top Profile Card */}
@@ -63,11 +95,17 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           {/* Avatar with live photo verification ring */}
           <div className="relative">
             <div className="p-1 rounded-full bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-amber-400">
-              <img
-                src={currentUser.photos[0]}
-                alt={currentUser.name}
-                className="w-20 h-20 rounded-full object-cover border-2 border-[#090312]"
-              />
+              {currentUser.photos[0] ? (
+                <img
+                  src={currentUser.photos[0]}
+                  alt={currentUser.name}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-[#090312]"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full border-2 border-[#090312] bg-purple-950/70 flex items-center justify-center text-purple-300">
+                  <Camera className="w-7 h-7" />
+                </div>
+              )}
             </div>
             {currentUser.isVerified ? (
               <span

@@ -90,7 +90,19 @@ export const CampusStoryModal: React.FC = () => {
           <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-purple-400 shrink-0">
-                <img src={activeStory.avatar} alt="" className="w-full h-full object-cover" />
+                {activeStory.avatar ? (
+                  <img src={activeStory.avatar} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-purple-900/80 text-purple-100 flex items-center justify-center text-xs font-bold">
+                    {activeStory.userName
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .map((part) => part[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase() || '?'}
+                  </div>
+                )}
               </div>
               <div className="text-left">
                 <div className="flex items-center space-x-1.5">

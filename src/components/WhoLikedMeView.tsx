@@ -69,9 +69,18 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
         </div>
       )}
 
-      {/* Grid of Profiles */}
-      <div className="grid grid-cols-2 gap-3">
-        {whoLikedMeProfiles.map((profile) => (
+      {/* Live inbound likes */}
+      {whoLikedMeProfiles.length === 0 ? (
+        <div className="p-8 text-center rounded-2xl bg-[#120722] border border-purple-950/80">
+          <Heart className="w-10 h-10 text-purple-400 mx-auto mb-2 opacity-60" />
+          <h4 className="text-sm font-bold text-white">No one has liked your profile yet</h4>
+          <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
+            Complete your profile and add real photos to help other UniAbuja students discover you.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {whoLikedMeProfiles.map((profile) => (
           <div
             key={profile.id}
             className="relative h-60 rounded-2xl overflow-hidden border border-purple-900/50 bg-[#120622] group shadow-md flex flex-col justify-end"
@@ -142,8 +151,9 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
               </div>
             )}
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

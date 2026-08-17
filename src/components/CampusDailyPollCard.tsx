@@ -59,7 +59,26 @@ export const CampusDailyPollCard: React.FC = () => {
     setIsCreatingPoll(false);
   };
 
-  if (!currentPoll) return null;
+  if (!currentPoll) {
+    return (
+      <div className="w-full mb-3 p-4 rounded-2xl bg-gradient-to-r from-[#17082a] to-[#110520] border border-purple-800/40 shadow-lg text-left">
+        <div className="flex items-center space-x-2 text-purple-300">
+          <MessageSquareQuote className="w-4 h-4" />
+          <span className="text-xs font-extrabold uppercase tracking-wider">Campus polls</span>
+        </div>
+        <p className="mt-2 text-xs text-neutral-400">No live campus poll has been published yet.</p>
+        <button
+          onClick={() => {
+            if (requestAuthentication()) setIsCreatingPoll(true);
+          }}
+          className="mt-3 text-xs font-bold text-purple-300 hover:text-white flex items-center space-x-1"
+        >
+          <PlusCircle className="w-3.5 h-3.5" />
+          <span>{isAuthenticated ? 'Suggest the first poll' : 'Sign in to suggest a poll'}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

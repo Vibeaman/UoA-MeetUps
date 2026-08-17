@@ -83,12 +83,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       if (currentMode === 'normal' && p.mode === 'lowkey') return false;
 
       // Vibe filter
-      if (selectedVibeFilter === 'trending') {
-        const isTrending = p.badges?.some((b) => b.includes('High Match') || b.includes('Top Vibe') || b.includes('DJ') || b.includes('Radio'));
-        if (!isTrending) return false;
-      } else if (selectedVibeFilter === 'new') {
-        if (p.level !== '100L' && p.level !== '200L') return false;
-      } else if (selectedVibeFilter === 'science') {
+      if (selectedVibeFilter === 'science') {
         if (p.faculty !== 'Faculty of Science' && p.faculty !== 'Faculty of Engineering') return false;
       } else if (selectedVibeFilter === 'law') {
         if (p.faculty !== 'Faculty of Law' && p.faculty !== 'Faculty of Arts') return false;

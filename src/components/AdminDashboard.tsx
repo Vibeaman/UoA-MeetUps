@@ -52,7 +52,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     deleteGossipPost,
     deleteCampusPoll,
     broadcastCampusAlert,
-    resetDemoData,
+    clearLocalCache,
     gossipPosts,
     campusPolls,
     matches,
@@ -200,8 +200,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           </button>
 
           <button
-            onClick={resetDemoData}
-            title="Reset Demo Dataset"
+            onClick={clearLocalCache}
+            title="Clear Local Cache"
             className="p-2 rounded-xl bg-purple-950/80 border border-purple-800/40 text-purple-300 hover:text-white transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />

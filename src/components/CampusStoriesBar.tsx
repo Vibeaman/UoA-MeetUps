@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Sparkles, X, Image as ImageIcon, Flame, Camera } from 'lucide-react';
+import { Plus, Sparkles, X, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CampusStory } from '../types';
 
@@ -10,6 +10,8 @@ export const CampusStoriesBar: React.FC = () => {
   const [newCaption, setNewCaption] = useState('');
   const [selectedTag, setSelectedTag] = useState('✨ Campus Vibe');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [postError, setPostError] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
 
   const PRESET_TAGS = [
     '✨ Campus Vibe',
@@ -21,11 +23,24 @@ export const CampusStoriesBar: React.FC = () => {
     '🎭 Arts & Drama',
   ];
 
-  const handlePostStory = (e: React.FormEvent) => {
+  const handlePostStory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCaption.trim()) return;
-    const photoUrl = currentUser.photos[selectedPhotoIndex] || currentUser.photos[0];
-    addCampusStory(newCaption.trim(), selectedTag, photoUrl);
+    const photoUrl = currentUser.photos[selectedPhotoIndex];
+    if (!photoUrl) {
+      setPostError('Add a real profile photo before posting a story.');
+      return;
+    }
+
+    setPostError('');
+    setIsPosting(true);
+    const posted = await addCampusStory(newCaption.trim(), selectedTag, photoUrl);
+    setIsPosting(false);
+    if (!posted) {
+      setPostError('Your story could not be published. Please try again.');
+      return;
+    }
+
     setNewCaption('');
     setIsAddModalOpen(false);
   };
@@ -40,7 +55,7 @@ export const CampusStoriesBar: React.FC = () => {
           </span>
         </div>
         <span className="text-[10px] font-medium text-purple-400/80 bg-purple-950/60 px-2 py-0.5 rounded-full border border-purple-800/40">
-          Live Today
+          {stories.length > 0 ? 'Live stories' : 'No active stories'}
         </span>
       </div>
 
@@ -55,12 +70,16 @@ export const CampusStoriesBar: React.FC = () => {
             className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-pink-500 shadow-md group"
             id="btn-add-campus-story"
           >
-            <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090410]">
-              <img
-                src={currentUser.photos[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
-                alt="My Avatar"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-              />
+            <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900 border-2 border-[#090410] flex items-center justify-center text-purple-200 text-sm font-black">
+              {currentUser.photos[0] ? (
+                <img
+                  src={currentUser.photos[0]}
+                  alt="Your profile"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <Camera className="w-5 h-5 text-purple-300" />
+              )}
             </div>
             <div className="absolute bottom-0 right-0 p-1 rounded-full bg-gradient-to-tr from-purple-500 to-fuchsia-500 text-white border-2 border-[#090410] shadow-sm">
               <Plus className="w-3 h-3 stroke-[3]" />
@@ -72,6 +91,9 @@ export const CampusStoriesBar: React.FC = () => {
         </div>
 
         {/* Stories from students */}
+        {stories.length === 0 && (
+          <p className="px-2 text-[11px] text-neutral-500">No students have posted a story yet.</p>
+        )}
         {stories.map((story) => (
           <div key={story.id} className="flex flex-col items-center space-y-1 shrink-0">
             <motion.button
@@ -81,12 +103,16 @@ export const CampusStoriesBar: React.FC = () => {
               className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2.5px] bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-amber-400 shadow-lg shadow-purple-950/50 group"
               id={`story-btn-${story.id}`}
             >
-              <div className="w-full h-full rounded-full overflow-hidden bg-[#10061c] border-2 border-[#090410]">
-                <img
-                  src={story.avatar}
-                  alt={story.userName}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
+              <div className="w-full h-full rounded-full overflow-hidden bg-[#10061c] border-2 border-[#090410] flex items-center justify-center text-purple-200 text-sm font-black">
+                {story.avatar ? (
+                  <img
+                    src={story.avatar}
+                    alt={story.userName}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  story.userName.slice(0, 1).toUpperCase()
+                )}
               </div>
               <div className="absolute -top-1 -right-1 px-1 rounded-full bg-purple-900/90 text-[8px] font-black text-purple-200 border border-purple-400/50">
                 {story.tag.split(' ')[0]}
@@ -132,6 +158,9 @@ export const CampusStoriesBar: React.FC = () => {
                     Select Story Cover Photo
                   </label>
                   <div className="flex items-center space-x-2 overflow-x-auto py-1">
+                    {currentUser.photos.length === 0 && (
+                      <p className="text-[11px] text-neutral-400">Add a profile photo before sharing a story.</p>
+                    )}
                     {currentUser.photos.map((p, idx) => (
                       <button
                         key={idx}
@@ -148,6 +177,12 @@ export const CampusStoriesBar: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {postError && (
+                  <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-[11px] font-semibold text-rose-300">
+                    {postError}
+                  </p>
+                )}
 
                 {/* Tag Selection */}
                 <div>
@@ -200,10 +235,10 @@ export const CampusStoriesBar: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={!newCaption.trim()}
+                    disabled={!newCaption.trim() || !currentUser.photos.length || isPosting}
                     className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50 disabled:opacity-40 transition-all"
                   >
-                    Share Vibe ⚡
+                    {isPosting ? 'Publishing...' : 'Share Story'}
                   </button>
                 </div>
               </form>

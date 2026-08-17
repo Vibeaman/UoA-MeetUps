@@ -13,15 +13,23 @@ import {
   UserX,
   Sparkles,
   Info,
-  Check,
   CheckCheck,
   Eye,
   Camera,
   Trash2,
-  Mic,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MatchItem, ChatMessage, UserProfile } from '../types';
+import { supabaseService } from '../services/supabaseService';
+
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '?';
 
 interface ChatViewProps {
   onOpenProfileDetails: (profile: UserProfile) => void;
@@ -46,6 +54,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
   const [viewOnceActive, setViewOnceActive] = useState(false);
   const [viewedOncePhotos, setViewedOncePhotos] = useState<Record<string, boolean>>({});
   const [showIcebreakerPicker, setShowIcebreakerPicker] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeMessages = currentChatMatch ? messages[currentChatMatch.id] || [] : [];
@@ -60,9 +71,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     setInputMessage('');
   };
 
-  const handleSendPhotoPreset = (photoUrl: string) => {
-    if (!currentChatMatch) return;
-    sendMessage(currentChatMatch.id, '', photoUrl, viewOnceActive);
+  const handlePhotoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !currentChatMatch || !currentUser.id) return;
+
+    setPhotoUploadError(null);
+    setIsUploadingPhoto(true);
+    const { url, error } = await supabaseService.uploadUserMedia(file, currentUser.id, 'chat');
+    setIsUploadingPhoto(false);
+
+    if (!url) {
+      setPhotoUploadError(error || 'Photo upload failed. Please try again.');
+      return;
+    }
+
+    sendMessage(currentChatMatch.id, '', url, viewOnceActive);
     setShowPhotoPicker(false);
     setViewOnceActive(false);
   };
@@ -80,13 +104,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     return `${days}d ${hours}h left`;
   };
-
-  const samplePhotoPresets = [
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=600&q=80',
-  ];
 
   // If a chat thread is selected, render the conversation view
   if (currentChatMatch) {
@@ -112,11 +129,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               className="flex items-center space-x-2.5 cursor-pointer group"
             >
               <div className="relative">
-                <img
-                  src={matched.photos[0]}
-                  alt={matched.name}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-purple-500 shadow-md group-hover:scale-105 transition-transform"
-                />
+                {matched.photos[0] ? (
+                  <img
+                    src={matched.photos[0]}
+                    alt={matched.name}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-purple-500 shadow-md group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border-2 border-purple-500 bg-purple-900/70 text-purple-100 flex items-center justify-center text-xs font-bold shadow-md group-hover:scale-105 transition-transform">
+                    {getInitials(matched.name)}
+                  </div>
+                )}
                 <span
                   className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#120722] ${
                     matched.isOnline ? 'bg-emerald-400' : 'bg-neutral-500'
@@ -314,38 +337,54 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           </div>
         )}
 
-        {/* Photo preset picker */}
+        {/* Real gallery photo picker */}
         {showPhotoPicker && (
           <div className="bg-[#150727] border-t border-purple-800/60 p-3 space-y-2 animate-fadeIn">
             <div className="flex items-center justify-between text-xs text-purple-300 font-bold">
-              <span>Attach a Campus Photo</span>
+              <span>Attach a photo from your gallery</span>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setViewOnceActive(!viewOnceActive)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                  disabled={isUploadingPhoto}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all disabled:opacity-50 ${
                     viewOnceActive
                       ? 'bg-fuchsia-600 text-white border-fuchsia-400'
                       : 'bg-purple-950 text-neutral-400 border-purple-800'
                   }`}
                 >
-                  {viewOnceActive ? '🔒 View Once ON' : 'View Once OFF'}
+                  {viewOnceActive ? 'View Once ON' : 'View Once OFF'}
                 </button>
-                <button onClick={() => setShowPhotoPicker(false)} className="text-neutral-400 hover:text-white">
+                <button
+                  onClick={() => {
+                    setShowPhotoPicker(false);
+                    setPhotoUploadError(null);
+                  }}
+                  disabled={isUploadingPhoto}
+                  className="text-neutral-400 hover:text-white disabled:opacity-50"
+                >
                   ✕
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {samplePhotoPresets.map((p, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => handleSendPhotoPreset(p)}
-                  className="relative h-16 rounded-xl overflow-hidden border border-purple-800 cursor-pointer hover:opacity-80"
-                >
-                  <img src={p} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
+            <input
+              ref={photoInputRef}
+              id="chat-photo-upload"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoFileChange}
+              className="sr-only"
+              disabled={isUploadingPhoto}
+            />
+            <label
+              htmlFor="chat-photo-upload"
+              className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-purple-700/70 bg-purple-950/50 text-xs font-bold text-purple-200 hover:bg-purple-900/60 cursor-pointer transition-colors ${
+                isUploadingPhoto ? 'pointer-events-none opacity-60' : ''
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              {isUploadingPhoto ? 'Uploading photo…' : 'Choose from gallery'}
+            </label>
+            {photoUploadError && <p className="text-[11px] text-rose-300">{photoUploadError}</p>}
           </div>
         )}
 
@@ -428,11 +467,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               className="flex flex-col items-center space-y-1 cursor-pointer group shrink-0"
             >
               <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-indigo-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] group-hover:scale-105 transition-transform">
-                <img
-                  src={match.matchedUser.photos[0]}
-                  alt={match.matchedUser.name}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-[#090312]"
-                />
+                {match.matchedUser.photos[0] ? (
+                  <img
+                    src={match.matchedUser.photos[0]}
+                    alt={match.matchedUser.name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-[#090312]"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full border-2 border-[#090312] bg-purple-900/70 text-purple-100 flex items-center justify-center text-sm font-bold">
+                    {getInitials(match.matchedUser.name)}
+                  </div>
+                )}
                 {match.hasUnread && (
                   <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-fuchsia-500 border-2 border-[#090312]" />
                 )}
@@ -476,11 +521,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               >
                 {/* Avatar */}
                 <div className="relative shrink-0">
-                  <img
-                    src={user.photos[0]}
-                    alt={user.name}
-                    className="w-12 h-12 rounded-full object-cover border border-purple-800/60 group-hover:scale-105 transition-transform"
-                  />
+                  {user.photos[0] ? (
+                    <img
+                      src={user.photos[0]}
+                      alt={user.name}
+                      className="w-12 h-12 rounded-full object-cover border border-purple-800/60 group-hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border border-purple-800/60 bg-purple-900/70 text-purple-100 flex items-center justify-center text-xs font-bold group-hover:scale-105 transition-transform">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
                   {user.isOnline && (
                     <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#120620]" />
                   )}

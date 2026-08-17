@@ -11,7 +11,7 @@ import {
   Building,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { FACULTIES_AND_DEPARTMENTS } from '../data/mockData';
+import { FACULTIES_AND_DEPARTMENTS } from '../data/catalogData';
 import { StudentLevel } from '../types';
 
 export const FiltersModal: React.FC = () => {

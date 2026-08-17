@@ -13,7 +13,7 @@ import {
   Smartphone,
   Lock,
 } from 'lucide-react';
-import { PREMIUM_PLANS } from '../data/mockData';
+import { PREMIUM_PLANS } from '../data/catalogData';
 import { useApp } from '../context/AppContext';
 
 export const PremiumModal: React.FC = () => {

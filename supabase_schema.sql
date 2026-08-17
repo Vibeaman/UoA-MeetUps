@@ -605,45 +605,6 @@ grant execute on function public.react_to_gossip_post(text, text) to authenticat
 -- authenticated mutation path and both functions validate auth.uid().
 
 
--- Seed public starter polls for server-side voting --
--- Keep the public starter polls usable after enabling server-side voting RPCs.
-insert into public.campus_polls (id, question, category, options, total_votes, created_by)
-values
-  (
-    'poll_01',
-    $$What's the best first-date move on campus? 💡$$,
-    'Campus Vibe Check',
-    $$[{"id":"opt_1","text":"🥤 Smoothies at Senate Plaza Terrace","votes":148},{"id":"opt_2","text":"🍢 Shawarma & Suya evening banter","votes":112},{"id":"opt_3","text":"📚 Casual Library Courtyard study date","votes":54},{"id":"opt_4","text":"🚗 Weekend drive into Abuja city","votes":28}]$$::jsonb,
-    342,
-    null
-  ),
-  (
-    'poll_02',
-    $$Which faculty has the highest dating rizz & best dress sense? 💅👔$$,
-    'UniAbuja Showdown',
-    $$[{"id":"opt_1","text":"⚖️ Faculty of Law (Corporate drip)","votes":198},{"id":"opt_2","text":"🎭 Theatre Arts & Mass Comm (Runway energy)","votes":184},{"id":"opt_3","text":"💼 Management Sciences / Accounting","votes":81},{"id":"opt_4","text":"🩺 Med Squad / Health Sciences","votes":56}]$$::jsonb,
-    519,
-    null
-  ),
-  (
-    'poll_03',
-    $$If a campus crush asks you out right before semester exams, what's your move? 📚👀$$,
-    'Exam Season Dilemma',
-    $$[{"id":"opt_1","text":"📖 Library date only, we read first!","votes":210},{"id":"opt_2","text":"⚡ GPA can recover, love comes once. I'm going!","votes":114},{"id":"opt_3","text":"⏰ Postpone until after final paper!","votes":78},{"id":"opt_4","text":"🤫 Ghost for 2 weeks until exams end","votes":18}]$$::jsonb,
-    420,
-    null
-  ),
-  (
-    'poll_04',
-    $$Is Lowkey / Discreet Mode better than public campus dating? 🤫🔒$$,
-    'Campus Relationship Pulse',
-    $$[{"id":"opt_1","text":"🔒 100% Lowkey — No campus eyes, zero drama","votes":342},{"id":"opt_2","text":"✨ Public & Proud — Hand in hand across arcade","votes":180},{"id":"opt_3","text":"🤷 Depends on the partner's vibe","votes":90}]$$::jsonb,
-    612,
-    null
-  )
-on conflict (id) do nothing;
-
-
 -- Tighten RPC grants and private vote/reaction RLS --
 -- Tighten function grants and add read-only ownership policies for RPC backing tables.
 create or replace function public.is_admin()
@@ -671,3 +632,56 @@ revoke all on function public.vote_campus_poll(text, text) from public, anon, au
 revoke all on function public.react_to_gossip_post(text, text) from public, anon, authenticated;
 grant execute on function public.vote_campus_poll(text, text) to authenticated;
 grant execute on function public.react_to_gossip_post(text, text) to authenticated;
+
+
+-- Real data migration: shared campus stories and removal of repository seed rows.
+create table if not exists public.campus_stories (
+  id text primary key,
+  user_id text not null references public.profiles(id) on delete cascade,
+  story_image text not null,
+  caption text not null check (char_length(caption) between 1 and 140),
+  tag text not null default 'Campus Vibe',
+  created_at timestamptz not null default timezone('utc'::text, now()),
+  expires_at timestamptz not null default (timezone('utc'::text, now()) + interval '24 hours')
+);
+
+create index if not exists campus_stories_active_idx
+  on public.campus_stories (expires_at desc, created_at desc);
+
+alter table public.campus_stories enable row level security;
+
+drop policy if exists "Public can read active campus stories" on public.campus_stories;
+create policy "Public can read active campus stories"
+  on public.campus_stories for select
+  to anon, authenticated
+  using (expires_at > timezone('utc'::text, now()));
+
+drop policy if exists "Authenticated users can create their own stories" on public.campus_stories;
+create policy "Authenticated users can create their own stories"
+  on public.campus_stories for insert
+  to authenticated
+  with check (auth.uid()::text = user_id);
+
+drop policy if exists "Authors can update their own stories" on public.campus_stories;
+create policy "Authors can update their own stories"
+  on public.campus_stories for update
+  to authenticated
+  using (auth.uid()::text = user_id or public.is_admin())
+  with check (auth.uid()::text = user_id or public.is_admin());
+
+drop policy if exists "Authors and admins can delete stories" on public.campus_stories;
+create policy "Authors and admins can delete stories"
+  on public.campus_stories for delete
+  to authenticated
+  using (auth.uid()::text = user_id or public.is_admin());
+
+-- Remove only known repository-generated seed rows. User-created rows are untouched.
+delete from public.gossip_reactions where post_id in ('gossip_01', 'gossip_02', 'gossip_03', 'gossip_04', 'gossip_05');
+delete from public.gossip_comments where post_id in ('gossip_01', 'gossip_02', 'gossip_03', 'gossip_04', 'gossip_05');
+delete from public.gossip_posts where id in ('gossip_01', 'gossip_02', 'gossip_03', 'gossip_04', 'gossip_05');
+delete from public.campus_poll_votes where poll_id in ('poll_01', 'poll_02', 'poll_03', 'poll_04');
+delete from public.campus_polls where id in ('poll_01', 'poll_02', 'poll_03', 'poll_04');
+delete from public.campus_stories where id in ('story_01', 'story_02', 'story_03', 'story_04', 'story_05');
+delete from public.user_reports where id in ('report_01', 'report_02');
+delete from public.verification_requests where id in ('ver_01', 'ver_02');
+delete from public.profiles where id in ('user_me_01', 'user_01', 'user_02', 'user_03', 'user_04', 'user_05', 'user_06', 'user_07', 'user_08');

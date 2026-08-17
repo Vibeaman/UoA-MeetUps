@@ -431,12 +431,18 @@ export const CampusGossipBoard: React.FC = () => {
                         🎭
                       </div>
                     ) : (
-                      <img
-                        src={post.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
-                        alt={post.authorName}
-                        referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full object-cover border border-purple-500/40 shadow"
-                      />
+                      post.authorAvatar ? (
+                        <img
+                          src={post.authorAvatar}
+                          alt={post.authorName}
+                          referrerPolicy="no-referrer"
+                          className="w-8 h-8 rounded-full object-cover border border-purple-500/40 shadow"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-purple-950 border border-purple-500/40 flex items-center justify-center text-xs font-black text-purple-200">
+                          {post.authorName.slice(0, 1).toUpperCase()}
+                        </div>
+                      )
                     )}
 
                     <div>

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabaseService } from '../services/supabaseService';
-import { FACULTIES_AND_DEPARTMENTS, PROMPT_QUESTIONS } from '../data/mockData';
+import { FACULTIES_AND_DEPARTMENTS, PROMPT_QUESTIONS } from '../data/catalogData';
 import { UserProfile, Gender, LookingFor, StudentLevel, CampusLocation, AppMode } from '../types';
 
 export const ProfileEditModal: React.FC = () => {
@@ -218,7 +218,7 @@ export const ProfileEditModal: React.FC = () => {
               <input
                 type="number"
                 value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 20 })}
+                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 rounded-xl bg-[#140824] border border-purple-900/50 text-white focus:outline-none focus:border-purple-400"
               />
             </div>

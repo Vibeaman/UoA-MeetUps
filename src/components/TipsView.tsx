@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, Sparkles, HeartHandshake, Shield, HeartPulse, Check } from 'lucide-react';
-import { DATING_AND_HEALTH_TIPS } from '../data/mockData';
+import { DATING_AND_HEALTH_TIPS } from '../data/catalogData';
 
 export const TipsView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [activeCategory, setActiveCategory] = useState<number>(0);

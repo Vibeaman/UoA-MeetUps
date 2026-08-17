@@ -9,7 +9,7 @@ import {
   ChevronRight,
   BookOpen,
 } from 'lucide-react';
-import { CAMPUS_SAFETY_RULES, UNI_ABUJA_EMERGENCY_CONTACTS } from '../data/mockData';
+import { CAMPUS_SAFETY_RULES } from '../data/catalogData';
 import { useApp } from '../context/AppContext';
 
 export const SafetyCenterView: React.FC<{
@@ -90,32 +90,14 @@ export const SafetyCenterView: React.FC<{
         ))}
       </div>
 
-      {/* Emergency Contacts */}
+      {/* Emergency Guidance */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center space-x-1.5">
           <PhoneCall className="w-3.5 h-3.5" />
-          <span>UniAbuja Campus Emergency Lines</span>
+          <span>Emergency Guidance</span>
         </h3>
-
-        <div className="grid grid-cols-1 gap-2">
-          {UNI_ABUJA_EMERGENCY_CONTACTS.map((c, i) => (
-            <div
-              key={i}
-              className="p-3 rounded-2xl bg-[#140825] border border-purple-900/40 flex items-center justify-between"
-            >
-              <div>
-                <span className="text-xs font-bold text-white block">{c.name}</span>
-                <span className="text-[10px] text-neutral-400">{c.location}</span>
-              </div>
-              <a
-                href={`tel:${c.phone}`}
-                className="px-3 py-1.5 rounded-xl bg-purple-900/70 border border-purple-600/50 text-purple-200 text-xs font-bold hover:bg-purple-800 transition-all flex items-center space-x-1"
-              >
-                <PhoneCall className="w-3 h-3" />
-                <span>{c.phone}</span>
-              </a>
-            </div>
-          ))}
+        <div className="p-4 rounded-2xl bg-[#140825] border border-purple-900/40 text-xs text-neutral-300 leading-relaxed">
+          If you are in immediate danger, use the official emergency number for your location. For campus incidents, contact the current UniAbuja security or medical service through an official university channel; this app does not publish unverified phone numbers.
         </div>
       </div>
     </div>
