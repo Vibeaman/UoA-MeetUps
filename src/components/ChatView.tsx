@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import EmojiPicker, { Emoji, EmojiStyle, Theme } from 'emoji-picker-react';
+import emojiRegex from 'emoji-regex';
 import {
   MessageCircle,
   Send,
@@ -17,6 +19,7 @@ import {
   Eye,
   Camera,
   Trash2,
+  Smile,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MatchItem, ChatMessage, UserProfile } from '../types';
@@ -30,6 +33,44 @@ const getInitials = (name: string) =>
     .join('')
     .slice(0, 2)
     .toUpperCase() || '?';
+
+const unicodeToUnified = (value: string) =>
+  Array.from(value)
+    .map((character) => character.codePointAt(0)?.toString(16))
+    .filter((codePoint): codePoint is string => Boolean(codePoint))
+    .join('-');
+
+const renderChatText = (text: string) => {
+  const segments: React.ReactNode[] = [];
+  const matcher = emojiRegex();
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let emojiIndex = 0;
+
+  while ((match = matcher.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push(text.slice(lastIndex, match.index));
+    }
+
+    segments.push(
+      <span key={`emoji-${emojiIndex}-${match.index}`} className="inline-flex align-middle">
+        <Emoji
+          unified={unicodeToUnified(match[0])}
+          emojiStyle={EmojiStyle.APPLE}
+          size={18}
+        />
+      </span>,
+    );
+    emojiIndex += 1;
+    lastIndex = matcher.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    segments.push(text.slice(lastIndex));
+  }
+
+  return segments.length > 0 ? segments : text;
+};
 
 interface ChatViewProps {
   onOpenProfileDetails: (profile: UserProfile) => void;
@@ -54,6 +95,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
   const [viewOnceActive, setViewOnceActive] = useState(false);
   const [viewedOncePhotos, setViewedOncePhotos] = useState<Record<string, boolean>>({});
   const [showIcebreakerPicker, setShowIcebreakerPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +111,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     if (!currentChatMatch || !inputMessage.trim()) return;
     sendMessage(currentChatMatch.id, inputMessage);
     setInputMessage('');
+    setShowEmojiPicker(false);
+  };
+
+  const handleEmojiClick = (emojiData: { emoji: string }) => {
+    setInputMessage((current) => `${current}${emojiData.emoji}`);
   };
 
   const handlePhotoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -295,7 +342,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                   )}
 
                   {/* Text content */}
-                  {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
+                  {msg.text && (
+                    <p className="whitespace-pre-line inline-flex flex-wrap items-center gap-0.5">
+                      {renderChatText(msg.text)}
+                    </p>
+                  )}
 
                   {/* Message timestamp & ticks */}
                   <div className="flex items-center justify-end space-x-1 mt-1 text-[9px] opacity-75">
@@ -390,6 +441,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           </div>
         )}
 
+        {showEmojiPicker && (
+          <div className="border-t border-white/10 bg-[#100719] p-2">
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              emojiStyle={EmojiStyle.APPLE}
+              theme={Theme.DARK}
+              width="100%"
+              height={360}
+              lazyLoadEmojis
+              previewConfig={{ showPreview: false }}
+              skinTonesDisabled={false}
+            />
+          </div>
+        )}
+
         {/* Input Bar */}
         <div className="border-t border-white/10 bg-black/10 p-3 flex items-center space-x-2">
           {/* Photos Button */}
@@ -403,11 +469,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
           {/* Icebreaker button */}
           <button
-            onClick={() => setShowIcebreakerPicker(!showIcebreakerPicker)}
+            onClick={() => {
+              setShowIcebreakerPicker(!showIcebreakerPicker);
+              setShowEmojiPicker(false);
+            }}
             className="uoa-quiet-button rounded-xl p-2 text-pink-200 transition-all"
             title="Send Icebreaker"
           >
             <Sparkles className="w-4 h-4" />
+          </button>
+
+          {/* Consistent cross-platform emoji button */}
+          <button
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowIcebreakerPicker(false);
+            }}
+            className={`uoa-quiet-button rounded-xl p-2 transition-all ${showEmojiPicker ? 'text-orange-200 ring-1 ring-orange-300/40' : 'text-pink-200'}`}
+            title="Add emoji"
+            aria-label="Add emoji"
+            aria-expanded={showEmojiPicker}
+          >
+            <Smile className="h-4 w-4" />
           </button>
 
           {/* Text Input */}
