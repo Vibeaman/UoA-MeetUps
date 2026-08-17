@@ -1,4 +1,5 @@
 import { getSupabase } from '../lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import {
   UserProfile,
   CampusStory,
@@ -78,6 +79,55 @@ export const supabaseService = {
     }
   },
 
+  async ensureUserProfile(userId: string, username: string, name: string): Promise<boolean> {
+    try {
+      const { error } = await getSupabase().from('profiles').upsert({
+        id: userId,
+        name: name.trim() || username.trim(),
+        username: username.trim().toLowerCase(),
+        age: 0,
+        faculty: '',
+        department: '',
+        level: '100L',
+        campus_location: 'Main Campus',
+        bio: '',
+        photos: [],
+        interests: [],
+        looking_for: 'both',
+        mode: 'normal',
+        is_verified: false,
+        verification_status: 'unverified',
+        badges: [],
+        is_banned: false,
+      }, { onConflict: 'id' });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  async signInWithUsername(username: string, password: string): Promise<{
+    session: Session | null;
+    user: { id: string; email?: string | null; email_confirmed_at?: string | null; confirmed_at?: string | null } | null;
+    email?: string;
+    code?: string;
+    error?: string;
+  }> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('username-login', {
+        body: { username: username.trim().toLowerCase(), password },
+      });
+      if (error) return { session: null, user: null, error: error.message };
+      return data || { session: null, user: null, error: 'Username login failed.' };
+    } catch (error) {
+      return {
+        session: null,
+        user: null,
+        error: error instanceof Error ? error.message : 'Username login failed. Please try again.',
+      };
+    }
+  },
+
   // Fetch only real profiles; empty Supabase results remain empty.
   async fetchProfiles(): Promise<UserProfile[] | null> {
     try {
@@ -91,7 +141,7 @@ export const supabaseService = {
         id: r.id,
         name: r.name,
         age: r.age,
-        matricNumber: r.matric_number,
+        username: r.username || '',
         gender: r.gender || 'Prefer not to say',
         faculty: r.faculty,
         course: r.course || r.department || '',
@@ -201,7 +251,7 @@ export const supabaseService = {
         id: profile.id,
         name: profile.name,
         age: profile.age,
-        matric_number: profile.matricNumber,
+        username: profile.username,
         faculty: profile.faculty,
         department: profile.department,
         level: profile.level,
@@ -239,7 +289,7 @@ export const supabaseService = {
         id: req.id,
         user_id: req.userId,
         user_name: req.userName,
-        matric_number: req.matricNumber,
+        username: req.username,
         faculty: req.faculty,
         department: req.department,
         profile_photo: req.profilePhoto,
@@ -297,7 +347,7 @@ export const supabaseService = {
         reporter_name: report.reporterName,
         target_user_id: report.targetUserId,
         target_user_name: report.targetUserName,
-        target_matric: report.targetMatric,
+        target_username: report.targetUsername,
         target_photo: report.targetPhoto || null,
         reason: report.reason,
         details: report.details,

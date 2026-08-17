@@ -31,10 +31,10 @@ export const CommunityGuidelinesView: React.FC<{ onBack: () => void }> = ({ onBa
       <div className="space-y-3 text-xs">
         <div className="p-4 rounded-2xl bg-[#120620] border border-purple-950 space-y-1">
           <h3 className="font-bold text-white text-sm flex items-center space-x-2">
-            <span>1. Authentic Matric Number & Identity</span>
+            <span>1. Authentic Identity</span>
           </h3>
           <p className="text-neutral-300 leading-relaxed">
-            You must register with your real UniAbuja Matriculation Number. Impersonating other students, using borrowed credentials, or creating fake alumni accounts will trigger instant banning and account blacklisting.
+            Use your real identity and your own profile details. Impersonating other students, using borrowed credentials, or creating fake alumni accounts will trigger instant banning and account blacklisting.
           </p>
         </div>
 

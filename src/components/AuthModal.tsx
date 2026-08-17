@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getSupabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { Logo } from './Logo';
 
 export const AuthModal: React.FC = () => {
@@ -22,9 +23,10 @@ export const AuthModal: React.FC = () => {
   } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup' | 'verification' | 'onboarding'>('signup');
-  const [matricInput, setMatricInput] = useState(currentUser.matricNumber || '');
+  const [usernameInput, setUsernameInput] = useState(currentUser.username || '');
   const [emailInput, setEmailInput] = useState('');
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationPurpose, setVerificationPurpose] = useState<'signup' | 'login'>('signup');
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState(currentUser.name || '');
   const [ageConfirmed, setAgeConfirmed] = useState(true);
@@ -35,9 +37,12 @@ export const AuthModal: React.FC = () => {
   useEffect(() => {
     if (!isAuthModalOpen) return;
     setMode(authModalMode);
+    setUsernameInput(currentUser.username || '');
+    setEmailInput('');
     setPasswordInput('');
     setAuthError('');
     setVerificationMessage('');
+    setVerificationPurpose('signup');
   }, [isAuthModalOpen, authModalMode]);
 
   if (!isAuthModalOpen) return null;
@@ -47,58 +52,101 @@ export const AuthModal: React.FC = () => {
     setAuthError('');
     setVerificationMessage('');
 
-    if (!ageConfirmed) {
+    if (mode === 'signup' && !ageConfirmed) {
       setAuthError('You must confirm that you are at least 18 years old to use UoA MeetUps.');
       return;
     }
 
+    const username = usernameInput.trim().toLowerCase();
     const email = emailInput.trim().toLowerCase();
     const password = passwordInput.trim();
+
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
+      setAuthError('Choose a username with 3–24 lowercase letters, numbers, or underscores.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const supabase = getSupabase();
-      const result =
-        mode === 'signup'
-          ? await supabase.auth.signUp({
-              email,
-              password,
-              options: {
-                data: {
-                  full_name: fullNameInput.trim(),
-                  matric_number: matricInput.trim().toUpperCase(),
-                },
-              },
-            })
-          : await supabase.auth.signInWithPassword({ email, password });
 
-      if (result.error) {
-        if (mode === 'login' && /email not confirmed/i.test(result.error.message)) {
-          setVerificationEmail(email);
-          setAuthError('Your email has not been confirmed yet. Check your inbox before signing in.');
-          setMode('verification');
-        } else {
-          setAuthError(result.error.message);
+      if (mode === 'signup') {
+        if (!email) {
+          setAuthError('Enter an email address so we can send your confirmation link.');
+          return;
         }
+
+        const { data: existingProfiles, error: usernameCheckError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .limit(1);
+        if (usernameCheckError) {
+          setAuthError('We could not check that username. Please try again.');
+          return;
+        }
+        if (existingProfiles && existingProfiles.length > 0) {
+          setAuthError('That username is already taken. Choose another one.');
+          return;
+        }
+
+        const result = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullNameInput.trim(),
+              username,
+            },
+          },
+        });
+
+        if (result.error) {
+          setAuthError(result.error.message);
+          return;
+        }
+
+        const user = result.data.user;
+        const isVerified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
+        if (!user || !result.data.session || !isVerified) {
+          setVerificationPurpose('signup');
+          setVerificationEmail(email);
+          setPasswordInput('');
+          setMode('verification');
+          setVerificationMessage('We sent a confirmation link to your email. Open it before signing in.');
+          return;
+        }
+
+        await supabaseService.ensureUserProfile(user.id, username, fullNameInput);
+        updateCurrentUser({ username, name: fullNameInput.trim() });
+        authenticateUser(user.id);
+        setMode('onboarding');
         return;
       }
 
-      const user = result.data.user;
-      const isVerified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
-      if (!user || !result.data.session || !isVerified) {
-        setVerificationEmail(email);
-        setPasswordInput('');
+      const usernameResult = await supabaseService.signInWithUsername(username, password);
+      if (usernameResult.code === 'email_not_confirmed' && usernameResult.email) {
+        setVerificationPurpose('login');
+        setVerificationEmail(usernameResult.email);
+        setAuthError(usernameResult.error || 'Your email has not been confirmed yet.');
         setMode('verification');
-        setVerificationMessage('We sent a confirmation link to your email. Open it before signing in.');
+        return;
+      }
+      if (usernameResult.error || !usernameResult.session || !usernameResult.user) {
+        setAuthError(usernameResult.error || 'Invalid username or password.');
         return;
       }
 
-      updateCurrentUser({
-        matricNumber: matricInput.trim().toUpperCase(),
-        name: fullNameInput.trim(),
-      });
-      authenticateUser(user.id);
-      setMode('onboarding');
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession(usernameResult.session as Parameters<typeof supabase.auth.setSession>[0]);
+      if (sessionError || !sessionData.user) {
+        setAuthError(sessionError?.message || 'Could not start your session. Please try again.');
+        return;
+      }
+
+      updateCurrentUser({ username });
+      authenticateUser(sessionData.user.id);
+      setIsAuthModalOpen(false);
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
     } finally {
@@ -115,7 +163,7 @@ export const AuthModal: React.FC = () => {
       const result = await refreshAuthentication();
       if (!result.hasSession) {
         setPasswordInput('');
-        setVerificationMessage('Your email may be confirmed, but this browser is not signed in. Sign in with your email and password to continue.');
+        setVerificationMessage('Your email may be confirmed, but this browser is not signed in. Sign in with your username and password to continue.');
         setMode('login');
         return;
       }
@@ -125,9 +173,17 @@ export const AuthModal: React.FC = () => {
         return;
       }
 
-      authenticateUser(result.userId);
-      setVerificationMessage('Email confirmed. You can continue into UoA MeetUps.');
-      setMode('onboarding');
+      const username = usernameInput.trim().toLowerCase();
+      if (verificationPurpose === 'signup' && result.userId) {
+        await supabaseService.ensureUserProfile(result.userId, username, fullNameInput);
+        updateCurrentUser({ username, name: fullNameInput.trim() });
+        authenticateUser(result.userId);
+        setVerificationMessage('Email confirmed. Continue by agreeing to the UoA MeetUps house rules.');
+        setMode('onboarding');
+      } else {
+        authenticateUser(result.userId);
+        setIsAuthModalOpen(false);
+      }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Could not check verification status.');
     } finally {
@@ -298,8 +354,8 @@ export const AuthModal: React.FC = () => {
               </h1>
               <p className="uoa-muted-copy mt-4 max-w-md text-sm sm:text-base">
                 {mode === 'signup'
-                  ? 'Create a verified student account and find genuine connections across UniAbuja.'
-                  : 'Log in to continue your conversations and discover more students.'}
+                  ? 'Choose a username, verify your email, and find genuine connections across UniAbuja.'
+                  : 'Log in with your username to continue your conversations and discover more students.'}
               </p>
             </div>
 
@@ -319,38 +375,41 @@ export const AuthModal: React.FC = () => {
               </div>
             )}
 
-            {/* Email */}
+            {/* Username */}
             <div>
               <label className="mb-2 block text-left text-[11px] font-semibold text-white/65">
-                Email Address
+                Username
               </label>
-              <input
-                type="email"
-                required
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete={mode === 'signup' ? 'email' : 'username'}
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
-              />
-            </div>
-
-            {/* Matric Number Input */}
-            <div>
-              <label className="mb-2 block text-left text-[11px] font-semibold text-white/65">
-                UniAbuja Matric Number
-              </label>
-
               <input
                 type="text"
                 required
-                value={matricInput}
-                onChange={(e) => setMatricInput(e.target.value)}
-                placeholder="e.g. 21/104CS082 or 22/209LAW044"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 font-mono text-sm uppercase text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                minLength={3}
+                maxLength={24}
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                placeholder="e.g. campus_connect"
+                autoComplete="username"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
               />
-
+              <p className="mt-1.5 text-left text-[11px] text-white/35">3–24 lowercase letters, numbers, or underscores.</p>
             </div>
+
+            {mode === 'signup' && (
+              <div>
+                <label className="mb-2 block text-left text-[11px] font-semibold text-white/65">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                />
+              </div>
+            )}
 
             {/* Password */}
             <div>
@@ -374,19 +433,20 @@ export const AuthModal: React.FC = () => {
               </p>
             )}
 
-            {/* 18+ Age confirmation */}
-            <div className="flex items-start space-x-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-left">
-              <input
-                type="checkbox"
-                id="age-confirm-check"
-                checked={ageConfirmed}
-                onChange={(e) => setAgeConfirmed(e.target.checked)}
-                className="mt-0.5 rounded border-white/20 bg-white/10 text-violet-400 focus:ring-0"
-              />
-              <label htmlFor="age-confirm-check" className="text-xs leading-relaxed text-white/60">
-                I confirm I am <strong>18+ years of age</strong> and currently enrolled at University of Abuja.
-              </label>
-            </div>
+            {mode === 'signup' && (
+              <div className="flex items-start space-x-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-left">
+                <input
+                  type="checkbox"
+                  id="age-confirm-check"
+                  checked={ageConfirmed}
+                  onChange={(e) => setAgeConfirmed(e.target.checked)}
+                  className="mt-0.5 rounded border-white/20 bg-white/10 text-violet-400 focus:ring-0"
+                />
+                <label htmlFor="age-confirm-check" className="text-xs leading-relaxed text-white/60">
+                  I confirm I am <strong>18+ years of age</strong> and currently enrolled at University of Abuja.
+                </label>
+              </div>
+            )}
 
             {/* Submit */}
             <button

@@ -108,7 +108,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     // Search query
     const matchesSearch =
       p.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      p.matricNumber.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      p.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       p.department.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       p.faculty.toLowerCase().includes(userSearchQuery.toLowerCase());
 
@@ -351,7 +351,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                     <div className="flex items-center space-x-2">
                       <span className="font-extrabold text-sm text-white">{req.userName}</span>
                       <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 text-[10px] font-mono font-bold border border-purple-800">
-                        {req.matricNumber}
+                        @{req.username}
                       </span>
                     </div>
                     <p className="text-xs text-neutral-400 mt-0.5">
@@ -568,7 +568,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                       </span>
                       <h4 className="text-xs font-bold text-white mt-0.5">
                         Reported Student: <span className="text-purple-300">{rep.targetUserName}</span>{' '}
-                        <span className="font-mono text-neutral-400">({rep.targetMatric})</span>
+                        <span className="font-mono text-neutral-400">(@{rep.targetUsername})</span>
                       </h4>
                       <p className="text-[10px] text-neutral-400">
                         Filed by: {rep.reporterName} • {new Date(rep.createdAt).toLocaleTimeString()}
@@ -651,7 +651,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
               type="text"
               value={userSearchQuery}
               onChange={(e) => setUserSearchQuery(e.target.value)}
-              placeholder="Search by student name, matric, department, or faculty..."
+              placeholder="Search by name, username, department, or faculty..."
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#140825] border border-purple-900/60 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 shadow-inner"
             />
             {userSearchQuery && (
@@ -732,7 +732,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                         )}
                       </div>
                       <p className="text-[10px] text-purple-300 font-mono mt-0.5">
-                        {user.matricNumber} • {user.level} {user.department}
+                        @{user.username} • {user.level} {user.department}
                       </p>
                       <p className="text-[10px] text-neutral-400 truncate max-w-[280px]">
                         {user.faculty} • {user.campusLocation}
@@ -1007,7 +1007,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
               <p className="text-xs text-neutral-300">
                 Provide reason for rejecting <strong>{selectedRejectReq.userName}</strong> (
-                {selectedRejectReq.matricNumber}):
+                @{selectedRejectReq.username}):
               </p>
 
               {/* Preset selection */}
@@ -1018,7 +1018,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 {[
                   'Face angle mismatch with profile photos',
                   'Blurry or unreadable UniAbuja Student ID',
-                  'Name does not match Matriculation records',
+                  'Name, username, or identity details do not match',
                   'Inappropriate or non-student photo',
                 ].map((preset) => (
                   <button

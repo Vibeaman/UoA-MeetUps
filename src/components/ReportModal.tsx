@@ -32,7 +32,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
   const reportOptions: { value: ReportReason; label: string; desc: string }[] = [
     {
       value: 'fake_profile',
-      label: 'Fake Profile / Fake Matric Number',
+      label: 'Fake Profile / Fake Username',
       desc: 'Not a real UniAbuja student or impersonating someone else',
     },
     {
@@ -86,7 +86,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
               <div>
                 <h3 className="text-lg font-black font-display text-white">Report Student</h3>
                 <p className="text-xs text-purple-300">
-                  Reporting: <strong>{targetUser.name}</strong> ({targetUser.matricNumber})
+                  Reporting: <strong>{targetUser.name}</strong> (@{targetUser.username})
                 </p>
               </div>
             </div>
@@ -162,7 +162,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
 
             <h3 className="text-xl font-bold font-display text-white">Report Logged</h3>
             <p className="text-xs text-neutral-300 max-w-xs mx-auto">
-              Thank you for keeping University of Abuja safe. Our admins are auditing the student's matric credentials.
+              Thank you for keeping University of Abuja safe. Our admins are reviewing the account and reported behaviour.
             </p>
 
             <div className="pt-2 flex flex-col gap-2">

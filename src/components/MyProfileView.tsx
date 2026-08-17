@@ -53,7 +53,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     void refreshAuthentication();
   }, [isAuthLoading, isAuthenticated]);
 
-  const hasProfile = Boolean(currentUser.name.trim() && currentUser.matricNumber.trim());
+  const hasProfile = Boolean(currentUser.name.trim() && currentUser.username.trim());
   const [isLandingMenuOpen, setIsLandingMenuOpen] = useState(false);
 
   if (isAuthLoading) {
@@ -242,7 +242,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-purple-300/90">
             <span className="font-mono bg-black/40 px-2 py-0.5 rounded-lg border border-purple-950 text-[11px] text-purple-200 font-bold">
-              {currentUser.matricNumber}
+              @{currentUser.username}
             </span>
             <span>•</span>
             <span>{currentUser.level}</span>

@@ -242,7 +242,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               <ShieldCheck className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
               <div className="text-xs text-neutral-300">
                 <span className="font-bold text-white block">UniAbuja Identity Safeguard</span>
-                This profile has been verified against the University of Abuja matriculation directory and facial recognition.
+                This profile has passed the available UniAbuja identity and safety checks, including facial verification where required.
               </div>
             </div>
 

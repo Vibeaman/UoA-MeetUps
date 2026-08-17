@@ -86,7 +86,7 @@ export interface UserProfile {
   id: string;
   name: string;
   age: number;
-  matricNumber: string;
+  username: string;
   gender: Gender;
   faculty: string;
   department: string;
@@ -158,7 +158,7 @@ export interface UserReport {
   reporterName: string;
   targetUserId: string;
   targetUserName: string;
-  targetMatric: string;
+  targetUsername: string;
   targetPhoto: string;
   reason: ReportReason;
   details: string;
@@ -170,7 +170,7 @@ export interface VerificationRequest {
   id: string;
   userId: string;
   userName: string;
-  matricNumber: string;
+  username: string;
   faculty: string;
   department: string;
   profilePhoto: string;

@@ -56,7 +56,7 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
                 See Who Likes You Instantly
               </h4>
               <p className="text-[11px] text-purple-200/80 mt-0.5 leading-relaxed">
-                Skip the swipe queue! Unblur profiles, see exact matric levels, and match back with 1 tap.
+                Skip the swipe queue! Unblur profiles, see who liked you first, and match back with 1 tap.
               </p>
               <button
                 onClick={() => setIsPremiumModalOpen(true)}
