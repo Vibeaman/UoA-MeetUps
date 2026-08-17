@@ -7,20 +7,26 @@ interface AdminAccessGateProps {
 }
 
 export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
-  const { unlockAdmin } = useApp();
+  const { authenticateAdmin } = useApp();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsSubmitting(true);
+    setError('');
 
-    if (unlockAdmin(password)) {
-      setError('');
-      return;
+    try {
+      if (await authenticateAdmin(password)) return;
+      setPassword('');
+      setError('That staff password is not valid. Please try again.');
+    } catch {
+      setPassword('');
+      setError('Unable to verify staff access. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setPassword('');
-    setError('That staff password is not valid. Please try again.');
   };
 
   return (
@@ -81,10 +87,10 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
           )}
           <button
             type="submit"
-            disabled={password.length !== 3}
+            disabled={password.length !== 3 || isSubmitting}
             className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(168,85,247,0.28)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Unlock admin console
+            {isSubmitting ? 'Verifying...' : 'Unlock admin console'}
           </button>
         </form>
       </div>

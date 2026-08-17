@@ -24,7 +24,7 @@ import {
   INITIAL_GOSSIP_POSTS,
 } from '../data/mockData';
 import { supabaseService } from '../services/supabaseService';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/supabase';
 
 interface AppContextType {
   currentUser: UserProfile;
@@ -40,7 +40,7 @@ interface AppContextType {
   resendVerificationEmail: (email: string) => Promise<{ success: boolean; message: string }>;
   requestAuthentication: () => boolean;
   isAdminAuthenticated: boolean;
-  unlockAdmin: (password: string) => boolean;
+  authenticateAdmin: (password: string) => Promise<boolean>;
   logoutAdmin: () => void;
   currentMode: AppMode;
   toggleAppMode: (mode?: AppMode) => void;
@@ -130,8 +130,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const ADMIN_PASSWORD = 'MJJ';
-
 const STORAGE_KEYS = {
   CURRENT_USER: 'uoa_current_user_v2',
   PROFILES: 'uoa_profiles_v2',
@@ -162,10 +160,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [currentMode, setCurrentMode] = useState<AppMode>(currentUser.mode || 'normal');
 
-  const unlockAdmin = (password: string) => {
-    const isValid = password.trim().toUpperCase() === ADMIN_PASSWORD;
-    setIsAdminAuthenticated(isValid);
-    return isValid;
+  const authenticateAdmin = async (password: string) => {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { password: password.trim().toUpperCase() },
+      });
+
+      if (error || !data?.authenticated) {
+        setIsAdminAuthenticated(false);
+        return false;
+      }
+
+      setIsAdminAuthenticated(true);
+      return true;
+    } catch (error) {
+      console.warn(`Admin authorization request failed for ${SUPABASE_URL_DISPLAY}:`, error);
+      setIsAdminAuthenticated(false);
+      return false;
+    }
   };
 
   const logoutAdmin = () => {
@@ -510,7 +522,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setCampusPolls((prevPolls) => prevPolls.map((poll) => (poll.id === pollId ? updatedPoll : poll)));
-    void supabaseService.upsertCampusPoll(updatedPoll);
+    void supabaseService.voteCampusPoll(pollId, optionId).then((remotePoll) => {
+      if (!remotePoll) return;
+      setCampusPolls((prevPolls) =>
+        prevPolls.map((poll) =>
+          poll.id === pollId
+            ? {
+                ...poll,
+                options: remotePoll.options,
+                totalVotes: remotePoll.totalVotes,
+                userVotedOptionId: remotePoll.userVotedOptionId,
+              }
+            : poll
+        )
+      );
+    });
 
     confetti({
       particleCount: 35,
@@ -528,6 +554,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       question,
       category: category || 'Campus Vibe',
       totalVotes: 0,
+      createdBy: currentUser.id,
       options: options.map((text, idx) => ({
         id: `opt_${Date.now()}_${idx}`,
         text,
@@ -641,7 +668,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     setGossipPosts((prev) => prev.map((post) => (post.id === postId ? updatedPost : post)));
-    void supabaseService.updateGossipPostCounters(updatedPost);
+    void supabaseService.reactToGossipPost(postId, reactionType).then((remoteReaction) => {
+      if (!remoteReaction) return;
+      setGossipPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                ...remoteReaction,
+              }
+            : post
+        )
+      );
+    });
   };
 
   const addGossipComment = (postId: string, content: string, isAnonymous: boolean) => {
@@ -1268,7 +1307,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resendVerificationEmail,
         requestAuthentication,
         isAdminAuthenticated,
-        unlockAdmin,
+        authenticateAdmin,
         logoutAdmin,
         currentMode,
         toggleAppMode,

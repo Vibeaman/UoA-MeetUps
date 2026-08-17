@@ -42,6 +42,7 @@ export interface CampusPoll {
   totalVotes: number;
   options: CampusPollOption[];
   userVotedOptionId?: string;
+  createdBy?: string;
 }
 
 export interface GossipComment {

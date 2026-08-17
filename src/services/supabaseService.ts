@@ -408,6 +408,7 @@ export const supabaseService = {
         category: row.category,
         options: Array.isArray(row.options) ? row.options : [],
         totalVotes: row.total_votes || 0,
+        createdBy: row.created_by || undefined,
       }));
     } catch (error) {
       console.warn('Supabase polls fetch error:', error);
@@ -425,6 +426,7 @@ export const supabaseService = {
         category: poll.category,
         options: poll.options,
         total_votes: poll.totalVotes,
+        created_by: poll.createdBy || null,
       });
 
       if (error) {
@@ -471,29 +473,53 @@ export const supabaseService = {
     }
   },
 
-  // Persist the current gossip counters after a signed-in interaction
-  async updateGossipPostCounters(post: GossipPost): Promise<boolean> {
+  async voteCampusPoll(pollId: string, optionId: string): Promise<CampusPoll | null> {
     try {
-      const supabase = getSupabase();
-      const { error } = await supabase
-        .from('gossip_posts')
-        .update({
-          spicy_count: post.spicyCount,
-          cap_count: post.capCount,
-          facts_count: post.factsCount,
-          tea_count: post.teaCount,
-          views_count: post.viewsCount,
-        })
-        .eq('id', post.id);
-
-      if (error) {
-        console.warn('Supabase gossip counter notice:', error.message);
-        return false;
+      const { data, error } = await getSupabase().rpc('vote_campus_poll', {
+        p_poll_id: pollId,
+        p_option_id: optionId,
+      });
+      if (error || !data?.[0]) {
+        console.warn('Supabase poll vote error:', error?.message || 'No vote result returned.');
+        return null;
       }
-      return true;
+      const result = data[0];
+      return {
+        id: pollId,
+        question: '',
+        category: '',
+        options: Array.isArray(result.options) ? result.options : [],
+        totalVotes: result.total_votes || 0,
+        userVotedOptionId: result.user_voted_option_id || undefined,
+      };
     } catch (error) {
-      console.warn('Supabase gossip counter error:', error);
-      return false;
+      console.warn('Supabase poll vote exception:', error);
+      return null;
+    }
+  },
+
+  async reactToGossipPost(postId: string, reactionType: GossipPost['userReaction']): Promise<Pick<GossipPost, 'spicyCount' | 'capCount' | 'factsCount' | 'teaCount' | 'userReaction'> | null> {
+    if (!reactionType) return null;
+    try {
+      const { data, error } = await getSupabase().rpc('react_to_gossip_post', {
+        p_post_id: postId,
+        p_reaction_type: reactionType,
+      });
+      if (error || !data?.[0]) {
+        console.warn('Supabase gossip reaction error:', error?.message || 'No reaction result returned.');
+        return null;
+      }
+      const result = data[0];
+      return {
+        spicyCount: result.spicy_count || 0,
+        capCount: result.cap_count || 0,
+        factsCount: result.facts_count || 0,
+        teaCount: result.tea_count || 0,
+        userReaction: result.user_reaction || undefined,
+      };
+    } catch (error) {
+      console.warn('Supabase gossip reaction exception:', error);
+      return null;
     }
   },
 
