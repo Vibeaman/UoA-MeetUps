@@ -31,15 +31,15 @@ export const CampusPulseBar: React.FC = () => {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <span className="font-semibold text-white truncate">
-            {activeCount > 0 ? `${activeCount} UniAbuja students online` : 'No students marked online yet'}
+            {activeCount > 0 ? `${activeCount} UniAbuja students online` : 'Be part of the first campus wave'}
           </span>
           <span className="text-orange-400 hidden sm:inline">•</span>
           <span className="text-orange-300/80 truncate hidden sm:inline">
-            {topFaculty ? `Most represented: ${topFaculty}` : 'Live activity will appear as students join'}
+            {topFaculty ? `Most represented: ${topFaculty}` : 'Campus activity starts with people like you'}
           </span>
         </div>
         <span className="ml-1 shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold text-white/65">
-          {profiles.length > 0 ? `${profiles.length} profiles` : 'No live profiles'}
+          {profiles.length > 0 ? `${profiles.length} profiles` : 'Start exploring'}
         </span>
       </div>
 

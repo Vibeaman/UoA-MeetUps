@@ -53,7 +53,7 @@ export const CampusStoriesBar: React.FC = () => {
           <h2 className="mt-1 text-lg font-extrabold tracking-tight text-white">What’s happening on campus</h2>
         </div>
         <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold text-white/55 ring-1 ring-white/10">
-          {stories.length > 0 ? 'Live stories' : 'No active stories'}
+          {stories.length > 0 ? 'Live stories' : 'Be the first to post'}
         </span>
       </div>
 
@@ -90,7 +90,7 @@ export const CampusStoriesBar: React.FC = () => {
 
         {/* Stories from students */}
         {stories.length === 0 && (
-          <p className="px-2 text-[11px] text-neutral-500">No students have posted a story yet.</p>
+          <p className="px-2 text-[11px] leading-relaxed text-neutral-400">Be the first to post—share what’s happening around campus.</p>
         )}
         {stories.map((story) => (
           <div key={story.id} className="flex flex-col items-center space-y-1 shrink-0">

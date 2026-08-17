@@ -247,7 +247,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
             <p className="text-[11px] text-neutral-400 max-w-xs mx-auto">
               {activeMessages.length > 0
                 ? 'Keep the conversation going with a message or campus icebreaker.'
-                : 'No chat history in this conversation yet. Send a message or icebreaker to start.'}
+                : 'This conversation is ready for its first message. Send a hello or campus icebreaker to start.'}
             </p>
           </div>
 
@@ -501,9 +501,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         {matches.length === 0 ? (
           <div className="uoa-surface-soft rounded-2xl p-8 text-center">
             <MessageCircle className="w-10 h-10 text-orange-400 mx-auto mb-2 opacity-60" />
-            <h4 className="text-sm font-bold text-white">No chat history yet</h4>
+            <h4 className="text-sm font-bold text-white">Your first conversation starts in Discover</h4>
             <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
-              Your matches and conversations will appear here after you connect with another student in Discover.
+              Meet someone who feels like your kind of person, then come back here to keep the conversation going.
             </p>
           </div>
         ) : (

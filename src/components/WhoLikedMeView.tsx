@@ -73,9 +73,9 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
       {whoLikedMeProfiles.length === 0 ? (
         <div className="uoa-surface-soft rounded-2xl p-8 text-center">
           <Heart className="w-10 h-10 text-orange-400 mx-auto mb-2 opacity-60" />
-          <h4 className="text-sm font-bold text-white">No one has liked your profile yet</h4>
+          <h4 className="text-sm font-bold text-white">Your first connection can start here</h4>
           <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
-            Complete your profile and add real photos to help other UniAbuja students discover you.
+            Complete your profile and add real photos so the right UniAbuja students can discover you when they arrive.
           </p>
         </div>
       ) : (

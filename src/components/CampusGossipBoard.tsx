@@ -408,8 +408,8 @@ export const CampusGossipBoard: React.FC = () => {
         {filteredPosts.length === 0 ? (
           <div className="p-6 text-center rounded-2xl bg-[#120521] border border-orange-950 text-neutral-400 text-xs">
             <Flame className="w-8 h-8 mx-auto mb-2 text-orange-500/50" />
-            <p className="font-semibold text-neutral-300">No tea spilled under this category yet.</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Be the first to share campus gist!</p>
+            <p className="font-semibold text-neutral-300">Start the campus conversation.</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-neutral-400">Be the first to share what’s happening around UniAbuja.</p>
           </div>
         ) : (
           filteredPosts.map((post) => {
@@ -619,7 +619,7 @@ export const CampusGossipBoard: React.FC = () => {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-neutral-500 italic">No comments yet. Drop your reaction below!</p>
+                        <p className="text-[11px] text-neutral-400 italic">Be the first to react to this conversation.</p>
                       )}
 
                       {/* Comment Input Form */}

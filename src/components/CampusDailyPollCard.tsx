@@ -66,7 +66,7 @@ export const CampusDailyPollCard: React.FC = () => {
           <MessageSquareQuote className="w-4 h-4" />
           <span className="text-xs font-extrabold uppercase tracking-wider">Campus polls</span>
         </div>
-        <p className="mt-2 text-xs text-neutral-400">No live campus poll has been published yet.</p>
+        <p className="mt-2 max-w-md text-xs leading-relaxed text-neutral-300">Ask UniAbuja something the campus will want to answer. Create the first campus poll and start the conversation.</p>
         <button
           onClick={() => {
             if (requestAuthentication()) setIsCreatingPoll(true);
@@ -74,7 +74,7 @@ export const CampusDailyPollCard: React.FC = () => {
           className="mt-3 text-xs font-bold text-orange-300 hover:text-white flex items-center space-x-1"
         >
           <PlusCircle className="w-3.5 h-3.5" />
-          <span>{isAuthenticated ? 'Suggest the first poll' : 'Sign in to suggest a poll'}</span>
+          <span>{isAuthenticated ? 'Create the first campus poll' : 'Sign up to create a poll'}</span>
         </button>
       </div>
     );
