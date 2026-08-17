@@ -442,25 +442,32 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         )}
 
         {showEmojiPicker && (
-          <div className="border-t border-white/10 bg-[#100719] p-2">
-            <EmojiPicker
-              onEmojiClick={handleEmojiClick}
-              emojiStyle={EmojiStyle.APPLE}
-              theme={Theme.DARK}
-              width="100%"
-              height={360}
-              lazyLoadEmojis
-              previewConfig={{ showPreview: false }}
-              skinTonesDisabled={false}
-            />
+          <div className="shrink-0 border-t border-white/10 bg-[#100719] p-2">
+            <div className="h-[min(27dvh,220px)] overflow-hidden rounded-2xl sm:h-[280px]">
+              <EmojiPicker
+                onEmojiClick={handleEmojiClick}
+                emojiStyle={EmojiStyle.APPLE}
+                theme={Theme.DARK}
+                width="100%"
+                height="100%"
+                className="!h-full !w-full"
+                lazyLoadEmojis
+                previewConfig={{ showPreview: false }}
+                skinTonesDisabled={false}
+              />
+            </div>
           </div>
         )}
 
         {/* Input Bar */}
-        <div className="border-t border-white/10 bg-black/10 p-3 flex items-center space-x-2">
+        <div className="shrink-0 border-t border-white/10 bg-black/10 p-3 flex items-center space-x-2">
           {/* Photos Button */}
           <button
-            onClick={() => setShowPhotoPicker(!showPhotoPicker)}
+            onClick={() => {
+              setShowPhotoPicker(!showPhotoPicker);
+              setShowEmojiPicker(false);
+              setShowIcebreakerPicker(false);
+            }}
             className="uoa-quiet-button rounded-xl p-2 text-pink-200 transition-all"
             title="Attach Photo"
           >
@@ -472,6 +479,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
             onClick={() => {
               setShowIcebreakerPicker(!showIcebreakerPicker);
               setShowEmojiPicker(false);
+              setShowPhotoPicker(false);
             }}
             className="uoa-quiet-button rounded-xl p-2 text-pink-200 transition-all"
             title="Send Icebreaker"
@@ -484,6 +492,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
             onClick={() => {
               setShowEmojiPicker(!showEmojiPicker);
               setShowIcebreakerPicker(false);
+              setShowPhotoPicker(false);
             }}
             className={`uoa-quiet-button rounded-xl p-2 transition-all ${showEmojiPicker ? 'text-orange-200 ring-1 ring-orange-300/40' : 'text-pink-200'}`}
             title="Add emoji"
