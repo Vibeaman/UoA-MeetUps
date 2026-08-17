@@ -19,6 +19,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { Logo } from './Logo';
 import { UserProfile } from '../types';
 
 interface MyProfileViewProps {
@@ -54,31 +55,83 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
   const hasProfile = Boolean(currentUser.name.trim() && currentUser.matricNumber.trim());
 
-  if (isAuthLoading || !isAuthenticated || !hasProfile) {
+  if (isAuthLoading) {
+    return (
+      <div className="flex min-h-[100dvh] flex-1 items-center justify-center px-6 text-center">
+        <div>
+          <Sparkles className="mx-auto h-7 w-7 animate-pulse text-violet-200" />
+          <p className="mt-4 text-sm text-white/55">Checking your secure session</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#0d0710] px-5 pb-8 pt-6 sm:px-8 sm:pt-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-violet-700/[0.08] blur-3xl" />
+        <div className="relative z-10 flex items-center justify-between">
+          <Logo size="sm" />
+          <button
+            type="button"
+            onClick={() => openAuthModal('login')}
+            className="uoa-quiet-button rounded-full px-4 py-2.5 text-xs font-semibold text-white/75"
+          >
+            Log in
+          </button>
+        </div>
+
+        <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-14 sm:py-20">
+          <p className="uoa-section-kicker">UniAbuja student network</p>
+          <h1 className="mt-4 max-w-[14ch] font-display text-5xl font-black leading-[0.95] tracking-[-0.065em] text-white sm:text-7xl">
+            Meet your people on campus.
+          </h1>
+          <p className="uoa-muted-copy mt-6 max-w-md text-sm sm:text-base">
+            Create a real student profile, find genuine connections, and make campus feel a little smaller.
+          </p>
+
+          <div className="mt-9 flex w-full max-w-sm flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => openAuthModal('signup')}
+              className="uoa-primary-button w-full rounded-full px-5 py-4 text-sm font-bold text-white"
+            >
+              Create account
+            </button>
+            <button
+              type="button"
+              onClick={() => openAuthModal('login')}
+              className="uoa-quiet-button w-full rounded-full px-5 py-4 text-sm font-semibold"
+            >
+              Log in
+            </button>
+          </div>
+
+          <p className="mt-8 text-xs leading-relaxed text-white/35">
+            Built for University of Abuja students. Email confirmation is required before you join.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasProfile) {
     return (
       <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col space-y-5 overflow-y-auto px-3 pb-24 pt-4 custom-scrollbar sm:px-5 sm:pt-6">
         <div className="uoa-surface rounded-[28px] p-6 text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-purple-950/70 border border-purple-700/50 flex items-center justify-center text-purple-300">
-            {isAuthLoading ? <Sparkles className="w-7 h-7 animate-pulse" /> : <LogIn className="w-7 h-7" />}
+            <LogIn className="w-7 h-7" />
           </div>
-          <h2 className="mt-4 text-xl font-black font-display text-white">
-            {isAuthLoading ? 'Checking your session' : isAuthenticated ? 'Complete your student profile' : 'Create your student profile'}
-          </h2>
+          <h2 className="mt-4 text-xl font-black font-display text-white">Complete your student profile</h2>
           <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-            {isAuthLoading
-              ? 'We are checking your secure Supabase session.'
-              : isAuthenticated
-                ? 'Add your real student details and photos before appearing in the campus feed.'
-                : 'Sign in to add real photos, publish stories, and manage your UniAbuja profile.'}
+            Add your real student details and photos before appearing in the campus feed.
           </p>
-          {!isAuthLoading && (
-            <button
-              onClick={() => (isAuthenticated ? onOpenEditProfile() : openAuthModal('signup'))}
-              className="mt-5 w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50"
-            >
-              {isAuthenticated ? 'Complete Profile' : 'Sign Up Or Log In'}
-            </button>
-          )}
+          <button
+            onClick={onOpenEditProfile}
+            className="uoa-primary-button mt-5 w-full rounded-2xl py-3 text-xs font-bold text-white"
+          >
+            Complete Profile
+          </button>
         </div>
       </div>
     );

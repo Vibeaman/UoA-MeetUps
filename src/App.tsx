@@ -33,7 +33,11 @@ const MainAppContent: React.FC = () => {
     setRecentMatch,
     isAdminAuthenticated,
     logoutAdmin,
+    isAuthenticated,
+    isAuthLoading,
   } = useApp();
+
+  const isStandaloneSignedOutProfile = activeTab === 'profile' && !isAuthenticated && !isAuthLoading;
 
   // Modal and sub-view states
   const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
@@ -64,10 +68,16 @@ const MainAppContent: React.FC = () => {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 h-72 bg-fuchsia-700/[0.04] blur-3xl" />
 
       {/* Top Header */}
-      <Header />
+      {!isStandaloneSignedOutProfile && <Header />}
 
       {/* Main Content Area */}
-      <main className="relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-8">
+      <main
+        className={
+          isStandaloneSignedOutProfile
+            ? 'relative z-10 flex w-full flex-1 flex-col'
+            : 'relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-8'
+        }
+      >
         {showGuidelines ? (
           <CommunityGuidelinesView onBack={() => setShowGuidelines(false)} />
         ) : showTips ? (
@@ -120,7 +130,7 @@ const MainAppContent: React.FC = () => {
       </main>
 
       {/* Bottom Nav — hidden while the protected admin console is open */}
-      {activeTab !== 'admin' && <BottomNav />}
+      {activeTab !== 'admin' && !isStandaloneSignedOutProfile && <BottomNav />}
 
       {/* Modals & Overlays */}
       <ProfileDetailModal
