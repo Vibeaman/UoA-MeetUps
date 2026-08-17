@@ -195,7 +195,7 @@ Deno.serve(async (request) => {
 
     if (!timingSafeEqual(digest, PASSWORD_DIGEST)) {
       rateLimitState.count += 1;
-      return json({ authenticated: false, message: "Invalid staff password." }, 401);
+      return json({ authenticated: false, message: "Invalid partner password." }, 401);
     }
 
     failedAttempts.delete(clientKey);

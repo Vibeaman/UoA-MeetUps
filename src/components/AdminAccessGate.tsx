@@ -20,10 +20,10 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
     try {
       if (await authenticateAdmin(password)) return;
       setPassword('');
-      setError('That staff password is not valid. Please try again.');
+      setError('That partner password is not valid. Please try again.');
     } catch {
       setPassword('');
-      setError('Unable to verify staff access. Please try again.');
+      setError('Unable to verify partner access. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -47,17 +47,17 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-2xl font-black text-white">Staff access</h1>
+            <h1 className="font-display text-2xl font-black text-white">Partner access</h1>
             <ShieldCheck className="h-5 w-5 text-emerald-400" />
           </div>
           <p className="text-sm leading-6 text-orange-200/75">
-            The moderation console is restricted to authorised UniAbuja staff.
+            The moderation console is restricted to official UoA MeetUps partners.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-4">
           <label htmlFor="admin-password" className="block text-xs font-black uppercase tracking-[0.18em] text-orange-300">
-            Staff password
+            Partner password
           </label>
           <input
             id="admin-password"
@@ -78,7 +78,7 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
             aria-describedby={error ? 'admin-password-error' : 'admin-password-help'}
           />
           <p id="admin-password-help" className="text-center text-[11px] text-neutral-500">
-            Enter the three-letter staff password.
+            Enter the three-letter partner password.
           </p>
           {error && (
             <p id="admin-password-error" role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-center text-xs font-semibold text-rose-300">
@@ -90,7 +90,7 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
             disabled={password.length !== 3 || isSubmitting}
             className="w-full rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 px-4 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(168,85,247,0.28)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isSubmitting ? 'Verifying...' : 'Unlock admin console'}
+            {isSubmitting ? 'Verifying...' : 'Unlock partner console'}
           </button>
         </form>
       </div>
