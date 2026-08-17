@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   X,
-  Lock,
-  Flame,
+  Check,
   ShieldCheck,
   CheckCircle2,
-  GraduationCap,
-  Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getSupabase } from '../lib/supabase';
@@ -35,7 +31,6 @@ export const AuthModal: React.FC = () => {
   const [authError, setAuthError] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [onboardingSlide, setOnboardingSlide] = useState(0);
 
   useEffect(() => {
     if (!isAuthModalOpen) return;
@@ -43,7 +38,6 @@ export const AuthModal: React.FC = () => {
     setPasswordInput('');
     setAuthError('');
     setVerificationMessage('');
-    setOnboardingSlide(0);
   }, [isAuthModalOpen, authModalMode]);
 
   if (!isAuthModalOpen) return null;
@@ -104,7 +98,6 @@ export const AuthModal: React.FC = () => {
         name: fullNameInput.trim(),
       });
       authenticateUser(user.id);
-      setOnboardingSlide(0);
       setMode('onboarding');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
@@ -134,7 +127,6 @@ export const AuthModal: React.FC = () => {
 
       authenticateUser(result.userId);
       setVerificationMessage('Email confirmed. You can continue into UoA MeetUps.');
-      setOnboardingSlide(0);
       setMode('onboarding');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Could not check verification status.');
@@ -162,41 +154,22 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const onboardingSlides = [
+  const houseRules = [
     {
-      title: 'Welcome to UoA MeetUps',
-      subtitle: 'CONNECT. MEET. BELONG.',
-      icon: <Logo size="lg" showTagline />,
-      desc: 'The official, exclusive dating and social network designed specifically for University of Abuja students across all campuses.',
+      title: 'Be yourself.',
+      desc: 'Use your own photos, age, and profile details. Keep your profile true to who you are.',
     },
     {
-      title: 'Normal Mode vs Lowkey Mode',
-      subtitle: 'Your Privacy, Your Choice',
-      icon: (
-        <div className="flex items-center space-x-4 my-2">
-          <div className="p-4 rounded-2xl bg-purple-900/60 border border-purple-500 text-center">
-            <Flame className="w-8 h-8 text-purple-300 mx-auto mb-1" />
-            <span className="text-xs font-bold text-white block">Normal Mode</span>
-            <span className="text-[10px] text-purple-300">Public Campus Feed</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-fuchsia-950/80 border border-fuchsia-400 text-center">
-            <Lock className="w-8 h-8 text-fuchsia-300 mx-auto mb-1" />
-            <span className="text-xs font-bold text-white block">Lowkey Mode</span>
-            <span className="text-[10px] text-fuchsia-300">Discreet & Private</span>
-          </div>
-        </div>
-      ),
-      desc: 'In Lowkey Mode, your profile is strictly hidden from general view and only visible to fellow students who also have Lowkey Mode enabled.',
+      title: 'Stay safe.',
+      desc: 'Protect your personal information and take new conversations at your own pace.',
     },
     {
-      title: 'Mandatory Student Verification',
-      subtitle: 'No Bots. No Scammers. 100% UniAbuja.',
-      icon: (
-        <div className="w-16 h-16 rounded-full bg-purple-900/80 border-2 border-purple-400 flex items-center justify-center text-purple-300 mx-auto shadow-[0_0_25px_#a855f7]">
-          <ShieldCheck className="w-9 h-9" />
-        </div>
-      ),
-      desc: 'Accounts can submit a real selfie and optional student ID for manual campus verification review.',
+      title: 'Play it cool.',
+      desc: 'Respect other students and treat them as you would like to be treated.',
+    },
+    {
+      title: 'Speak up.',
+      desc: 'Report bad behaviour so we can keep the UniAbuja community welcoming.',
     },
   ];
 
@@ -276,47 +249,44 @@ export const AuthModal: React.FC = () => {
             </button>
           </div>
         ) : mode === 'onboarding' ? (
-          /* Onboarding Explanation Slides */
-          <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center space-y-6 py-10 sm:py-14">
-            <div className="min-h-[220px] flex flex-col items-center justify-center">
-              {onboardingSlides[onboardingSlide].icon}
-              <h3 className="text-xl sm:text-2xl font-black font-display text-white mt-4">
-                {onboardingSlides[onboardingSlide].title}
-              </h3>
-              <span className="text-xs font-bold text-purple-400 tracking-wider uppercase block mt-0.5">
-                {onboardingSlides[onboardingSlide].subtitle}
-              </span>
-              <p className="text-xs text-neutral-300 mt-2 leading-relaxed max-w-xs">
-                {onboardingSlides[onboardingSlide].desc}
+          /* House Rules */
+          <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-between bg-[#111013] px-1 py-8 sm:rounded-[2rem] sm:px-10 sm:py-12">
+            <div>
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-violet-900/70 text-violet-200 ring-1 ring-violet-300/40">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <h2 className="mt-7 text-center font-display text-3xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
+                Welcome to UoA MeetUps.
+              </h2>
+              <p className="mt-3 text-center text-lg text-white/55 sm:text-2xl">
+                Please follow these house rules.
+              </p>
+
+              <div className="mt-10 space-y-7 sm:mt-12 sm:space-y-8">
+                {houseRules.map((rule) => (
+                  <div key={rule.title} className="grid grid-cols-[2rem_1fr] gap-3 sm:grid-cols-[2.5rem_1fr] sm:gap-4">
+                    <Check className="mt-1 h-6 w-6 text-violet-300" strokeWidth={2.5} />
+                    <div>
+                      <h3 className="text-xl font-bold text-white sm:text-2xl">{rule.title}</h3>
+                      <p className="mt-2 max-w-xl text-base leading-relaxed text-white/50 sm:text-lg">{rule.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-12 sm:mt-16">
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(false)}
+                className="w-full rounded-full bg-white px-5 py-4 text-lg font-bold text-[#17131a] transition-colors hover:bg-violet-100 sm:py-5 sm:text-xl"
+              >
+                I Agree
+              </button>
+              <p className="mt-4 text-center text-xs text-white/35">
+                You can revisit these rules any time from Safety.
               </p>
             </div>
-
-            {/* Slide Indicators */}
-            <div className="flex justify-center space-x-1.5">
-              {onboardingSlides.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === onboardingSlide ? 'w-6 bg-purple-400' : 'w-2 bg-purple-950'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Next / Get Started */}
-            <button
-              onClick={() => {
-                if (onboardingSlide < onboardingSlides.length - 1) {
-                  setOnboardingSlide((s) => s + 1);
-                } else {
-                  setIsAuthModalOpen(false);
-                }
-              }}
-              className="uoa-primary-button flex w-full items-center justify-center space-x-2 rounded-2xl px-4 py-4 text-sm font-bold text-white hover:brightness-110"
-            >
-              <span>{onboardingSlide === onboardingSlides.length - 1 ? 'Start Meeting Students' : 'Next'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
         ) : (
           /* Sign Up / Login Form */
