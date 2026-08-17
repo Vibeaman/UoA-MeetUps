@@ -113,7 +113,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     return (
       <div className="uoa-surface relative mx-auto flex h-[calc(100dvh-9rem)] min-h-0 w-full max-w-5xl min-w-0 flex-col overflow-hidden rounded-[28px] sm:h-[calc(100dvh-10rem)]">
         {/* Chat Header */}
-        <div className="flex items-center justify-between p-3.5 bg-[#120722] border-b border-purple-900/40 z-20">
+        <div className="flex items-center justify-between p-3.5 bg-[#120817] border-b border-orange-900/40 z-20">
           <div className="flex items-center space-x-2.5">
             <button
               onClick={() => setCurrentChatMatch(null)}
@@ -133,15 +133,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                   <img
                     src={matched.photos[0]}
                     alt={matched.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-purple-500 shadow-md group-hover:scale-105 transition-transform"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-orange-500 shadow-md group-hover:scale-105 transition-transform"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full border-2 border-purple-500 bg-purple-900/70 text-purple-100 flex items-center justify-center text-xs font-bold shadow-md group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-full border-2 border-orange-500 bg-orange-900/70 text-orange-100 flex items-center justify-center text-xs font-bold shadow-md group-hover:scale-105 transition-transform">
                     {getInitials(matched.name)}
                   </div>
                 )}
                 <span
-                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#120722] ${
+                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#120817] ${
                     matched.isOnline ? 'bg-emerald-400' : 'bg-neutral-500'
                   }`}
                 />
@@ -149,17 +149,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
               <div>
                 <div className="flex items-center space-x-1">
-                  <span className="font-bold text-sm text-white group-hover:text-purple-300 transition-colors">
+                  <span className="font-bold text-sm text-white group-hover:text-orange-300 transition-colors">
                     {matched.name}
                   </span>
                   {matched.isVerified && (
-                    <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                   )}
                   {matched.mode === 'lowkey' && (
-                    <Lock className="w-3 h-3 text-fuchsia-400 shrink-0" />
+                    <Lock className="w-3 h-3 text-orange-400 shrink-0" />
                   )}
                 </div>
-                <div className="text-[10px] text-purple-300/80">
+                <div className="text-[10px] text-orange-300/80">
                   {matched.level} • {matched.department}
                 </div>
               </div>
@@ -177,15 +177,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
             </button>
 
             {showOptionsMenu && (
-              <div className="absolute right-0 top-10 w-48 bg-[#18092d] border border-purple-800/60 rounded-2xl shadow-2xl py-1.5 z-50 text-xs text-neutral-200 backdrop-blur-xl animate-fadeIn">
+              <div className="absolute right-0 top-10 w-48 bg-[#18092d] border border-orange-800/60 rounded-2xl shadow-2xl py-1.5 z-50 text-xs text-neutral-200 backdrop-blur-xl animate-fadeIn">
                 <button
                   onClick={() => {
                     setShowOptionsMenu(false);
                     onOpenProfileDetails(matched);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-purple-900/50 flex items-center space-x-2"
+                  className="w-full text-left px-4 py-2 hover:bg-orange-900/50 flex items-center space-x-2"
                 >
-                  <Info className="w-4 h-4 text-purple-400" />
+                  <Info className="w-4 h-4 text-orange-400" />
                   <span>View Full Profile</span>
                 </button>
                 <button
@@ -228,19 +228,19 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         </div>
 
         {/* 7-Day Match Expiry Bar */}
-        <div className="bg-purple-950/70 border-b border-purple-900/40 px-3 py-1 flex items-center justify-between text-[11px] text-purple-300">
+        <div className="bg-orange-950/70 border-b border-orange-900/40 px-3 py-1 flex items-center justify-between text-[11px] text-orange-300">
           <div className="flex items-center space-x-1.5">
-            <Clock className="w-3.5 h-3.5 text-purple-400" />
+            <Clock className="w-3.5 h-3.5 text-orange-400" />
             <span>Match Expiry: <strong className="text-white">{expiryText}</strong></span>
           </div>
-          <span className="text-[10px] text-purple-400/80">Keeps connections fresh</span>
+          <span className="text-[10px] text-orange-400/80">Keeps connections fresh</span>
         </div>
 
         {/* Messages List Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gradient-to-b from-[#0e051a] via-[#090312] to-[#0c0416]">
           {/* Matched Greeting Card */}
-          <div className="text-center py-4 px-3 rounded-2xl bg-purple-950/30 border border-purple-900/30 space-y-1.5 my-2">
-            <Sparkles className="w-5 h-5 text-purple-400 mx-auto" />
+          <div className="text-center py-4 px-3 rounded-2xl bg-orange-950/30 border border-orange-900/30 space-y-1.5 my-2">
+            <Sparkles className="w-5 h-5 text-orange-400 mx-auto" />
             <p className="text-xs font-bold text-white">
               You matched with {matched.name}!
             </p>
@@ -265,8 +265,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                 <div
                   className={`relative max-w-[78%] p-3 rounded-2xl text-xs leading-relaxed ${
                     isMe
-                      ? 'bg-gradient-to-r from-purple-700 to-fuchsia-700 text-white rounded-br-none shadow-[0_2px_10px_rgba(168,85,247,0.3)]'
-                      : 'bg-[#1a0c2e] text-neutral-100 border border-purple-900/50 rounded-bl-none shadow-sm'
+                      ? 'bg-gradient-to-r from-orange-700 to-orange-700 text-white rounded-br-none shadow-[0_2px_10px_rgba(168,85,247,0.3)]'
+                      : 'bg-[#1a0c2e] text-neutral-100 border border-orange-900/50 rounded-bl-none shadow-sm'
                   }`}
                 >
                   {/* Photo content */}
@@ -275,9 +275,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                       {isViewOnce && !hasBeenViewed ? (
                         <button
                           onClick={() => setViewedOncePhotos({ ...viewedOncePhotos, [msg.id]: true })}
-                          className="flex items-center space-x-2 py-3 px-4 bg-purple-950/90 text-purple-200 font-bold hover:bg-purple-900 transition-all w-full"
+                          className="flex items-center space-x-2 py-3 px-4 bg-orange-950/90 text-orange-200 font-bold hover:bg-orange-900 transition-all w-full"
                         >
-                          <Eye className="w-4 h-4 text-purple-300" />
+                          <Eye className="w-4 h-4 text-orange-300" />
                           <span>📸 Tap to view view-once photo</span>
                         </button>
                       ) : isViewOnce && hasBeenViewed ? (
@@ -305,7 +305,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                         minute: '2-digit',
                       })}
                     </span>
-                    {isMe && <CheckCheck className="w-3 h-3 text-purple-300" />}
+                    {isMe && <CheckCheck className="w-3 h-3 text-orange-300" />}
                   </div>
                 </div>
               </div>
@@ -317,7 +317,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         {/* Icebreaker suggestions floating picker */}
         {showIcebreakerPicker && (
           <div className="border-t border-white/10 bg-white/[0.035] p-3 space-y-1.5 animate-fadeIn">
-            <div className="flex items-center justify-between text-xs text-purple-300 font-bold mb-1">
+            <div className="flex items-center justify-between text-xs text-orange-300 font-bold mb-1">
               <span>Send a Quick Campus Icebreaker:</span>
               <button onClick={() => setShowIcebreakerPicker(false)} className="text-neutral-400 hover:text-white">
                 ✕
@@ -331,7 +331,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               <button
                 key={i}
                 onClick={() => handleSendPromptAnswer(prompt)}
-                className="w-full text-left p-2 rounded-xl bg-purple-950/60 border border-purple-900/40 text-xs text-neutral-200 hover:bg-purple-900/70 truncate"
+                className="w-full text-left p-2 rounded-xl bg-orange-950/60 border border-orange-900/40 text-xs text-neutral-200 hover:bg-orange-900/70 truncate"
               >
                 {prompt}
               </button>
@@ -342,7 +342,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         {/* Real gallery photo picker */}
         {showPhotoPicker && (
           <div className="border-t border-white/10 bg-white/[0.035] p-3 space-y-2 animate-fadeIn">
-            <div className="flex items-center justify-between text-xs text-purple-300 font-bold">
+            <div className="flex items-center justify-between text-xs text-orange-300 font-bold">
               <span>Attach a photo from your gallery</span>
               <div className="flex items-center space-x-2">
                 <button
@@ -350,8 +350,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                   disabled={isUploadingPhoto}
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all disabled:opacity-50 ${
                     viewOnceActive
-                      ? 'bg-fuchsia-600 text-white border-fuchsia-400'
-                      : 'bg-purple-950 text-neutral-400 border-purple-800'
+                      ? 'bg-orange-600 text-white border-orange-400'
+                      : 'bg-orange-950 text-neutral-400 border-orange-800'
                   }`}
                 >
                   {viewOnceActive ? 'View Once ON' : 'View Once OFF'}
@@ -379,7 +379,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
             />
             <label
               htmlFor="chat-photo-upload"
-              className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-purple-700/70 bg-purple-950/50 text-xs font-bold text-purple-200 hover:bg-purple-900/60 cursor-pointer transition-colors ${
+              className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-orange-700/70 bg-orange-950/50 text-xs font-bold text-orange-200 hover:bg-orange-900/60 cursor-pointer transition-colors ${
                 isUploadingPhoto ? 'pointer-events-none opacity-60' : ''
               }`}
             >
@@ -395,7 +395,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           {/* Photos Button */}
           <button
             onClick={() => setShowPhotoPicker(!showPhotoPicker)}
-            className="uoa-quiet-button rounded-xl p-2 text-violet-200 transition-all"
+            className="uoa-quiet-button rounded-xl p-2 text-pink-200 transition-all"
             title="Attach Photo"
           >
             <ImageIcon className="w-4 h-4" />
@@ -404,7 +404,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           {/* Icebreaker button */}
           <button
             onClick={() => setShowIcebreakerPicker(!showIcebreakerPicker)}
-            className="uoa-quiet-button rounded-xl p-2 text-violet-200 transition-all"
+            className="uoa-quiet-button rounded-xl p-2 text-pink-200 transition-all"
             title="Send Icebreaker"
           >
             <Sparkles className="w-4 h-4" />
@@ -419,7 +419,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               if (e.key === 'Enter') handleSend();
             }}
             placeholder={`Message ${matched.name.split(' ')[0]}...`}
-            className="flex-1 rounded-2xl border border-white/10 bg-white/[0.045] px-3.5 py-2.5 text-xs text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+            className="flex-1 rounded-2xl border border-white/10 bg-white/[0.045] px-3.5 py-2.5 text-xs text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
           />
 
           {/* Send */}
@@ -450,15 +450,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           </p>
         </div>
 
-        <div className="uoa-surface-soft flex items-center space-x-1 rounded-full px-3 py-1 text-xs font-bold text-violet-200">
-          <Flame className="w-3.5 h-3.5 text-purple-400" />
+        <div className="uoa-surface-soft flex items-center space-x-1 rounded-full px-3 py-1 text-xs font-bold text-pink-200">
+          <Flame className="w-3.5 h-3.5 text-orange-400" />
           <span>7-Day Expiry</span>
         </div>
       </div>
 
       {/* Top Matches Story Rings Carousel */}
       <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2 block">
+        <span className="text-xs font-bold uppercase tracking-wider text-orange-400 mb-2 block">
           New Matches
         </span>
         <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar pb-2 pt-1">
@@ -468,7 +468,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               onClick={() => setCurrentChatMatch(match)}
               className="flex flex-col items-center space-y-1 cursor-pointer group shrink-0"
             >
-              <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-indigo-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] group-hover:scale-105 transition-transform">
+              <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-indigo-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] group-hover:scale-105 transition-transform">
                 {match.matchedUser.photos[0] ? (
                   <img
                     src={match.matchedUser.photos[0]}
@@ -476,12 +476,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                     className="w-14 h-14 rounded-full object-cover border-2 border-[#090312]"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full border-2 border-[#090312] bg-purple-900/70 text-purple-100 flex items-center justify-center text-sm font-bold">
+                  <div className="w-14 h-14 rounded-full border-2 border-[#090312] bg-orange-900/70 text-orange-100 flex items-center justify-center text-sm font-bold">
                     {getInitials(match.matchedUser.name)}
                   </div>
                 )}
                 {match.hasUnread && (
-                  <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-fuchsia-500 border-2 border-[#090312]" />
+                  <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-orange-500 border-2 border-[#090312]" />
                 )}
               </div>
               <span className="text-[11px] font-semibold text-neutral-200 truncate w-14 text-center">
@@ -494,13 +494,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
       {/* Conversations List */}
       <div className="flex-1 space-y-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-purple-400 block">
+        <span className="text-xs font-bold uppercase tracking-wider text-orange-400 block">
           Messages
         </span>
 
         {matches.length === 0 ? (
           <div className="uoa-surface-soft rounded-2xl p-8 text-center">
-            <MessageCircle className="w-10 h-10 text-purple-400 mx-auto mb-2 opacity-60" />
+            <MessageCircle className="w-10 h-10 text-orange-400 mx-auto mb-2 opacity-60" />
             <h4 className="text-sm font-bold text-white">No chat history yet</h4>
             <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
               Your matches and conversations will appear here after you connect with another student in Discover.
@@ -517,7 +517,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                 onClick={() => setCurrentChatMatch(match)}
                 className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center space-x-3 group ${
                   match.hasUnread
-                    ? 'bg-violet-500/10 border-violet-300/30'
+                    ? 'bg-pink-500/10 border-pink-300/30'
                     : 'bg-white/[0.035] border-white/10 hover:border-white/20'
                 }`}
               >
@@ -527,10 +527,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                     <img
                       src={user.photos[0]}
                       alt={user.name}
-                      className="w-12 h-12 rounded-full object-cover border border-purple-800/60 group-hover:scale-105 transition-transform"
+                      className="w-12 h-12 rounded-full object-cover border border-orange-800/60 group-hover:scale-105 transition-transform"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full border border-purple-800/60 bg-purple-900/70 text-purple-100 flex items-center justify-center text-xs font-bold group-hover:scale-105 transition-transform">
+                    <div className="w-12 h-12 rounded-full border border-orange-800/60 bg-orange-900/70 text-orange-100 flex items-center justify-center text-xs font-bold group-hover:scale-105 transition-transform">
                       {getInitials(user.name)}
                     </div>
                   )}
@@ -543,17 +543,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-1.5">
-                      <span className="font-bold text-xs text-white group-hover:text-purple-300 transition-colors">
+                      <span className="font-bold text-xs text-white group-hover:text-orange-300 transition-colors">
                         {user.name}
                       </span>
                       {user.isVerified && (
-                        <ShieldCheck className="w-3 h-3 text-purple-400" />
+                        <ShieldCheck className="w-3 h-3 text-orange-400" />
                       )}
                       {user.mode === 'lowkey' && (
-                        <Lock className="w-3 h-3 text-fuchsia-400" />
+                        <Lock className="w-3 h-3 text-orange-400" />
                       )}
                     </div>
-                    <span className="text-[10px] text-purple-400/80 font-medium">
+                    <span className="text-[10px] text-orange-400/80 font-medium">
                       {expiryText} remaining
                     </span>
                   </div>
@@ -568,7 +568,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
                 {/* Unread indicator */}
                 {match.hasUnread && (
-                  <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-violet-300" />
+                  <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-pink-300" />
                 )}
               </div>
             );

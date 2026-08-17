@@ -43,10 +43,10 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fadeIn">
-      <div className="relative w-full max-w-md bg-gradient-to-b from-[#1c0c2e] via-[#120620] to-[#090312] border border-purple-600/40 rounded-3xl p-6 shadow-[0_0_50px_rgba(168,85,247,0.4)] text-center overflow-hidden">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-[#1c0c2e] via-[#120620] to-[#090312] border border-orange-600/40 rounded-3xl p-6 shadow-[0_0_50px_rgba(168,85,247,0.4)] text-center overflow-hidden">
         {/* Ambient Glows */}
-        <div className="absolute -top-20 -left-20 w-48 h-48 bg-purple-600/30 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-fuchsia-600/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -left-20 w-48 h-48 bg-orange-600/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-orange-600/30 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
@@ -63,12 +63,12 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
           transition={{ type: 'spring', damping: 12 }}
           className="flex flex-col items-center mt-2"
         >
-          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-200 text-xs font-bold uppercase tracking-widest mb-2 shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-950/80 border border-orange-500/50 text-orange-200 text-xs font-bold uppercase tracking-widest mb-2 shadow-inner">
+            <Sparkles className="w-3.5 h-3.5 text-orange-400" />
             <span>UniAbuja MeetUp</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-black font-display text-gradient-purple tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black font-display text-gradient-orange tracking-tight">
             IT’S A MATCH!
           </h2>
           <p className="text-xs text-neutral-300 mt-1 max-w-xs">
@@ -79,24 +79,24 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
         {/* Overlapping Avatars */}
         <div className="relative flex items-center justify-center my-6">
           {/* Current User */}
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.6)] transform -translate-x-3 z-10">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(168,85,247,0.6)] transform -translate-x-3 z-10">
             <img src={currentUser.photos[0]} alt="You" className="w-full h-full object-cover" />
           </div>
 
           {/* Glowing Center Heart */}
-          <div className="absolute z-20 w-11 h-11 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-center text-white shadow-[0_0_20px_#a855f7] border-2 border-[#090312] animate-bounce">
+          <div className="absolute z-20 w-11 h-11 rounded-full bg-gradient-to-r from-orange-600 to-orange-600 flex items-center justify-center text-white shadow-[0_0_20px_#ff177f] border-2 border-[#090312] animate-bounce">
             <Heart className="w-5 h-5 fill-white" />
           </div>
 
           {/* Matched Profile */}
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-[0_0_20px_rgba(216,70,239,0.6)] transform translate-x-3 z-10">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(216,70,239,0.6)] transform translate-x-3 z-10">
             <img src={matchedProfile.photos[0]} alt={matchedProfile.name} className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Level & Faculty tags */}
-        <div className="flex items-center justify-center space-x-2 text-xs text-purple-200 mb-5">
-          <span className="bg-purple-950 px-2 py-0.5 rounded border border-purple-800/60 font-bold">
+        <div className="flex items-center justify-center space-x-2 text-xs text-orange-200 mb-5">
+          <span className="bg-orange-950 px-2 py-0.5 rounded border border-orange-800/60 font-bold">
             {matchedProfile.level}
           </span>
           <span className="font-semibold">{matchedProfile.department}</span>
@@ -104,14 +104,14 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
 
         {/* Quick Conversation Starters Chips */}
         <div className="space-y-1.5 mb-4 text-left">
-          <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block">
+          <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider block">
             Quick Icebreaker Starters:
           </span>
           {quickStarters.map((starter, idx) => (
             <button
               key={idx}
               onClick={() => setMessageText(starter)}
-              className="w-full text-left p-2 rounded-xl bg-purple-950/40 border border-purple-900/40 text-xs text-neutral-200 hover:bg-purple-900/60 hover:text-white transition-all truncate"
+              className="w-full text-left p-2 rounded-xl bg-orange-950/40 border border-orange-900/40 text-xs text-neutral-200 hover:bg-orange-900/60 hover:text-white transition-all truncate"
             >
               {starter}
             </button>
@@ -125,14 +125,14 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder={`Say something nice to ${matchedProfile.name.split(' ')[0]}...`}
-            className="w-full py-3 pl-4 pr-12 rounded-2xl bg-[#140824] border border-purple-700/50 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+            className="w-full py-3 pl-4 pr-12 rounded-2xl bg-[#1a0b22] border border-orange-700/50 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSendAndOpenChat();
             }}
           />
           <button
             onClick={handleSendAndOpenChat}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white hover:brightness-110"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white hover:brightness-110"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -147,7 +147,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
         <div className="flex flex-col space-y-2">
           <button
             onClick={handleSendAndOpenChat}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 text-white font-bold text-sm shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:brightness-110 transition-all flex items-center justify-center space-x-2"
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-600 to-indigo-600 text-white font-bold text-sm shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:brightness-110 transition-all flex items-center justify-center space-x-2"
             id="match-start-chat-btn"
           >
             <MessageCircle className="w-4 h-4" />

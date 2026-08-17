@@ -85,7 +85,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
               </div>
               <div>
                 <h3 className="text-lg font-black font-display text-white">Report Student</h3>
-                <p className="text-xs text-purple-300">
+                <p className="text-xs text-orange-300">
                   Reporting: <strong>{targetUser.name}</strong> (@{targetUser.username})
                 </p>
               </div>
@@ -103,7 +103,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
                   className={`p-2.5 rounded-xl border flex items-start space-x-2.5 cursor-pointer transition-all ${
                     reason === opt.value
                       ? 'bg-rose-950/40 border-rose-600/70 text-white'
-                      : 'bg-[#140824] border-purple-950 text-neutral-300 hover:border-purple-800'
+                      : 'bg-[#1a0b22] border-orange-950 text-neutral-300 hover:border-orange-800'
                   }`}
                 >
                   <input
@@ -124,7 +124,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
 
             {/* Extra details */}
             <div>
-              <label className="block text-[11px] font-bold text-purple-300 uppercase mb-1">
+              <label className="block text-[11px] font-bold text-orange-300 uppercase mb-1">
                 Additional Details (Optional)
               </label>
               <textarea
@@ -132,7 +132,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Explain what occurred or paste relevant details..."
-                className="w-full p-2.5 rounded-xl bg-[#140824] border border-purple-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none"
               />
             </div>
 

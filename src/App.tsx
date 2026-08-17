@@ -62,10 +62,10 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="uoa-app-shell relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-purple-500 selection:text-white">
+    <div className="uoa-app-shell relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-pink-500 selection:text-white">
       {/* Quiet ambient depth */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-violet-700/[0.05] blur-3xl" />
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-72 bg-fuchsia-700/[0.04] blur-3xl" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-pink-700/[0.05] blur-3xl" />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-72 bg-orange-700/[0.04] blur-3xl" />
 
       {/* Top Header */}
       {!isStandaloneSignedOutProfile && <Header />}

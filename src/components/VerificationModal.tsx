@@ -170,7 +170,7 @@ export const VerificationModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl overflow-y-auto">
-      <div className="relative w-full max-w-md bg-[#0e051a] border border-purple-800/50 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden text-center flex flex-col">
+      <div className="relative w-full max-w-md bg-[#0e051a] border border-orange-800/50 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden text-center flex flex-col">
         {/* Floating Close */}
         <button
           onClick={() => {
@@ -189,8 +189,8 @@ export const VerificationModal: React.FC = () => {
         {step === 'camera' && (
           <div className="space-y-4">
             <div>
-              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
-                <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-950/80 border border-orange-500/50 text-orange-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <ShieldCheck className="w-4 h-4 text-orange-400" />
                 <span>UniAbuja Live Photo Check</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black font-display text-white">
@@ -202,7 +202,7 @@ export const VerificationModal: React.FC = () => {
             </div>
 
             {/* Video Feed / Fallback Container */}
-            <div className="relative w-full h-72 sm:h-80 bg-black rounded-2xl overflow-hidden border-2 border-purple-600/60 flex items-center justify-center">
+            <div className="relative w-full h-72 sm:h-80 bg-black rounded-2xl overflow-hidden border-2 border-orange-600/60 flex items-center justify-center">
               {!hasCameraError ? (
                 <video
                   ref={videoRef}
@@ -213,7 +213,7 @@ export const VerificationModal: React.FC = () => {
                 />
               ) : (
                 <div className="p-4 text-center space-y-3">
-                  <Camera className="w-10 h-10 text-purple-400 mx-auto opacity-70" />
+                  <Camera className="w-10 h-10 text-orange-400 mx-auto opacity-70" />
                   <p className="text-xs text-neutral-300">
                     Live camera stream unavailable in this browser. Use the gallery upload button below to choose a real selfie.
                   </p>
@@ -222,8 +222,8 @@ export const VerificationModal: React.FC = () => {
 
               {/* Oval Face Alignment Frame overlay */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-44 h-56 border-2 border-dashed border-purple-400/80 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-purple-300 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                <div className="w-44 h-56 border-2 border-dashed border-orange-400/80 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-orange-300 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
                     Align Face Here
                   </span>
                 </div>
@@ -235,13 +235,13 @@ export const VerificationModal: React.FC = () => {
               <button
                 onClick={takeSelfie}
                 disabled={isCapturing}
-                className="p-4 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-105 active:scale-95 transition-all"
+                className="p-4 rounded-full bg-gradient-to-r from-orange-600 to-orange-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-105 active:scale-95 transition-all"
                 id="take-selfie-shutter-btn"
                 title="Capture Selfie"
               >
                 <Camera className="w-6 h-6" />
               </button>
-              <label htmlFor="verification-selfie-upload" className="p-4 rounded-full bg-white/10 border border-purple-500/50 text-purple-200 hover:bg-purple-900/40 cursor-pointer transition-all" title="Choose selfie from gallery">
+              <label htmlFor="verification-selfie-upload" className="p-4 rounded-full bg-white/10 border border-orange-500/50 text-orange-200 hover:bg-orange-900/40 cursor-pointer transition-all" title="Choose selfie from gallery">
                 <Upload className="w-6 h-6" />
                 <input
                   id="verification-selfie-upload"
@@ -266,15 +266,15 @@ export const VerificationModal: React.FC = () => {
               </p>
             </div>
 
-            <div className="relative w-full h-72 rounded-2xl overflow-hidden border-2 border-purple-500 bg-black">
+            <div className="relative w-full h-72 rounded-2xl overflow-hidden border-2 border-orange-500 bg-black">
               {capturedPhoto && (
                 <img src={capturedPhoto} alt="captured" className="w-full h-full object-cover" />
               )}
             </div>
 
-            <div className="rounded-2xl border border-purple-800/50 bg-purple-950/20 p-3 text-left space-y-2">
-              <p className="text-[11px] font-bold text-purple-200">Student ID photo (optional)</p>
-              <label htmlFor="student-id-upload" className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-purple-800/70 text-[11px] text-purple-200 cursor-pointer hover:border-purple-400">
+            <div className="rounded-2xl border border-orange-800/50 bg-orange-950/20 p-3 text-left space-y-2">
+              <p className="text-[11px] font-bold text-orange-200">Student ID photo (optional)</p>
+              <label htmlFor="student-id-upload" className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-orange-800/70 text-[11px] text-orange-200 cursor-pointer hover:border-orange-400">
                 <Upload className="w-4 h-4" />
                 {studentIdFile ? studentIdFile.name : 'Choose from gallery'}
                 <input
@@ -302,7 +302,7 @@ export const VerificationModal: React.FC = () => {
               <button
                 onClick={handleConfirmSubmit}
                 disabled={isUploading}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50 hover:brightness-110 flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white text-xs font-bold shadow-lg shadow-orange-900/50 hover:brightness-110 flex items-center justify-center space-x-1.5 disabled:opacity-50"
                 id="submit-verification-confirm-btn"
               >
                 <FileCheck className="w-4 h-4" />
@@ -315,8 +315,8 @@ export const VerificationModal: React.FC = () => {
         {/* STEP 3: SUBMITTED SUCCESS */}
         {step === 'success' && (
           <div className="py-6 space-y-4 animate-fadeIn">
-            <div className="w-16 h-16 rounded-full bg-purple-900/60 border-2 border-purple-400 text-purple-300 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(168,85,247,0.5)] animate-bounce">
-              <CheckCircle2 className="w-8 h-8 text-purple-300" />
+            <div className="w-16 h-16 rounded-full bg-orange-900/60 border-2 border-orange-400 text-orange-300 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(168,85,247,0.5)] animate-bounce">
+              <CheckCircle2 className="w-8 h-8 text-orange-300" />
             </div>
 
             <h3 className="text-2xl font-black font-display text-white">
@@ -328,7 +328,7 @@ export const VerificationModal: React.FC = () => {
 
             <button
               onClick={() => setIsVerificationModalOpen(false)}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs shadow-md"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold text-xs shadow-md"
             >
               Done & Return to Feed
             </button>

@@ -65,10 +65,10 @@ export const CampusStoriesBar: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAddModalOpen(true)}
-            className="relative h-14 w-14 rounded-full border border-violet-300/40 bg-violet-500/10 p-[2px] transition-transform group hover:scale-[1.03] sm:h-16 sm:w-16"
+            className="relative h-14 w-14 rounded-full border border-pink-300/40 bg-pink-500/10 p-[2px] transition-transform group hover:scale-[1.03] sm:h-16 sm:w-16"
             id="btn-add-campus-story"
           >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-violet-100">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-pink-100">
               {currentUser.photos[0] ? (
                 <img
                   src={currentUser.photos[0]}
@@ -76,7 +76,7 @@ export const CampusStoriesBar: React.FC = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 />
               ) : (
-                <Camera className="w-5 h-5 text-purple-300" />
+                <Camera className="w-5 h-5 text-orange-300" />
               )}
             </div>
             <div className="absolute bottom-0 right-0 rounded-full border-2 border-[#0d0710] bg-white p-1 text-[#29112e] shadow-sm">
@@ -98,10 +98,10 @@ export const CampusStoriesBar: React.FC = () => {
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveStory(story)}
-              className="group relative h-14 w-14 rounded-full border border-violet-300/35 bg-violet-500/10 p-[2px] transition-transform hover:scale-[1.03] sm:h-16 sm:w-16"
+              className="group relative h-14 w-14 rounded-full border border-pink-300/35 bg-pink-500/10 p-[2px] transition-transform hover:scale-[1.03] sm:h-16 sm:w-16"
               id={`story-btn-${story.id}`}
             >
-              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-violet-100">
+              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-[#0d0710] bg-[#1b1022] text-sm font-black text-pink-100">
                 {story.avatar ? (
                   <img
                     src={story.avatar}
@@ -128,19 +128,19 @@ export const CampusStoriesBar: React.FC = () => {
               initial={{ scale: 0.92, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.92, opacity: 0, y: 15 }}
-              className="w-full max-w-sm rounded-3xl bg-[#130722] border border-purple-700/50 p-5 shadow-2xl space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-[#130722] border border-orange-700/50 p-5 shadow-2xl space-y-4"
               id="modal-add-story"
             >
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <div className="flex items-center justify-between border-b border-orange-900/60 pb-3">
                 <div className="flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <Sparkles className="w-5 h-5 text-orange-400" />
                   <h3 className="text-base font-black font-display text-white">
                     Post Campus Story
                   </h3>
                 </div>
                 <button
                   onClick={() => setIsAddModalOpen(false)}
-                  className="p-1 rounded-full hover:bg-purple-900/50 text-neutral-400 hover:text-white transition-colors"
+                  className="p-1 rounded-full hover:bg-orange-900/50 text-neutral-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -163,8 +163,8 @@ export const CampusStoriesBar: React.FC = () => {
                         onClick={() => setSelectedPhotoIndex(idx)}
                         className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
                           selectedPhotoIndex === idx
-                            ? 'border-purple-400 scale-105 shadow-md shadow-purple-900/60 ring-2 ring-purple-500/50'
-                            : 'border-purple-950 opacity-60 hover:opacity-100'
+                            ? 'border-orange-400 scale-105 shadow-md shadow-orange-900/60 ring-2 ring-orange-500/50'
+                            : 'border-orange-950 opacity-60 hover:opacity-100'
                         }`}
                       >
                         <img src={p} alt="" className="w-full h-full object-cover" />
@@ -192,8 +192,8 @@ export const CampusStoriesBar: React.FC = () => {
                         onClick={() => setSelectedTag(tag)}
                         className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all ${
                           selectedTag === tag
-                            ? 'bg-purple-600 text-white font-bold shadow-sm'
-                            : 'bg-[#1a0c2e] text-neutral-300 hover:bg-purple-900/50 border border-purple-950'
+                            ? 'bg-orange-600 text-white font-bold shadow-sm'
+                            : 'bg-[#1a0c2e] text-neutral-300 hover:bg-orange-900/50 border border-orange-950'
                         }`}
                       >
                         {tag}
@@ -212,7 +212,7 @@ export const CampusStoriesBar: React.FC = () => {
                     value={newCaption}
                     onChange={(e) => setNewCaption(e.target.value)}
                     placeholder="What are you up to on campus today? (e.g. Smoothie break at Senate Plaza...)"
-                    className="w-full p-2.5 rounded-xl bg-[#0a0312] border border-purple-800/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400 resize-none"
+                    className="w-full p-2.5 rounded-xl bg-[#0a0312] border border-orange-800/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-400 resize-none"
                     maxLength={140}
                   />
                   <div className="text-right text-[10px] text-neutral-500 mt-0.5">
@@ -224,14 +224,14 @@ export const CampusStoriesBar: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl bg-purple-950/40 text-neutral-300 text-xs font-semibold hover:bg-purple-900/40 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl bg-orange-950/40 text-neutral-300 text-xs font-semibold hover:bg-orange-900/40 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!newCaption.trim() || !currentUser.photos.length || isPosting}
-                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50 disabled:opacity-40 transition-all"
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white text-xs font-bold shadow-lg shadow-orange-900/50 disabled:opacity-40 transition-all"
                   >
                     {isPosting ? 'Publishing...' : 'Share Story'}
                   </button>

@@ -195,7 +195,7 @@ export const CampusGossipBoard: React.FC = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-purple-900/95 border border-purple-400 text-white text-xs font-semibold shadow-xl backdrop-blur-md flex items-center space-x-2"
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-orange-900/95 border border-orange-400 text-white text-xs font-semibold shadow-xl backdrop-blur-md flex items-center space-x-2"
           >
             <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
             <span>{toastMessage}</span>
@@ -207,7 +207,7 @@ export const CampusGossipBoard: React.FC = () => {
       <div className="uoa-surface mb-3 rounded-2xl p-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.08] text-violet-100 ring-1 ring-white/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.08] text-pink-100 ring-1 ring-white/10">
               <Flame className="w-4 h-4" />
             </div>
             <div>
@@ -219,11 +219,11 @@ export const CampusGossipBoard: React.FC = () => {
                   LIVE GIST
                 </span>
               </div>
-              <p className="text-[11px] text-purple-300/80">
+              <p className="text-[11px] text-orange-300/80">
                 Hostel drama, secret crushes & confessions across UniAbuja
               </p>
               {!isAuthenticated && (
-                <p className="mt-1 text-[10px] font-semibold text-amber-300/90">
+                <p className="mt-1 text-[10px] font-semibold text-orange-300/90">
                   Sign up to spill tea, react, comment, or flag a post.
                 </p>
               )}
@@ -250,12 +250,12 @@ export const CampusGossipBoard: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               onSubmit={handlePostSubmit}
-              className="mt-3 pt-3 border-t border-purple-800/40 space-y-2.5"
+              className="mt-3 pt-3 border-t border-orange-800/40 space-y-2.5"
             >
-              <div className="flex items-center justify-between text-xs text-purple-200">
+              <div className="flex items-center justify-between text-xs text-orange-200">
                 <span className="font-bold flex items-center space-x-1">
                   <span>Share campus news</span>
-                  <span className="text-[10px] text-purple-400 font-normal">(Visible to all students)</span>
+                  <span className="text-[10px] text-orange-400 font-normal">(Visible to all students)</span>
                 </span>
                 <button
                   type="button"
@@ -271,7 +271,7 @@ export const CampusGossipBoard: React.FC = () => {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share something happening around campus..."
                 rows={3}
-                className="w-full text-xs p-3 rounded-xl bg-black/40 border border-purple-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400 resize-none"
+                className="w-full text-xs p-3 rounded-xl bg-black/40 border border-orange-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-orange-400 resize-none"
                 required
               />
 
@@ -284,8 +284,8 @@ export const CampusGossipBoard: React.FC = () => {
                     onClick={() => setTag(t)}
                     className={`text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
                       tag === t
-                        ? 'bg-purple-600 text-white border-purple-400'
-                        : 'bg-purple-950/40 text-purple-300 border-purple-900 hover:border-purple-700'
+                        ? 'bg-orange-600 text-white border-orange-400'
+                        : 'bg-orange-950/40 text-orange-300 border-orange-900 hover:border-orange-700'
                     }`}
                   >
                     {t}
@@ -296,7 +296,7 @@ export const CampusGossipBoard: React.FC = () => {
               {showImageInput && (
                 <div className="space-y-2">
                   {imagePreview ? (
-                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-purple-700/60">
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-orange-700/60">
                       <img src={imagePreview} alt="Selected attachment preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -313,7 +313,7 @@ export const CampusGossipBoard: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <label htmlFor="gossip-photo-upload" className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-purple-800/60 bg-black/30 text-xs font-semibold text-purple-200 cursor-pointer hover:border-purple-400">
+                    <label htmlFor="gossip-photo-upload" className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-orange-800/60 bg-black/30 text-xs font-semibold text-orange-200 cursor-pointer hover:border-orange-400">
                       <ImageIcon className="w-4 h-4" />
                       Choose a photo from your gallery
                       <input
@@ -337,7 +337,7 @@ export const CampusGossipBoard: React.FC = () => {
                     onClick={() => setIsAnonymous(!isAnonymous)}
                     className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium flex items-center space-x-1.5 transition-all ${
                       isAnonymous
-                        ? 'bg-fuchsia-950/80 border-fuchsia-500 text-fuchsia-300'
+                        ? 'bg-orange-950/80 border-orange-500 text-orange-300'
                         : 'bg-neutral-900 border-neutral-700 text-neutral-300'
                     }`}
                   >
@@ -348,7 +348,7 @@ export const CampusGossipBoard: React.FC = () => {
                     <select
                       value={anonymousAlias}
                       onChange={(e) => setAnonymousAlias(e.target.value)}
-                      className="text-[10px] p-1 rounded-lg bg-purple-950 border border-purple-800 text-purple-200 focus:outline-none"
+                      className="text-[10px] p-1 rounded-lg bg-orange-950 border border-orange-800 text-orange-200 focus:outline-none"
                     >
                       {ANON_ALIASES.map((alias) => (
                         <option key={alias} value={alias}>
@@ -363,7 +363,7 @@ export const CampusGossipBoard: React.FC = () => {
                     onClick={() => setShowImageInput(!showImageInput)}
                     className={`p-1.5 rounded-lg border text-xs transition-colors ${
                       showImageInput || imageFile
-                        ? 'bg-purple-900/60 border-purple-400 text-purple-200'
+                        ? 'bg-orange-900/60 border-orange-400 text-orange-200'
                         : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-white'
                     }`}
                     title="Add photo"
@@ -394,8 +394,8 @@ export const CampusGossipBoard: React.FC = () => {
             onClick={() => setSelectedTag(t)}
             className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-all shrink-0 ${
               selectedTag === t
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
-                : 'bg-[#150727] text-neutral-400 hover:text-neutral-200 border border-purple-950'
+                ? 'bg-orange-600 text-white shadow-md shadow-orange-900/40'
+                : 'bg-[#150727] text-neutral-400 hover:text-neutral-200 border border-orange-950'
             }`}
           >
             {t}
@@ -406,8 +406,8 @@ export const CampusGossipBoard: React.FC = () => {
       {/* Gossip Post Cards List */}
       <div className="space-y-3">
         {filteredPosts.length === 0 ? (
-          <div className="p-6 text-center rounded-2xl bg-[#120521] border border-purple-950 text-neutral-400 text-xs">
-            <Flame className="w-8 h-8 mx-auto mb-2 text-purple-500/50" />
+          <div className="p-6 text-center rounded-2xl bg-[#120521] border border-orange-950 text-neutral-400 text-xs">
+            <Flame className="w-8 h-8 mx-auto mb-2 text-orange-500/50" />
             <p className="font-semibold text-neutral-300">No tea spilled under this category yet.</p>
             <p className="text-[11px] text-neutral-500 mt-1">Be the first to share campus gist!</p>
           </div>
@@ -423,13 +423,13 @@ export const CampusGossipBoard: React.FC = () => {
                 layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3.5 rounded-2xl bg-gradient-to-b from-[#160628] to-[#0f041b] border border-purple-900/40 shadow-lg text-left transition-all hover:border-purple-700/50"
+                className="p-3.5 rounded-2xl bg-gradient-to-b from-[#160628] to-[#0f041b] border border-orange-900/40 shadow-lg text-left transition-all hover:border-orange-700/50"
               >
                 {/* Post Author Header */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2.5">
                     {post.isAnonymous ? (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-800 to-fuchsia-900 border border-purple-500/40 flex items-center justify-center text-sm shadow">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-800 to-orange-900 border border-orange-500/40 flex items-center justify-center text-sm shadow">
                         A
                       </div>
                     ) : (
@@ -438,10 +438,10 @@ export const CampusGossipBoard: React.FC = () => {
                           src={post.authorAvatar}
                           alt={post.authorName}
                           referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover border border-purple-500/40 shadow"
+                          className="w-8 h-8 rounded-full object-cover border border-orange-500/40 shadow"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-purple-950 border border-purple-500/40 flex items-center justify-center text-xs font-black text-purple-200">
+                        <div className="w-8 h-8 rounded-full bg-orange-950 border border-orange-500/40 flex items-center justify-center text-xs font-black text-orange-200">
                           {post.authorName.slice(0, 1).toUpperCase()}
                         </div>
                       )
@@ -453,17 +453,17 @@ export const CampusGossipBoard: React.FC = () => {
                           {post.authorName}
                         </h4>
                         {!post.isAnonymous && (
-                          <CheckCircle2 className="w-3 h-3 text-purple-400" />
+                          <CheckCircle2 className="w-3 h-3 text-orange-400" />
                         )}
                       </div>
-                      <p className="text-[10px] text-purple-300/70 mt-0.5">
+                      <p className="text-[10px] text-orange-300/70 mt-0.5">
                         {post.authorDepartment} {post.authorLevel ? `• ${post.authorLevel}` : ''} • {post.timeAgo}
                       </p>
                     </div>
                   </div>
 
                   {/* Post Tag Pill */}
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-800/60 shadow-sm shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-950/80 text-orange-300 border border-orange-800/60 shadow-sm shrink-0">
                     {post.tag}
                   </span>
                 </div>
@@ -475,7 +475,7 @@ export const CampusGossipBoard: React.FC = () => {
 
                 {/* Optional Image */}
                 {post.imageUrl && (
-                  <div className="mt-2.5 rounded-xl overflow-hidden border border-purple-900/60 max-h-56 bg-black">
+                  <div className="mt-2.5 rounded-xl overflow-hidden border border-orange-900/60 max-h-56 bg-black">
                     <img
                       src={post.imageUrl}
                       alt="Gossip attachment"
@@ -486,7 +486,7 @@ export const CampusGossipBoard: React.FC = () => {
                 )}
 
                 {/* Interactive Reactions Bar */}
-                <div className="mt-3 pt-2.5 border-t border-purple-950 flex flex-wrap items-center justify-between gap-1.5">
+                <div className="mt-3 pt-2.5 border-t border-orange-950 flex flex-wrap items-center justify-between gap-1.5">
                   <div className="flex items-center space-x-1">
                     {/* Spicy */}
                     <button
@@ -494,7 +494,7 @@ export const CampusGossipBoard: React.FC = () => {
                       className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all ${
                         post.userReaction === 'spicy'
                           ? 'bg-red-950/90 border-red-500 text-red-300 shadow-sm shadow-red-950'
-                          : 'bg-purple-950/30 border-purple-900/60 text-neutral-300 hover:border-purple-700'
+                          : 'bg-orange-950/30 border-orange-900/60 text-neutral-300 hover:border-orange-700'
                       }`}
                     >
                       <span>Spicy</span>
@@ -507,7 +507,7 @@ export const CampusGossipBoard: React.FC = () => {
                       className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all ${
                         post.userReaction === 'cap'
                           ? 'bg-blue-950/90 border-blue-500 text-blue-300 shadow-sm shadow-blue-950'
-                          : 'bg-purple-950/30 border-purple-900/60 text-neutral-300 hover:border-purple-700'
+                          : 'bg-orange-950/30 border-orange-900/60 text-neutral-300 hover:border-orange-700'
                       }`}
                     >
                       <span>Cap</span>
@@ -520,7 +520,7 @@ export const CampusGossipBoard: React.FC = () => {
                       className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all ${
                         post.userReaction === 'facts'
                           ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-sm shadow-emerald-950'
-                          : 'bg-purple-950/30 border-purple-900/60 text-neutral-300 hover:border-purple-700'
+                          : 'bg-orange-950/30 border-orange-900/60 text-neutral-300 hover:border-orange-700'
                       }`}
                     >
                       <span>Facts</span>
@@ -532,8 +532,8 @@ export const CampusGossipBoard: React.FC = () => {
                       onClick={() => handleAuthenticatedAction(() => reactToGossipPost(post.id, 'tea'))}
                       className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all ${
                         post.userReaction === 'tea'
-                          ? 'bg-amber-950/90 border-amber-500 text-amber-300 shadow-sm shadow-amber-950'
-                          : 'bg-purple-950/30 border-purple-900/60 text-neutral-300 hover:border-purple-700'
+                          ? 'bg-orange-950/90 border-orange-500 text-orange-300 shadow-sm shadow-orange-950'
+                          : 'bg-orange-950/30 border-orange-900/60 text-neutral-300 hover:border-orange-700'
                       }`}
                     >
                       <span>Tea</span>
@@ -545,7 +545,7 @@ export const CampusGossipBoard: React.FC = () => {
                   <div className="flex items-center space-x-1.5 text-neutral-400">
                     <button
                       onClick={() => toggleComments(post.id)}
-                      className="px-2 py-1 rounded-lg bg-purple-950/40 hover:bg-purple-900/50 text-[11px] font-medium text-purple-300 flex items-center space-x-1 transition-colors"
+                      className="px-2 py-1 rounded-lg bg-orange-950/40 hover:bg-orange-900/50 text-[11px] font-medium text-orange-300 flex items-center space-x-1 transition-colors"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>{post.comments.length}</span>
@@ -554,7 +554,7 @@ export const CampusGossipBoard: React.FC = () => {
 
                     <button
                       onClick={() => handleShare(post)}
-                      className="p-1.5 rounded-lg hover:bg-purple-950/60 text-neutral-400 hover:text-white transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-orange-950/60 text-neutral-400 hover:text-white transition-colors"
                       title="Share Gossip"
                     >
                       <Share2 className="w-3.5 h-3.5" />
@@ -577,7 +577,7 @@ export const CampusGossipBoard: React.FC = () => {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mt-3 pt-3 border-t border-purple-900/40 space-y-2.5"
+                      className="mt-3 pt-3 border-t border-orange-900/40 space-y-2.5"
                     >
                       {/* Comments list */}
                       {post.comments.length > 0 ? (
@@ -585,15 +585,15 @@ export const CampusGossipBoard: React.FC = () => {
                           {post.comments.map((comment) => (
                             <div
                               key={comment.id}
-                              className="p-2 rounded-xl bg-purple-950/30 border border-purple-900/40 text-xs text-left"
+                              className="p-2 rounded-xl bg-orange-950/30 border border-orange-900/40 text-xs text-left"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-1.5">
-                                  <span className="font-bold text-purple-200 text-[11px]">
+                                  <span className="font-bold text-orange-200 text-[11px]">
                                     {comment.authorName}
                                   </span>
                                   {comment.authorBadge && (
-                                    <span className="px-1 py-0.2 rounded text-[8px] bg-purple-900/80 text-purple-300">
+                                    <span className="px-1 py-0.2 rounded text-[8px] bg-orange-900/80 text-orange-300">
                                       {comment.authorBadge}
                                     </span>
                                   )}
@@ -634,8 +634,8 @@ export const CampusGossipBoard: React.FC = () => {
                           )}
                           className={`p-1.5 rounded-xl border text-[10px] font-bold shrink-0 transition-colors ${
                             isAnonComment
-                              ? 'bg-fuchsia-950 border-fuchsia-700 text-fuchsia-300'
-                              : 'bg-purple-950 border-purple-700 text-purple-300'
+                              ? 'bg-orange-950 border-orange-700 text-orange-300'
+                              : 'bg-orange-950 border-orange-700 text-orange-300'
                           }`}
                           title={isAnonComment ? 'Commenting as Anon' : `Commenting as ${currentUser.name.split(' ')[0]}`}
                         >
@@ -656,14 +656,14 @@ export const CampusGossipBoard: React.FC = () => {
                           }}
                           disabled={!isAuthenticated}
                           placeholder={isAuthenticated ? 'Drop a comment or confirm gist...' : 'Sign up to comment'}
-                          className="flex-1 text-xs p-2 rounded-xl bg-black/40 border border-purple-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
+                          className="flex-1 text-xs p-2 rounded-xl bg-black/40 border border-orange-800/60 text-white placeholder-neutral-500 focus:outline-none focus:border-orange-400"
                         />
 
                         <button
                           type="button"
                           onClick={() => handleAuthenticatedAction(() => handleSendComment(post.id))}
                           disabled={!currentInput.trim()}
-                          className="p-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white hover:opacity-90 disabled:opacity-40 shrink-0"
+                          className="p-2 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white hover:opacity-90 disabled:opacity-40 shrink-0"
                         >
                           <Send className="w-3.5 h-3.5" />
                         </button>

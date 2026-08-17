@@ -236,7 +236,7 @@ export const AuthModal: React.FC = () => {
           <div className="flex items-center gap-3">
             <Logo size="sm" />
             <div className="hidden sm:block">
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-violet-300/85">UniAbuja campus</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-pink-300/85">UniAbuja campus</p>
               <p className="mt-0.5 text-[10px] text-white/45">Student network</p>
             </div>
           </div>
@@ -253,16 +253,16 @@ export const AuthModal: React.FC = () => {
 
         {mode === 'verification' ? (
           <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center space-y-6 py-10 sm:py-14">
-            <div className="mx-auto w-16 h-16 rounded-full bg-purple-900/80 border-2 border-purple-400 flex items-center justify-center text-purple-300 shadow-[0_0_25px_#a855f7]">
+            <div className="mx-auto w-16 h-16 rounded-full bg-orange-900/80 border-2 border-orange-400 flex items-center justify-center text-orange-300 shadow-[0_0_25px_#ff177f]">
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <div>
               <h2 className="text-xl font-black font-display text-white">Confirm your email</h2>
-              <p className="text-xs text-purple-300 mt-1">One quick step before you join the campus community.</p>
+              <p className="text-xs text-orange-300 mt-1">One quick step before you join the campus community.</p>
             </div>
             <div className="uoa-surface-soft rounded-2xl p-4 text-left">
               <p className="text-xs text-neutral-200 leading-relaxed">
-                We sent a confirmation link to <strong className="text-purple-200 break-all">{verificationEmail}</strong>. Open it in your email app, then return here and tap “I confirmed my email”.
+                We sent a confirmation link to <strong className="text-orange-200 break-all">{verificationEmail}</strong>. Open it in your email app, then return here and tap “I confirmed my email”.
               </p>
             </div>
             {authError && (
@@ -308,7 +308,7 @@ export const AuthModal: React.FC = () => {
           /* House Rules */
           <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-between bg-[#111013] px-1 py-8 sm:rounded-[2rem] sm:px-10 sm:py-12">
             <div>
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-violet-900/70 text-violet-200 ring-1 ring-violet-300/40">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pink-900/70 text-pink-200 ring-1 ring-pink-300/40">
                 <ShieldCheck className="h-7 w-7" />
               </div>
               <h2 className="mt-7 text-center font-display text-3xl font-bold tracking-[-0.04em] text-white sm:text-5xl">
@@ -321,7 +321,7 @@ export const AuthModal: React.FC = () => {
               <div className="mt-10 space-y-7 sm:mt-12 sm:space-y-8">
                 {houseRules.map((rule) => (
                   <div key={rule.title} className="grid grid-cols-[2rem_1fr] gap-3 sm:grid-cols-[2.5rem_1fr] sm:gap-4">
-                    <Check className="mt-1 h-6 w-6 text-violet-300" strokeWidth={2.5} />
+                    <Check className="mt-1 h-6 w-6 text-pink-300" strokeWidth={2.5} />
                     <div>
                       <h3 className="text-xl font-bold text-white sm:text-2xl">{rule.title}</h3>
                       <p className="mt-2 max-w-xl text-base leading-relaxed text-white/50 sm:text-lg">{rule.desc}</p>
@@ -335,7 +335,7 @@ export const AuthModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(false)}
-                className="w-full rounded-full bg-white px-5 py-4 text-lg font-bold text-[#17131a] transition-colors hover:bg-violet-100 sm:py-5 sm:text-xl"
+                className="w-full rounded-full bg-white px-5 py-4 text-lg font-bold text-[#17131a] transition-colors hover:bg-pink-100 sm:py-5 sm:text-xl"
               >
                 I Agree
               </button>
@@ -370,7 +370,7 @@ export const AuthModal: React.FC = () => {
                   value={fullNameInput}
                   onChange={(e) => setFullNameInput(e.target.value)}
                   placeholder="Enter your full name"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
                 />
               </div>
             )}
@@ -389,7 +389,7 @@ export const AuthModal: React.FC = () => {
                 onChange={(e) => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 placeholder="e.g. campus_connect"
                 autoComplete="username"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
               />
               <p className="mt-1.5 text-left text-[11px] text-white/35">3–24 lowercase letters, numbers, or underscores.</p>
             </div>
@@ -406,7 +406,7 @@ export const AuthModal: React.FC = () => {
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="you@example.com"
                   autoComplete="email"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
                 />
               </div>
             )}
@@ -423,7 +423,7 @@ export const AuthModal: React.FC = () => {
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="At least 6 characters"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-violet-300/40"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
               />
             </div>
 
@@ -440,7 +440,7 @@ export const AuthModal: React.FC = () => {
                   id="age-confirm-check"
                   checked={ageConfirmed}
                   onChange={(e) => setAgeConfirmed(e.target.checked)}
-                  className="mt-0.5 rounded border-white/20 bg-white/10 text-violet-400 focus:ring-0"
+                  className="mt-0.5 rounded border-white/20 bg-white/10 text-pink-400 focus:ring-0"
                 />
                 <label htmlFor="age-confirm-check" className="text-xs leading-relaxed text-white/60">
                   I confirm I am <strong>18+ years of age</strong> and currently enrolled at University of Abuja.
@@ -469,7 +469,7 @@ export const AuthModal: React.FC = () => {
                       setPasswordInput('');
                       setMode('login');
                     }}
-                    className="font-semibold text-violet-200 underline-offset-4 hover:underline"
+                    className="font-semibold text-pink-200 underline-offset-4 hover:underline"
                   >
                     Log in
                   </button>
@@ -485,7 +485,7 @@ export const AuthModal: React.FC = () => {
                       setPasswordInput('');
                       setMode('signup');
                     }}
-                    className="font-semibold text-violet-200 underline-offset-4 hover:underline"
+                    className="font-semibold text-pink-200 underline-offset-4 hover:underline"
                   >
                     Sign up
                   </button>

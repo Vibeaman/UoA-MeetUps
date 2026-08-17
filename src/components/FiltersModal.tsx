@@ -58,11 +58,11 @@ export const FiltersModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-[#0d0518] border border-purple-900/50 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg bg-[#0d0518] border border-orange-900/50 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-purple-950/60">
+        <div className="flex items-center justify-between pb-4 border-b border-orange-950/60">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-purple-950/80 text-purple-400 border border-purple-800/40">
+            <div className="p-2 rounded-xl bg-orange-950/80 text-orange-400 border border-orange-800/40">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
@@ -83,7 +83,7 @@ export const FiltersModal: React.FC = () => {
         <div className="flex-1 overflow-y-auto custom-scrollbar py-4 space-y-5">
           {/* Search bar */}
           <div>
-            <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-1.5">
               Search by Keyword
             </label>
             <div className="relative">
@@ -93,15 +93,15 @@ export const FiltersModal: React.FC = () => {
                 value={localFilters.searchQuery}
                 onChange={(e) => setLocalFilters({ ...localFilters, searchQuery: e.target.value })}
                 placeholder="Name, course, department, or hobbies..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[#140824] border border-purple-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-400"
               />
             </div>
           </div>
 
           {/* Quick 1-Tap Campus Filters */}
           <div>
-            <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
               <span>UniAbuja Quick Filters</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -116,11 +116,11 @@ export const FiltersModal: React.FC = () => {
                 }
                 className={`p-3 rounded-2xl border text-left flex items-start space-x-2.5 transition-all ${
                   localFilters.onlyMyFaculty
-                    ? 'bg-purple-900/60 border-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                    : 'bg-[#140824] border-purple-950 text-neutral-300 hover:border-purple-800'
+                    ? 'bg-orange-900/60 border-orange-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                    : 'bg-[#1a0b22] border-orange-950 text-neutral-300 hover:border-orange-800'
                 }`}
               >
-                <Building className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                <Building className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold block">My Faculty Only</span>
                   <span className="text-[10px] text-neutral-400">{currentUser.faculty}</span>
@@ -138,11 +138,11 @@ export const FiltersModal: React.FC = () => {
                 }
                 className={`p-3 rounded-2xl border text-left flex items-start space-x-2.5 transition-all ${
                   localFilters.onlyMyDepartment
-                    ? 'bg-purple-900/60 border-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                    : 'bg-[#140824] border-purple-950 text-neutral-300 hover:border-purple-800'
+                    ? 'bg-orange-900/60 border-orange-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                    : 'bg-[#1a0b22] border-orange-950 text-neutral-300 hover:border-orange-800'
                 }`}
               >
-                <GraduationCap className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                <GraduationCap className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold block">My Department Only</span>
                   <span className="text-[10px] text-neutral-400">{currentUser.department}</span>
@@ -153,7 +153,7 @@ export const FiltersModal: React.FC = () => {
 
           {/* Gender Filter */}
           <div>
-            <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-2">
               Interested in
             </label>
             <div className="grid grid-cols-4 gap-1.5">
@@ -164,8 +164,8 @@ export const FiltersModal: React.FC = () => {
                   onClick={() => setLocalFilters({ ...localFilters, gender: g })}
                   className={`py-2 rounded-xl text-xs font-semibold capitalize border transition-all ${
                     localFilters.gender === g
-                      ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
-                      : 'bg-[#130722] border-purple-950 text-neutral-400 hover:text-white'
+                      ? 'bg-orange-600 text-white border-orange-400 shadow-sm'
+                      : 'bg-[#130722] border-orange-950 text-neutral-400 hover:text-white'
                   }`}
                 >
                   {g === 'all' ? 'Everyone' : g}
@@ -176,7 +176,7 @@ export const FiltersModal: React.FC = () => {
 
           {/* Academic Level */}
           <div>
-            <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-2">
               Academic Level
             </label>
             <div className="flex flex-wrap gap-2">
@@ -185,8 +185,8 @@ export const FiltersModal: React.FC = () => {
                 onClick={() => setLocalFilters({ ...localFilters, level: 'all' })}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${
                   localFilters.level === 'all'
-                    ? 'bg-purple-600 text-white border-purple-400'
-                    : 'bg-[#130722] border-purple-950 text-neutral-400 hover:text-white'
+                    ? 'bg-orange-600 text-white border-orange-400'
+                    : 'bg-[#130722] border-orange-950 text-neutral-400 hover:text-white'
                 }`}
               >
                 All Levels
@@ -198,8 +198,8 @@ export const FiltersModal: React.FC = () => {
                   onClick={() => setLocalFilters({ ...localFilters, level: lvl })}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${
                     localFilters.level === lvl
-                      ? 'bg-purple-600 text-white border-purple-400'
-                      : 'bg-[#130722] border-purple-950 text-neutral-400 hover:text-white'
+                      ? 'bg-orange-600 text-white border-orange-400'
+                      : 'bg-[#130722] border-orange-950 text-neutral-400 hover:text-white'
                   }`}
                 >
                   {lvl}
@@ -210,7 +210,7 @@ export const FiltersModal: React.FC = () => {
 
           {/* Faculty Dropdown */}
           <div>
-            <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-1.5">
               Specific Faculty
             </label>
             <select
@@ -224,7 +224,7 @@ export const FiltersModal: React.FC = () => {
                   onlyMyDepartment: false,
                 })
               }
-              className="w-full p-2.5 rounded-xl bg-[#140824] border border-purple-900/50 text-xs text-white focus:outline-none focus:border-purple-400"
+              className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-xs text-white focus:outline-none focus:border-orange-400"
             >
               <option value="all">All UniAbuja Faculties</option>
               {FACULTIES_AND_DEPARTMENTS.map((f) => (
@@ -238,7 +238,7 @@ export const FiltersModal: React.FC = () => {
           {/* Dynamic Department Dropdown */}
           {localFilters.faculty !== 'all' && availableDepts.length > 0 && (
             <div>
-              <label className="block text-xs font-bold text-purple-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-orange-300 uppercase tracking-wider mb-1.5">
                 Department in {localFilters.faculty}
               </label>
               <select
@@ -250,7 +250,7 @@ export const FiltersModal: React.FC = () => {
                     onlyMyDepartment: false,
                   })
                 }
-                className="w-full p-2.5 rounded-xl bg-[#140824] border border-purple-900/50 text-xs text-white focus:outline-none focus:border-purple-400"
+                className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-xs text-white focus:outline-none focus:border-orange-400"
               >
                 <option value="all">All Departments in Faculty</option>
                 {availableDepts.map((d) => (
@@ -263,9 +263,9 @@ export const FiltersModal: React.FC = () => {
           )}
 
           {/* Only Verified Toggle */}
-          <div className="p-3 rounded-2xl bg-[#140824] border border-purple-950 flex items-center justify-between">
+          <div className="p-3 rounded-2xl bg-[#1a0b22] border border-orange-950 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <ShieldCheck className="w-4 h-4 text-orange-400" />
               <div>
                 <span className="text-xs font-bold text-white block">Only Verified Students</span>
                 <span className="text-[10px] text-neutral-400">Show profiles with facial verification badge</span>
@@ -277,7 +277,7 @@ export const FiltersModal: React.FC = () => {
                 setLocalFilters((prev) => ({ ...prev, onlyVerified: !prev.onlyVerified }))
               }
               className={`w-10 h-6 rounded-full transition-colors relative ${
-                localFilters.onlyVerified ? 'bg-purple-600' : 'bg-neutral-800'
+                localFilters.onlyVerified ? 'bg-orange-600' : 'bg-neutral-800'
               }`}
             >
               <span
@@ -290,7 +290,7 @@ export const FiltersModal: React.FC = () => {
         </div>
 
         {/* Footer actions */}
-        <div className="pt-4 border-t border-purple-950/60 flex items-center space-x-3">
+        <div className="pt-4 border-t border-orange-950/60 flex items-center space-x-3">
           <button
             type="button"
             onClick={handleReset}
@@ -303,7 +303,7 @@ export const FiltersModal: React.FC = () => {
           <button
             type="button"
             onClick={handleApply}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs shadow-lg shadow-purple-900/40 hover:brightness-110 transition-all flex items-center justify-center space-x-1.5"
+            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold text-xs shadow-lg shadow-orange-900/40 hover:brightness-110 transition-all flex items-center justify-center space-x-1.5"
             id="apply-filters-btn"
           >
             <Check className="w-4 h-4" />

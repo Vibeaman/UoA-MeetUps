@@ -64,7 +64,7 @@ export const CampusStoryModal: React.FC = () => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-sm h-[82vh] max-h-[640px] rounded-3xl overflow-hidden bg-neutral-950 border border-purple-800/40 shadow-2xl flex flex-col justify-between"
+        className="relative w-full max-w-sm h-[82vh] max-h-[640px] rounded-3xl overflow-hidden bg-neutral-950 border border-orange-800/40 shadow-2xl flex flex-col justify-between"
         id="campus-story-viewer-modal"
       >
         {/* Story Background Image */}
@@ -81,7 +81,7 @@ export const CampusStoryModal: React.FC = () => {
         <div className="relative z-20 pt-3 px-3">
           <div className="w-full h-1 rounded-full bg-white/25 overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-purple-400 to-fuchsia-400"
+              className="h-full bg-gradient-to-r from-orange-400 to-orange-400"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -89,11 +89,11 @@ export const CampusStoryModal: React.FC = () => {
           {/* Author Header */}
           <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-purple-400 shrink-0">
+              <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-orange-400 shrink-0">
                 {activeStory.avatar ? (
                   <img src={activeStory.avatar} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-purple-900/80 text-purple-100 flex items-center justify-center text-xs font-bold">
+                  <div className="w-full h-full bg-orange-900/80 text-orange-100 flex items-center justify-center text-xs font-bold">
                     {activeStory.userName
                       .split(/\s+/)
                       .filter(Boolean)
@@ -109,7 +109,7 @@ export const CampusStoryModal: React.FC = () => {
                   <span className="text-sm font-bold text-white font-display">
                     {activeStory.userName}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-900/80 text-purple-200 border border-purple-600/40">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-900/80 text-orange-200 border border-orange-600/40">
                     {activeStory.level}
                   </span>
                 </div>
@@ -133,8 +133,8 @@ export const CampusStoryModal: React.FC = () => {
         {/* Story Middle / Bottom Content */}
         <div className="relative z-20 p-4 space-y-3 mt-auto">
           {/* Tag & Caption Card */}
-          <div className="p-3.5 rounded-2xl bg-black/60 backdrop-blur-md border border-purple-700/40 text-left space-y-1.5">
-            <div className="inline-block px-2.5 py-0.5 rounded-full bg-purple-900/90 text-purple-200 text-[10px] font-extrabold border border-purple-400/50">
+          <div className="p-3.5 rounded-2xl bg-black/60 backdrop-blur-md border border-orange-700/40 text-left space-y-1.5">
+            <div className="inline-block px-2.5 py-0.5 rounded-full bg-orange-900/90 text-orange-200 text-[10px] font-extrabold border border-orange-400/50">
               {activeStory.tag}
             </div>
             <p className="text-xs text-white leading-relaxed font-medium">
@@ -150,12 +150,12 @@ export const CampusStoryModal: React.FC = () => {
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder={`Send a spark to ${activeStory.userName}...`}
-                className="w-full py-2.5 pl-3.5 pr-10 rounded-full bg-white/10 border border-white/20 text-xs text-white placeholder-neutral-400 backdrop-blur-md focus:outline-none focus:border-purple-400 focus:bg-white/15"
+                className="w-full py-2.5 pl-3.5 pr-10 rounded-full bg-white/10 border border-white/20 text-xs text-white placeholder-neutral-400 backdrop-blur-md focus:outline-none focus:border-orange-400 focus:bg-white/15"
               />
               <button
                 type="submit"
                 disabled={!replyText.trim()}
-                className="absolute right-1.5 p-1.5 rounded-full bg-purple-600 text-white disabled:opacity-30 transition-all hover:bg-purple-500"
+                className="absolute right-1.5 p-1.5 rounded-full bg-orange-600 text-white disabled:opacity-30 transition-all hover:bg-orange-500"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -165,7 +165,7 @@ export const CampusStoryModal: React.FC = () => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleQuickLike}
-              className="p-2.5 rounded-full bg-gradient-to-tr from-rose-600 to-fuchsia-600 text-white shadow-lg shrink-0 border border-white/20"
+              className="p-2.5 rounded-full bg-gradient-to-tr from-rose-600 to-orange-600 text-white shadow-lg shrink-0 border border-white/20"
               title="Like & Meet"
             >
               <Heart className="w-5 h-5 fill-white" />

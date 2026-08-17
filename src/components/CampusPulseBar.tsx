@@ -24,7 +24,7 @@ export const CampusPulseBar: React.FC = () => {
   return (
     <div className="w-full space-y-3 pb-1" id="campus-pulse-bar">
       {/* Live Campus Pulse Banner */}
-      <div className="uoa-surface-soft flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-[11px] text-violet-100">
+      <div className="uoa-surface-soft flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-[11px] text-pink-100">
         <div className="flex items-center space-x-2 truncate">
           <span className="flex h-2 w-2 relative shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -33,8 +33,8 @@ export const CampusPulseBar: React.FC = () => {
           <span className="font-semibold text-white truncate">
             {activeCount > 0 ? `${activeCount} UniAbuja students online` : 'No students marked online yet'}
           </span>
-          <span className="text-purple-400 hidden sm:inline">•</span>
-          <span className="text-purple-300/80 truncate hidden sm:inline">
+          <span className="text-orange-400 hidden sm:inline">•</span>
+          <span className="text-orange-300/80 truncate hidden sm:inline">
             {topFaculty ? `Most represented: ${topFaculty}` : 'Live activity will appear as students join'}
           </span>
         </div>

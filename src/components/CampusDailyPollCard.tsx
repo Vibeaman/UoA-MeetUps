@@ -62,7 +62,7 @@ export const CampusDailyPollCard: React.FC = () => {
   if (!currentPoll) {
     return (
       <div className="uoa-surface-soft mb-3 w-full rounded-2xl p-4 text-left">
-        <div className="flex items-center space-x-2 text-purple-300">
+        <div className="flex items-center space-x-2 text-orange-300">
           <MessageSquareQuote className="w-4 h-4" />
           <span className="text-xs font-extrabold uppercase tracking-wider">Campus polls</span>
         </div>
@@ -71,7 +71,7 @@ export const CampusDailyPollCard: React.FC = () => {
           onClick={() => {
             if (requestAuthentication()) setIsCreatingPoll(true);
           }}
-          className="mt-3 text-xs font-bold text-purple-300 hover:text-white flex items-center space-x-1"
+          className="mt-3 text-xs font-bold text-orange-300 hover:text-white flex items-center space-x-1"
         >
           <PlusCircle className="w-3.5 h-3.5" />
           <span>{isAuthenticated ? 'Suggest the first poll' : 'Sign in to suggest a poll'}</span>
@@ -88,7 +88,7 @@ export const CampusDailyPollCard: React.FC = () => {
       {/* Poll Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="rounded-lg bg-white/[0.07] p-1.5 text-violet-200 ring-1 ring-white/10">
+          <div className="rounded-lg bg-white/[0.07] p-1.5 text-pink-200 ring-1 ring-white/10">
             <MessageSquareQuote className="w-3.5 h-3.5" />
           </div>
           <div>
@@ -96,7 +96,7 @@ export const CampusDailyPollCard: React.FC = () => {
               <span className="uoa-section-kicker">
                 {currentPoll.category || 'Campus Vibe Poll'}
               </span>
-              <span className="text-[10px] text-purple-400/80 font-semibold">
+              <span className="text-[10px] text-orange-400/80 font-semibold">
                 • {activePollIndex + 1}/{campusPolls.length}
               </span>
             </div>
@@ -108,17 +108,17 @@ export const CampusDailyPollCard: React.FC = () => {
 
         <div className="flex items-center space-x-1">
           {campusPolls.length > 1 && (
-            <div className="flex items-center space-x-0.5 mr-1 bg-purple-950/60 rounded-lg p-0.5 border border-purple-800/30">
+            <div className="flex items-center space-x-0.5 mr-1 bg-orange-950/60 rounded-lg p-0.5 border border-orange-800/30">
               <button
                 onClick={handlePrevPoll}
-                className="p-1 rounded text-purple-300 hover:bg-purple-900/60 transition-colors"
+                className="p-1 rounded text-orange-300 hover:bg-orange-900/60 transition-colors"
                 title="Previous Poll"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleNextPoll}
-                className="p-1 rounded text-purple-300 hover:bg-purple-900/60 transition-colors"
+                className="p-1 rounded text-orange-300 hover:bg-orange-900/60 transition-colors"
                 title="Next Poll"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -128,7 +128,7 @@ export const CampusDailyPollCard: React.FC = () => {
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1 rounded-lg text-purple-400 hover:bg-purple-950/60 transition-colors"
+            className="p-1 rounded-lg text-orange-400 hover:bg-orange-950/60 transition-colors"
             title={isCollapsed ? 'Expand Poll' : 'Collapse Poll'}
           >
             {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
@@ -162,7 +162,7 @@ export const CampusDailyPollCard: React.FC = () => {
                     }}
                     className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
                       isSelected
-                        ? 'bg-violet-500/10 border-violet-300/50 ring-1 ring-violet-300/25'
+                        ? 'bg-pink-500/10 border-pink-300/50 ring-1 ring-pink-300/25'
                         : 'bg-white/[0.035] border-white/10 hover:border-white/20'
                     }`}
                   >
@@ -174,7 +174,7 @@ export const CampusDailyPollCard: React.FC = () => {
                         transition={{ duration: 0.45, ease: 'easeOut' }}
                         className={`absolute inset-y-0 left-0 ${
                           isSelected
-                            ? 'bg-violet-500/25'
+                            ? 'bg-pink-500/25'
                             : 'bg-white/[0.06]'
                         }`}
                       />
@@ -183,13 +183,13 @@ export const CampusDailyPollCard: React.FC = () => {
                     <div className="relative z-10 flex items-center justify-between text-xs">
                       <div className="flex items-center space-x-2 text-neutral-100 font-medium truncate pr-2">
                         {isSelected && (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-purple-300 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-300 shrink-0" />
                         )}
                         <span className="truncate">{opt.text}</span>
                       </div>
 
                       {hasVoted && (
-                        <span className="text-[11px] font-bold text-purple-200 shrink-0 ml-2">
+                        <span className="text-[11px] font-bold text-orange-200 shrink-0 ml-2">
                           {percentage}%
                         </span>
                       )}
@@ -205,7 +205,7 @@ export const CampusDailyPollCard: React.FC = () => {
               {currentPoll.totalVotes.toLocaleString()} UniAbuja votes
             </span>
             <div className="flex items-center space-x-2">
-              <span className="text-purple-300/80">
+              <span className="text-orange-300/80">
                 {isAuthenticated
                   ? hasVoted
                     ? 'Your vote is counted'
@@ -216,7 +216,7 @@ export const CampusDailyPollCard: React.FC = () => {
                 onClick={() => {
                   if (requestAuthentication()) setIsCreatingPoll(!isCreatingPoll);
                 }}
-                className="text-purple-400 hover:text-purple-200 font-semibold flex items-center space-x-0.5"
+                className="text-orange-400 hover:text-orange-200 font-semibold flex items-center space-x-0.5"
               >
                 <PlusCircle className="w-3 h-3" />
                 <span>{isAuthenticated ? 'Suggest Poll' : 'Sign up to suggest'}</span>
@@ -231,10 +231,10 @@ export const CampusDailyPollCard: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               onSubmit={handleCreatePollSubmit}
-              className="mt-2 pt-2 border-t border-purple-900/50 space-y-2"
+              className="mt-2 pt-2 border-t border-orange-900/50 space-y-2"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-purple-200">
+                <span className="text-[11px] font-bold text-orange-200">
                   Suggest a UniAbuja Campus Poll
                 </span>
                 <button
@@ -251,7 +251,7 @@ export const CampusDailyPollCard: React.FC = () => {
                 value={newQuestion}
                 onChange={(e) => setNewQuestion(e.target.value)}
                 placeholder="Question (e.g. Best chill spot on campus?)"
-                className="w-full text-xs p-2 rounded-xl bg-purple-950/60 border border-purple-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400"
+                className="w-full text-xs p-2 rounded-xl bg-orange-950/60 border border-orange-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-orange-400"
                 required
               />
 
@@ -261,7 +261,7 @@ export const CampusDailyPollCard: React.FC = () => {
                   value={newOpt1}
                   onChange={(e) => setNewOpt1(e.target.value)}
                   placeholder="Option 1 (Required)"
-                  className="text-xs p-2 rounded-xl bg-purple-950/60 border border-purple-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400"
+                  className="text-xs p-2 rounded-xl bg-orange-950/60 border border-orange-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-orange-400"
                   required
                 />
                 <input
@@ -269,7 +269,7 @@ export const CampusDailyPollCard: React.FC = () => {
                   value={newOpt2}
                   onChange={(e) => setNewOpt2(e.target.value)}
                   placeholder="Option 2 (Required)"
-                  className="text-xs p-2 rounded-xl bg-purple-950/60 border border-purple-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400"
+                  className="text-xs p-2 rounded-xl bg-orange-950/60 border border-orange-800/60 text-white placeholder-neutral-400 focus:outline-none focus:border-orange-400"
                   required
                 />
               </div>
@@ -278,7 +278,7 @@ export const CampusDailyPollCard: React.FC = () => {
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="text-[11px] p-1.5 rounded-lg bg-purple-950 border border-purple-800 text-purple-200 focus:outline-none"
+                  className="text-[11px] p-1.5 rounded-lg bg-orange-950 border border-orange-800 text-orange-200 focus:outline-none"
                 >
                   <option value="Campus Vibe">Campus Vibe</option>
                   <option value="UniAbuja Showdown">UniAbuja Showdown</option>
@@ -289,7 +289,7 @@ export const CampusDailyPollCard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!newQuestion.trim() || !newOpt1.trim() || !newOpt2.trim()}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-semibold flex items-center space-x-1 disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white text-xs font-semibold flex items-center space-x-1 disabled:opacity-40"
                 >
                   <Send className="w-3 h-3" />
                   <span>Post Poll</span>

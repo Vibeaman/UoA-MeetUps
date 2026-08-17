@@ -66,7 +66,7 @@ export const Header: React.FC = () => {
         >
           <Logo size="sm" />
           <div className="hidden sm:flex flex-col">
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-violet-300/85">
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-pink-300/85">
               UniAbuja Campus
             </span>
             <span className="text-[9px] text-white/45">Student network for UniAbuja</span>
@@ -103,17 +103,17 @@ export const Header: React.FC = () => {
               }`}
               id="mode-lowkey-btn"
             >
-              <Lock className="w-3.5 h-3.5 text-purple-300" />
+              <Lock className="w-3.5 h-3.5 text-orange-300" />
               <span>Lowkey</span>
               {currentMode === 'lowkey' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-ping"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping"></span>
               )}
             </button>
           </div>
 
           {/* Lowkey Mode Floating Badge */}
           {currentMode === 'lowkey' && (
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-fuchsia-300 bg-fuchsia-950/80 px-2 py-0.5 rounded-full border border-fuchsia-800/40 shadow-sm animate-pulse">
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-orange-300 bg-orange-950/80 px-2 py-0.5 rounded-full border border-orange-800/40 shadow-sm animate-pulse">
               Lowkey mode active
             </div>
           )}
@@ -126,15 +126,15 @@ export const Header: React.FC = () => {
             onClick={isBoostActive ? undefined : triggerBoost}
             className={`relative rounded-xl border p-2 transition-all ${
               isBoostActive
-                ? 'bg-violet-500/15 border-violet-300/40 text-violet-100'
-                : 'uoa-quiet-button text-violet-200'
+                ? 'bg-pink-500/15 border-pink-300/40 text-pink-100'
+                : 'uoa-quiet-button text-pink-200'
             }`}
             title={isBoostActive ? `Boost Active (${formatBoostTime(boostTimeLeft)})` : 'Boost Profile (5x Matches)'}
             id="boost-header-btn"
           >
-            <Zap className="w-4 h-4 text-purple-400" />
+            <Zap className="w-4 h-4 text-orange-400" />
             {isBoostActive && (
-              <span className="absolute -top-1 -right-1 text-[8px] font-extrabold bg-purple-600 text-white px-1 rounded-full">
+              <span className="absolute -top-1 -right-1 text-[8px] font-extrabold bg-orange-600 text-white px-1 rounded-full">
                 {Math.ceil(boostTimeLeft / 60)}m
               </span>
             )}
@@ -145,12 +145,12 @@ export const Header: React.FC = () => {
             onClick={() => setIsPremiumModalOpen(true)}
             className={`flex items-center space-x-1 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all ${
               isPremium
-                ? 'bg-white/10 text-amber-200 ring-1 ring-amber-300/25'
+                ? 'bg-white/10 text-orange-200 ring-1 ring-orange-300/25'
                 : 'uoa-quiet-button text-white/75'
             }`}
             id="vip-header-btn"
           >
-            <Crown className={`w-3.5 h-3.5 ${isPremium ? 'text-amber-400 fill-amber-400' : 'text-purple-400'}`} />
+            <Crown className={`w-3.5 h-3.5 ${isPremium ? 'text-orange-400 fill-orange-400' : 'text-orange-400'}`} />
             <span className="hidden sm:inline">{isPremium ? 'VIP' : 'Upgrade'}</span>
           </button>
 
@@ -163,7 +163,7 @@ export const Header: React.FC = () => {
           >
             <SlidersHorizontal className="w-4 h-4" />
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center border border-[#08040d]">
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-600 text-white text-[9px] font-bold flex items-center justify-center border border-[#08040d]">
                 {activeFilterCount}
               </span>
             )}

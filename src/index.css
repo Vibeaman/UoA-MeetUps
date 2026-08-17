@@ -12,7 +12,7 @@
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: #08040d;
+    background-color: #08050c;
     color: #f3f4f6;
     overflow-x: hidden;
   }
@@ -28,26 +28,27 @@
 
 /* Custom glow and backdrop effects */
 .glow-purple {
-  box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 25px -5px rgba(255, 23, 127, 0.38);
 }
 
 .glow-purple-lg {
-  box-shadow: 0 0 45px -5px rgba(168, 85, 247, 0.45), 0 0 15px rgba(216, 70, 239, 0.3);
+  box-shadow: 0 0 45px -5px rgba(255, 23, 127, 0.48), 0 0 15px rgba(255, 139, 54, 0.32);
 }
 
 .glow-border {
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: inset 0 0 15px rgba(168, 85, 247, 0.15);
+  border-color: rgba(255, 54, 151, 0.48);
+  box-shadow: inset 0 0 15px rgba(255, 23, 127, 0.18);
 }
 
-.text-gradient-purple {
-  background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #a855f7 100%);
+.text-gradient-purple,
+.text-gradient-brand {
+  background: linear-gradient(125deg, #8b20d4 0%, #ff0f8f 48%, #ff8b36 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-gradient-gold {
-  background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+  background: linear-gradient(135deg, #ffd36a 0%, #ff8b36 55%, #ff3b78 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -64,13 +65,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4c1d95;
+  background: #5a0b83;
   border-radius: 9999px;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  border: 1px solid rgba(255, 23, 127, 0.34);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7e22ce;
+  background: #bd1eb6;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -84,12 +85,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #581c87;
+  background: #4e0b68;
   border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #9333ea;
+  background: #ee1b93;
 }
 
 /* Glassmorphism containers */
@@ -119,32 +120,35 @@
 
 /* UoA MeetUps editorial redesign tokens */
 :root {
-  --uoa-ink: #120b16;
-  --uoa-ink-soft: #231827;
-  --uoa-paper: #fbf8ff;
-  --uoa-paper-muted: #eee8f4;
-  --uoa-night: #0d0710;
-  --uoa-night-soft: #160d1c;
-  --uoa-plum: #6d28d9;
-  --uoa-violet: #8b5cf6;
-  --uoa-fuchsia: #c026d3;
-  --uoa-line: rgba(255, 255, 255, 0.12);
+  --uoa-ink: #0b0710;
+  --uoa-ink-soft: #241124;
+  --uoa-paper: #fff9fc;
+  --uoa-paper-muted: #f6dce7;
+  --uoa-night: #08050d;
+  --uoa-night-soft: #14081b;
+  --uoa-plum: #7d1cc4;
+  --uoa-violet: #b927e8;
+  --uoa-fuchsia: #ff177f;
+  --uoa-coral: #ff4f5e;
+  --uoa-orange: #ff8b36;
+  --uoa-line: rgba(255, 255, 255, 0.13);
 }
 
 .uoa-app-shell {
   background:
-    radial-gradient(circle at 50% -10%, rgba(109, 40, 217, 0.16), transparent 34rem),
-    linear-gradient(180deg, #0d0710 0%, #100914 48%, #0a060c 100%);
+    radial-gradient(circle at 12% -12%, rgba(255, 23, 127, 0.2), transparent 30rem),
+    radial-gradient(circle at 88% 110%, rgba(255, 139, 54, 0.15), transparent 28rem),
+    linear-gradient(180deg, #08050d 0%, #120817 48%, #07040a 100%);
 }
 
 .uoa-header {
-  background: rgba(13, 7, 16, 0.86);
+  background: rgba(8, 5, 13, 0.88);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 12px 35px rgba(3, 1, 5, 0.22);
 }
 
 .uoa-surface {
-  background: rgba(23, 13, 29, 0.78);
+  background: rgba(24, 10, 29, 0.8);
   border: 1px solid var(--uoa-line);
   box-shadow: 0 18px 50px rgba(3, 1, 5, 0.14);
 }
@@ -155,7 +159,7 @@
 }
 
 .uoa-section-kicker {
-  color: #d8c8e7;
+  color: #f3bfd6;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -172,14 +176,14 @@
 }
 
 .uoa-muted-copy {
-  color: #b9acbf;
+  color: #d0b7c8;
   font-size: 0.78rem;
   line-height: 1.55;
 }
 
 .uoa-primary-button {
-  background: linear-gradient(105deg, var(--uoa-plum), var(--uoa-fuchsia));
-  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.22);
+  background: linear-gradient(105deg, var(--uoa-plum) 0%, var(--uoa-fuchsia) 58%, var(--uoa-orange) 100%);
+  box-shadow: 0 12px 24px rgba(255, 23, 127, 0.24);
 }
 
 .uoa-primary-button:hover {
@@ -218,7 +222,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #c4b5fd;
+  outline: 2px solid #ff74b5;
   outline-offset: 3px;
 }
 

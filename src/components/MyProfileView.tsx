@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserProfile } from '../types';
+import { Logo } from './Logo';
 
 interface MyProfileViewProps {
   onOpenEditProfile: () => void;
@@ -60,7 +61,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     return (
       <div className="flex min-h-[100dvh] flex-1 items-center justify-center px-6 text-center">
         <div>
-          <Sparkles className="mx-auto h-7 w-7 animate-pulse text-violet-200" />
+          <Sparkles className="mx-auto h-7 w-7 animate-pulse text-pink-200" />
           <p className="mt-4 text-sm text-white/55">Checking your secure session</p>
         </div>
       </div>
@@ -71,16 +72,13 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     return (
       <div className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#0b0610] px-6 pb-7 pt-7 text-white sm:px-12 sm:pt-10">
         <div className="mx-auto flex w-full max-w-[1120px] items-start justify-between">
-          <div className="flex items-baseline gap-2 leading-none">
-            <span className="font-display text-3xl font-black tracking-[-0.08em] text-[#d8b4fe] sm:text-4xl">UoA</span>
-            <span className="font-serif text-3xl italic tracking-[-0.04em] text-white sm:text-4xl">MeetUps</span>
-          </div>
+          <Logo size="md" className="origin-left scale-[0.82] sm:scale-100" />
 
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsLandingMenuOpen((open) => !open)}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.08] text-violet-200 ring-1 ring-white/15 transition-colors hover:bg-white/[0.14]"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.08] text-pink-200 ring-1 ring-white/15 transition-colors hover:bg-white/[0.14]"
               aria-label="Open account menu"
               aria-expanded={isLandingMenuOpen}
             >
@@ -104,7 +102,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
                     setIsLandingMenuOpen(false);
                     openAuthModal('login');
                   }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-violet-200 hover:bg-white/[0.08]"
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-pink-200 hover:bg-white/[0.08]"
                 >
                   Log in
                 </button>
@@ -114,7 +112,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         </div>
 
         <div className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
-          <h1 className="max-w-[10ch] font-serif text-[4.4rem] font-semibold leading-[0.86] tracking-[-0.065em] text-[#c084fc] sm:text-[7.5rem]">
+          <h1 className="max-w-[10ch] font-serif text-[4.4rem] font-semibold leading-[0.86] tracking-[-0.065em] text-[#ff59ad] sm:text-[7.5rem]">
             It starts
             <br />
             with a
@@ -126,7 +124,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             <button
               type="button"
               onClick={() => openAuthModal('signup')}
-              className="w-full rounded-full bg-gradient-to-r from-[#6d28d9] to-[#c026d3] px-5 py-4 text-base font-bold text-white shadow-[0_12px_24px_rgba(109,40,217,0.25)] transition-colors hover:brightness-110"
+              className="w-full rounded-full bg-gradient-to-r from-[#7d1cc4] to-[#ff177f] px-5 py-4 text-base font-bold text-white shadow-[0_12px_24px_rgba(109,40,217,0.25)] transition-colors hover:brightness-110"
             >
               Create account
             </button>
@@ -157,7 +155,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     return (
       <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col space-y-5 overflow-y-auto px-3 pb-24 pt-4 custom-scrollbar sm:px-5 sm:pt-6">
         <div className="uoa-surface rounded-[28px] p-6 text-center">
-          <div className="mx-auto w-16 h-16 rounded-full bg-purple-950/70 border border-purple-700/50 flex items-center justify-center text-purple-300">
+          <div className="mx-auto w-16 h-16 rounded-full bg-orange-950/70 border border-orange-700/50 flex items-center justify-center text-orange-300">
             <LogIn className="w-7 h-7" />
           </div>
           <h2 className="mt-4 text-xl font-black font-display text-white">Complete your student profile</h2>
@@ -180,12 +178,12 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       {/* Top Profile Card */}
       <div className="uoa-surface relative overflow-hidden rounded-[28px] p-5">
         {/* Glow effect */}
-        <div className="absolute top-0 right-0 w-36 h-36 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-36 h-36 bg-orange-600/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-start justify-between">
           {/* Avatar with live photo verification ring */}
           <div className="relative">
-            <div className="p-1 rounded-full bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-amber-400">
+            <div className="p-1 rounded-full bg-gradient-to-tr from-orange-500 via-orange-500 to-orange-400">
               {currentUser.photos[0] ? (
                 <img
                   src={currentUser.photos[0]}
@@ -193,14 +191,14 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
                   className="w-20 h-20 rounded-full object-cover border-2 border-[#090312]"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full border-2 border-[#090312] bg-purple-950/70 flex items-center justify-center text-purple-300">
+                <div className="w-20 h-20 rounded-full border-2 border-[#090312] bg-orange-950/70 flex items-center justify-center text-orange-300">
                   <Camera className="w-7 h-7" />
                 </div>
               )}
             </div>
             {currentUser.isVerified ? (
               <span
-                className="absolute bottom-0 right-0 p-1 rounded-full bg-purple-600 border-2 border-[#090312] text-white shadow-md"
+                className="absolute bottom-0 right-0 p-1 rounded-full bg-orange-600 border-2 border-[#090312] text-white shadow-md"
                 title="Verified Student"
               >
                 <ShieldCheck className="w-4 h-4" />
@@ -208,7 +206,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             ) : (
               <button
                 onClick={() => setIsVerificationModalOpen(true)}
-                className="absolute bottom-0 right-0 p-1 rounded-full bg-amber-500 border-2 border-[#090312] text-black shadow-md hover:scale-110 transition-transform"
+                className="absolute bottom-0 right-0 p-1 rounded-full bg-orange-500 border-2 border-[#090312] text-black shadow-md hover:scale-110 transition-transform"
                 title="Tap to verify"
               >
                 <Camera className="w-4 h-4" />
@@ -219,7 +217,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           {/* Edit Profile Button */}
           <button
             onClick={onOpenEditProfile}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-2xl bg-purple-950/80 border border-purple-700/50 text-purple-200 text-xs font-bold hover:bg-purple-900/90 transition-all shadow-sm"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-2xl bg-orange-950/80 border border-orange-700/50 text-orange-200 text-xs font-bold hover:bg-orange-900/90 transition-all shadow-sm"
             id="edit-profile-btn"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -234,14 +232,14 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
               {currentUser.name}, {currentUser.age}
             </h2>
             {currentUser.isVerified && (
-              <span className="px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-orange-900/60 border border-orange-500/40 text-orange-300 text-[10px] font-bold">
                 Verified
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-purple-300/90">
-            <span className="font-mono bg-black/40 px-2 py-0.5 rounded-lg border border-purple-950 text-[11px] text-purple-200 font-bold">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-orange-300/90">
+            <span className="font-mono bg-black/40 px-2 py-0.5 rounded-lg border border-orange-950 text-[11px] text-orange-200 font-bold">
               @{currentUser.username}
             </span>
             <span>•</span>
@@ -251,28 +249,28 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-1 text-[11px] text-neutral-400 pt-0.5">
-            <MapPin className="w-3 h-3 text-purple-400" />
+            <MapPin className="w-3 h-3 text-orange-400" />
             <span>{currentUser.campusLocation}</span>
           </div>
         </div>
 
         {/* Verification Alert Banner if unverified */}
         {!currentUser.isVerified && (
-          <div className="mt-4 p-3 rounded-2xl bg-amber-950/40 border border-amber-600/40 flex items-center justify-between">
+          <div className="mt-4 p-3 rounded-2xl bg-orange-950/40 border border-orange-600/40 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Camera className="w-4 h-4 text-amber-400 shrink-0" />
+              <Camera className="w-4 h-4 text-orange-400 shrink-0" />
               <div className="text-left">
-                <span className="text-xs font-bold text-amber-200 block">
+                <span className="text-xs font-bold text-orange-200 block">
                   Verify Student Identity
                 </span>
-                <span className="text-[10px] text-amber-300/80">
+                <span className="text-[10px] text-orange-300/80">
                   Take a quick selfie to get 3x more matches
                 </span>
               </div>
             </div>
             <button
               onClick={() => setIsVerificationModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-amber-500 text-black text-xs font-black shadow hover:brightness-110"
+              className="px-3 py-1.5 rounded-xl bg-orange-500 text-black text-xs font-black shadow hover:brightness-110"
             >
               Verify
             </button>
@@ -285,9 +283,9 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {appMode === 'lowkey' ? (
-              <Lock className="w-5 h-5 text-fuchsia-400" />
+              <Lock className="w-5 h-5 text-orange-400" />
             ) : (
-              <Flame className="w-5 h-5 text-purple-400" />
+              <Flame className="w-5 h-5 text-orange-400" />
             )}
             <div>
               <span className="text-xs font-black uppercase tracking-wider text-white block">
@@ -304,7 +302,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           <button
             onClick={toggleMode}
             className={`w-12 h-7 rounded-full transition-all relative ${
-              appMode === 'lowkey' ? 'bg-fuchsia-600' : 'bg-purple-600'
+              appMode === 'lowkey' ? 'bg-orange-600' : 'bg-orange-600'
             }`}
             id="toggle-mode-profile-btn"
           >
@@ -321,14 +319,14 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
       <div className="uoa-surface relative overflow-hidden rounded-3xl p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300">
+            <div className="p-2.5 rounded-2xl bg-orange-500/20 border border-orange-500/40 text-orange-300">
               <Crown className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-black text-white">
                 {isPremium ? 'VIP Royal Pass Active' : 'UoA MeetUps VIP'}
               </h3>
-              <p className="text-[11px] text-purple-200/80">
+              <p className="text-[11px] text-orange-200/80">
                 {isPremium
                   ? `Active on ${activePlan} plan (Paystack verified)`
                   : 'See who liked you, rewind swipes, and incognito mode'}
@@ -338,7 +336,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
 
           <button
             onClick={() => setIsPremiumModalOpen(true)}
-            className="uoa-quiet-button rounded-xl px-3 py-1.5 text-xs font-extrabold transition-colors hover:text-amber-100"
+            className="uoa-quiet-button rounded-xl px-3 py-1.5 text-xs font-extrabold transition-colors hover:text-orange-100"
           >
             {isPremium ? 'Manage' : 'Upgrade'}
           </button>
@@ -350,10 +348,10 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         {/* Community Guidelines */}
         <button
           onClick={onOpenGuidelines}
-          className="w-full p-3 rounded-2xl hover:bg-purple-950/50 flex items-center justify-between transition-colors group"
+          className="w-full p-3 rounded-2xl hover:bg-orange-950/50 flex items-center justify-between transition-colors group"
         >
           <div className="flex items-center space-x-2.5 text-neutral-200">
-            <ShieldAlert className="w-4 h-4 text-purple-400" />
+            <ShieldAlert className="w-4 h-4 text-orange-400" />
             <span className="font-semibold">Community Guidelines & Rules</span>
           </div>
           <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" />
@@ -362,10 +360,10 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         {/* Tips */}
         <button
           onClick={onOpenTips}
-          className="w-full p-3 rounded-2xl hover:bg-purple-950/50 flex items-center justify-between transition-colors group"
+          className="w-full p-3 rounded-2xl hover:bg-orange-950/50 flex items-center justify-between transition-colors group"
         >
           <div className="flex items-center space-x-2.5 text-neutral-200">
-            <HelpCircle className="w-4 h-4 text-purple-400" />
+            <HelpCircle className="w-4 h-4 text-orange-400" />
             <span className="font-semibold">Campus Dating & Wellness Tips</span>
           </div>
           <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:translate-x-0.5 transition-transform" />
