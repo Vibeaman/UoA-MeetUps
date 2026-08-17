@@ -5,6 +5,7 @@ import { BottomNav } from './components/BottomNav';
 import { SwipeDeck } from './components/SwipeDeck';
 import { WhoLikedMeView } from './components/WhoLikedMeView';
 import { ChatView } from './components/ChatView';
+import { ChatAccessGate } from './components/ChatAccessGate';
 import { SafetyCenterView } from './components/SafetyCenterView';
 import { MyProfileView } from './components/MyProfileView';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -85,10 +86,12 @@ const MainAppContent: React.FC = () => {
             )}
 
             {activeTab === 'matches' && (
-              <ChatView
-                onOpenProfileDetails={handleOpenProfileDetails}
-                onOpenReport={handleOpenReport}
-              />
+              <ChatAccessGate>
+                <ChatView
+                  onOpenProfileDetails={handleOpenProfileDetails}
+                  onOpenReport={handleOpenReport}
+                />
+              </ChatAccessGate>
             )}
 
             {activeTab === 'safety' && (

@@ -40,7 +40,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     activePlan,
     setIsPremiumModalOpen,
     setIsVerificationModalOpen,
-    setIsAuthModalOpen,
+    openAuthModal,
     signOut,
     refreshAuthentication,
     toggleMode,
@@ -73,7 +73,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
           </p>
           {!isAuthLoading && (
             <button
-              onClick={() => (isAuthenticated ? onOpenEditProfile() : setIsAuthModalOpen(true))}
+              onClick={() => (isAuthenticated ? onOpenEditProfile() : openAuthModal('signup'))}
               className="mt-5 w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs font-bold shadow-lg shadow-purple-900/50"
             >
               {isAuthenticated ? 'Complete Profile' : 'Sign In'}
@@ -286,7 +286,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             if (isAuthenticated) {
               signOut();
             } else {
-              setIsAuthModalOpen(true);
+              openAuthModal('signup');
             }
           }}
           className="w-full p-3 rounded-2xl hover:bg-rose-950/40 flex items-center justify-between transition-colors text-rose-400"

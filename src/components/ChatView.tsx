@@ -245,7 +245,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
               You matched with {matched.name}!
             </p>
             <p className="text-[11px] text-neutral-400 max-w-xs mx-auto">
-              Both verified UniAbuja students. Say hello or send an icebreaker to keep the match active.
+              {activeMessages.length > 0
+                ? 'Keep the conversation going with a message or campus icebreaker.'
+                : 'No chat history in this conversation yet. Send a message or icebreaker to start.'}
             </p>
           </div>
 
@@ -499,9 +501,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
         {matches.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-[#120722] border border-purple-950/80">
             <MessageCircle className="w-10 h-10 text-purple-400 mx-auto mb-2 opacity-60" />
-            <h4 className="text-sm font-bold text-white">No active matches yet</h4>
+            <h4 className="text-sm font-bold text-white">No chat history yet</h4>
             <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
-              Swipe on students in the Discover feed to get your first campus match!
+              Your matches and conversations will appear here after you connect with another student in Discover.
             </p>
           </div>
         ) : (

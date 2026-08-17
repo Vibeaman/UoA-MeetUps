@@ -17,6 +17,8 @@ import {
 import { supabaseService } from '../services/supabaseService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/supabase';
 
+type AuthModalMode = 'login' | 'signup';
+
 interface AppContextType {
   currentUser: UserProfile;
   updateCurrentUser: (updates: Partial<UserProfile>) => void;
@@ -77,6 +79,8 @@ interface AppContextType {
   // Modals
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  authModalMode: AuthModalMode;
+  openAuthModal: (mode?: AuthModalMode) => void;
   isVerificationModalOpen: boolean;
   setIsVerificationModalOpen: (open: boolean) => void;
   isPremiumModalOpen: boolean;
@@ -240,6 +244,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('signup');
+
+  const openAuthModal = (mode: AuthModalMode = 'signup') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
 
   const authenticateUser = (userId?: string) => {
     setIsAuthenticated(true);
@@ -296,7 +306,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const requestAuthentication = () => {
     if (isAuthenticated) return true;
-    setIsAuthModalOpen(true);
+    openAuthModal('signup');
     return false;
   };
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -385,6 +395,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     void supabaseService.fetchProfile(currentUser.id).then((profile) => {
       if (!cancelled && profile) setCurrentUser(profile);
     });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, currentUser.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) {
+      if (!isAuthenticated) {
+        setMatches([]);
+        setMessages({});
+      }
+      return;
+    }
+
+    let cancelled = false;
+    void supabaseService.fetchUserChatHistory(currentUser.id).then((history) => {
+      if (!cancelled && history) {
+        setMatches(history.matches);
+        setMessages(history.messages);
+      }
+    });
+
     return () => {
       cancelled = true;
     };
@@ -1237,6 +1269,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearLocalCache,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        authModalMode,
+        openAuthModal,
         isVerificationModalOpen,
         setIsVerificationModalOpen,
         isPremiumModalOpen,

@@ -22,6 +22,7 @@ export const AuthModal: React.FC = () => {
     authenticateUser,
     refreshAuthentication,
     resendVerificationEmail,
+    authModalMode,
   } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup' | 'verification' | 'onboarding'>('signup');
@@ -38,12 +39,12 @@ export const AuthModal: React.FC = () => {
 
   useEffect(() => {
     if (!isAuthModalOpen) return;
-    setMode('signup');
+    setMode(authModalMode);
     setPasswordInput('');
     setAuthError('');
     setVerificationMessage('');
     setOnboardingSlide(0);
-  }, [isAuthModalOpen]);
+  }, [isAuthModalOpen, authModalMode]);
 
   if (!isAuthModalOpen) return null;
 

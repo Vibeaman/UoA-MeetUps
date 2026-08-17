@@ -564,6 +564,80 @@ export const supabaseService = {
     }
   },
 
+  async fetchUserChatHistory(userId: string): Promise<{
+    matches: MatchItem[];
+    messages: Record<string, ChatMessage[]>;
+  } | null> {
+    try {
+      const supabase = getSupabase();
+      const { data: matchRows, error: matchError } = await supabase
+        .from('matches')
+        .select('id, user_id_1, user_id_2, created_at, expires_at, last_message, last_message_time, is_lowkey_match')
+        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (matchError) {
+        console.warn('Supabase match history fetch notice:', matchError.message);
+        return null;
+      }
+
+      const profiles = await supabaseService.fetchProfiles();
+      const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile]));
+      const matches = (matchRows || []).flatMap((row: any) => {
+        const matchedUserId = row.user_id_1 === userId ? row.user_id_2 : row.user_id_1;
+        const matchedUser = profileMap.get(matchedUserId);
+        if (!matchedUser) return [];
+
+        return [{
+          id: row.id,
+          matchedUser,
+          createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+          expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : Date.now(),
+          lastMessage: row.last_message || undefined,
+          lastMessageTime: row.last_message_time ? new Date(row.last_message_time).getTime() : undefined,
+          hasUnread: false,
+          isLowkeyMatch: Boolean(row.is_lowkey_match),
+        } satisfies MatchItem];
+      });
+
+      const messages: Record<string, ChatMessage[]> = {};
+      const matchIds = matches.map((match) => match.id);
+      if (matchIds.length === 0) return { matches, messages };
+
+      const { data: messageRows, error: messageError } = await supabase
+        .from('messages')
+        .select('id, match_id, sender_id, text, image_url, is_view_once, view_once_viewed, created_at, read')
+        .in('match_id', matchIds)
+        .order('created_at', { ascending: true });
+
+      if (messageError) {
+        console.warn('Supabase message history fetch notice:', messageError.message);
+        return { matches, messages };
+      }
+
+      (messageRows || []).forEach((row: any) => {
+        const message: ChatMessage = {
+          id: row.id,
+          matchId: row.match_id,
+          senderId: row.sender_id,
+          text: row.text || '',
+          imageUrl: row.image_url || undefined,
+          isPhotoViewOnce: Boolean(row.is_view_once),
+          isPhotoViewed: Boolean(row.view_once_viewed),
+          createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+          read: Boolean(row.read),
+        };
+        messages[message.matchId] = [...(messages[message.matchId] || []), message];
+      });
+
+      return { matches, messages };
+    } catch (error) {
+      console.warn('Supabase chat history fetch error:', error);
+      return null;
+    }
+  },
+
   // Send Chat Message
   async sendMessage(message: ChatMessage): Promise<boolean> {
     try {
