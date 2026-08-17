@@ -475,7 +475,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           )}
 
           {/* Swipe Cards Deck Area */}
-          <div className="relative w-full max-w-5xl min-h-[30rem] h-[clamp(30rem,68dvh,36rem)] rounded-3xl flex items-center justify-center mt-1">
+          <div className="relative mt-1 flex h-[clamp(25rem,62dvh,36rem)] min-h-[25rem] w-full max-w-5xl items-center justify-center rounded-3xl sm:h-[clamp(30rem,68dvh,36rem)] sm:min-h-[30rem]">
         {deckProfiles.length === 0 ? (
           /* Empty Deck State */
           <motion.div
