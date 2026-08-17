@@ -26,7 +26,6 @@ import {
   Music2,
   Send,
   MessageCircle,
-  Flame,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserProfile } from '../types';
@@ -70,6 +69,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   } = useApp();
 
   const [discoverTab, setDiscoverTab] = useState<'matches' | 'gossip'>('matches');
+  const [isCampusHubOpen, setIsCampusHubOpen] = useState(false);
   const [sparkText, setSparkText] = useState('');
   const [isSparkInputOpen, setIsSparkInputOpen] = useState(false);
 
@@ -321,50 +321,41 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
   return (
     <div className="relative mx-auto flex w-full max-w-[1080px] min-w-0 flex-col items-center justify-start px-0 py-4 sm:px-3 sm:py-6 lg:px-5">
-      {/* 1. Campus Stories Bar */}
-      <CampusStoriesBar />
-
-      {/* 2. Campus Pulse & Vibe Filter Bar */}
-      <CampusPulseBar />
-
-      {/* 3. Daily Campus Poll Card */}
-      <CampusDailyPollCard />
-
-      {/* Discover Sub-Tab Segmented Control */}
-      <div className="uoa-surface-soft mb-4 flex w-full items-center rounded-2xl p-1">
+      {/* Primary journey: discover people first */}
+      <div className="mb-4 flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <p className="uoa-section-kicker">Student Match Feed</p>
+          <h1 className="mt-1 font-display text-3xl font-black tracking-[-0.05em] text-white sm:text-4xl">
+            Discover people.
+          </h1>
+          <p className="uoa-muted-copy mt-1 max-w-xl text-xs sm:text-sm">
+            Browse real UniAbuja profiles, then meet the people who feel worth a hello.
+          </p>
+        </div>
         <button
-          onClick={() => setDiscoverTab('matches')}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
-            discoverTab === 'matches'
-              ? 'uoa-primary-button text-white'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          <Flame className="w-3.5 h-3.5" />
-          <span>Student Match Feed</span>
-          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-extrabold">
-            {deckProfiles.length}
-          </span>
-        </button>
-
-        <button
+          type="button"
           onClick={() => setDiscoverTab('gossip')}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
-            discoverTab === 'gossip'
-              ? 'uoa-primary-button text-white'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
+          className="uoa-quiet-button flex shrink-0 self-start items-center gap-1.5 rounded-full px-3 py-2 text-[10px] font-bold text-orange-200 transition-colors hover:text-white sm:self-auto"
+          title="Open campus conversation"
         >
           <span>Campus conversation</span>
-          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-orange-950 text-orange-300 font-extrabold border border-orange-800/40">
+          <span className="rounded-full bg-orange-950 px-1.5 py-0.5 text-[10px] font-extrabold text-orange-300">
             {gossipPosts.length}
           </span>
         </button>
       </div>
 
       {discoverTab === 'gossip' ? (
-        /* Gossip Board View */
-        <CampusGossipBoard />
+        <div className="w-full">
+          <button
+            type="button"
+            onClick={() => setDiscoverTab('matches')}
+            className="mb-3 text-xs font-bold text-orange-300 transition-colors hover:text-white"
+          >
+            ← Back to discovering people
+          </button>
+          <CampusGossipBoard />
+        </div>
       ) : (
         <>
           {/* Active Filters Tag Pills Bar */}
@@ -1079,33 +1070,69 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         </motion.button>
       </div>
 
-      {/* Quick Tea Banner Under Deck */}
-      {gossipPosts.length > 0 && (
-        <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          onClick={() => setDiscoverTab('gossip')}
-          className="uoa-surface-soft group mt-4 flex w-full items-center justify-between rounded-2xl p-3 text-left transition-colors hover:bg-white/[0.08]"
-        >
-          <div className="flex items-center space-x-2.5 overflow-hidden">
-            <div className="truncate">
-              <div className="flex items-center space-x-1.5">
-                <span className="uoa-section-kicker">
-                  Campus conversation
-                </span>
-                <span className="text-[10px] text-orange-400 font-bold">• {gossipPosts[0].tag.replace(/^[^A-Za-z0-9]+\s*/, '')}</span>
-              </div>
-              <p className="text-xs text-neutral-300 truncate max-w-[260px]">
-                "{gossipPosts[0].content}"
-              </p>
-            </div>
+      {/* Secondary campus hub */}
+      <section className="mt-7 w-full" aria-label="Campus extras">
+        <div className="uoa-surface-soft flex items-center justify-between gap-4 rounded-2xl p-3.5 sm:p-4">
+          <div className="min-w-0">
+            <p className="uoa-section-kicker">Campus extras</p>
+            <h2 className="mt-1 text-sm font-black text-white sm:text-base">What’s happening around you</h2>
+            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-neutral-400 sm:text-xs">
+              Stories, polls, pulse, and conversation live here when you want a break from meeting people.
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsCampusHubOpen((open) => !open)}
+            className="uoa-quiet-button shrink-0 rounded-full px-3 py-2 text-[10px] font-bold text-orange-200 transition-colors hover:text-white"
+            aria-expanded={isCampusHubOpen}
+          >
+            {isCampusHubOpen ? 'Close' : 'Explore'}
+          </button>
+        </div>
 
-          <span className="text-[11px] text-orange-300 font-bold group-hover:text-orange-100 shrink-0 ml-2">
-            Read All ({gossipPosts.length}) →
-          </span>
-        </motion.button>
-      )}
+        <AnimatePresence initial={false}>
+          {isCampusHubOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="mt-3 space-y-3"
+            >
+              <CampusStoriesBar />
+              <CampusPulseBar />
+              <CampusDailyPollCard />
+
+              {gossipPosts.length > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => {
+                    setDiscoverTab('gossip');
+                    setIsCampusHubOpen(false);
+                  }}
+                  className="uoa-surface-soft group flex w-full items-center justify-between rounded-2xl p-3 text-left transition-colors hover:bg-white/[0.08]"
+                >
+                  <div className="min-w-0 truncate">
+                    <div className="flex items-center gap-1.5">
+                      <span className="uoa-section-kicker">Campus conversation</span>
+                      <span className="text-[10px] font-bold text-orange-400">
+                        • {gossipPosts[0].tag.replace(/^[^A-Za-z0-9]+\s*/, '')}
+                      </span>
+                    </div>
+                    <p className="mt-1 max-w-[260px] truncate text-xs text-neutral-300">
+                      "{gossipPosts[0].content}"
+                    </p>
+                  </div>
+                  <span className="ml-2 shrink-0 text-[11px] font-bold text-orange-300 group-hover:text-orange-100">
+                    Read All ({gossipPosts.length}) →
+                  </span>
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
     </>
   )}
 </div>
