@@ -31,6 +31,22 @@ export interface CampusStory {
   userLiked?: boolean;
 }
 
+export type AppNotificationType = 'story_like' | 'profile_like' | 'match' | 'message' | 'verification';
+
+export interface AppNotification {
+  id: string;
+  recipientId: string;
+  actorId?: string;
+  actorName?: string;
+  actorAvatar?: string;
+  type: AppNotificationType;
+  entityId?: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  readAt?: string;
+}
+
 export interface CampusPollOption {
   id: string;
   text: string;

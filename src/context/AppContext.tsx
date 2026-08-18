@@ -12,6 +12,7 @@ import {
   CampusStory,
   CampusPoll,
   CampusAlert,
+  AppNotification,
   GossipPost,
   GossipComment,
   AdminMetrics,
@@ -22,9 +23,26 @@ import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/
 
 type AuthModalMode = 'login' | 'signup';
 
+const mapNotificationRow = (row: Record<string, any>): AppNotification => ({
+  id: String(row.id),
+  recipientId: String(row.recipient_id),
+  actorId: row.actor_id || undefined,
+  actorName: row.actor_name || undefined,
+  actorAvatar: row.actor_avatar || undefined,
+  type: row.type as AppNotification['type'],
+  entityId: row.entity_id || undefined,
+  title: row.title || 'Campus activity',
+  body: row.body || '',
+  createdAt: row.created_at,
+  readAt: row.read_at || undefined,
+});
+
 interface AppContextType {
   currentUser: UserProfile;
   updateCurrentUser: (updates: Partial<UserProfile>) => void;
+  notifications: AppNotification[];
+  unreadNotificationCount: number;
+  markNotificationsRead: () => Promise<boolean>;
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
   isAuthenticated: boolean;
@@ -372,6 +390,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const unreadNotificationCount = notifications.filter((notification) => !notification.readAt).length;
 
   // Filters
   const [filters, setFilters] = useState<FilterState>({
@@ -404,6 +424,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRecentMatch(null);
     setIsPremium(false);
     setActivePlan(null);
+    setNotifications([]);
 
     if (!userId) {
       setSwipedProfileIds([]);
@@ -422,6 +443,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setReports([]);
     setVerificationRequests([]);
   }, [isAuthenticated, currentUser.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) {
+      setNotifications([]);
+      return;
+    }
+
+    let cancelled = false;
+    const userId = currentUser.id;
+    void supabaseService.fetchNotifications(userId).then((remoteNotifications) => {
+      if (!cancelled && remoteNotifications) setNotifications(remoteNotifications);
+    });
+
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`app-notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'app_notifications', filter: `recipient_id=eq.${userId}` },
+        (payload) => {
+          const incoming = mapNotificationRow(payload.new as Record<string, any>);
+          setNotifications((prev) => [incoming, ...prev.filter((notification) => notification.id !== incoming.id)].slice(0, 50));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated, currentUser.id]);
+
+  const markNotificationsRead = async (): Promise<boolean> => {
+    if (!isAuthenticated || !currentUser.id || !notifications.some((notification) => !notification.readAt)) return true;
+    const saved = await supabaseService.markNotificationsRead(currentUser.id);
+    if (!saved) return false;
+    const readAt = new Date().toISOString();
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, readAt: notification.readAt || readAt })));
+    return true;
+  };
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -1542,6 +1603,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       value={{
         currentUser,
         updateCurrentUser,
+        notifications,
+        unreadNotificationCount,
+        markNotificationsRead,
         activeTab,
         setActiveTab,
         isAuthenticated,

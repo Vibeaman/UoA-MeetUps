@@ -16,6 +16,7 @@ import {
   ViewOnceConsumeResult,
   ChatSecurityEvent,
   CampusAlert,
+  AppNotification,
 } from '../types';
 
 /**
@@ -339,6 +340,57 @@ export const supabaseService = {
     } catch (error) {
       console.warn('Supabase story like exception:', error);
       return null;
+    }
+  },
+
+  async fetchNotifications(userId: string): Promise<AppNotification[] | null> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('app_notifications')
+        .select('id, recipient_id, actor_id, actor_name, actor_avatar, type, entity_id, title, body, created_at, read_at')
+        .eq('recipient_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) {
+        console.warn('Supabase notifications fetch error:', error.message);
+        return null;
+      }
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        recipientId: row.recipient_id,
+        actorId: row.actor_id || undefined,
+        actorName: row.actor_name || undefined,
+        actorAvatar: row.actor_avatar || undefined,
+        type: row.type,
+        entityId: row.entity_id || undefined,
+        title: row.title,
+        body: row.body,
+        createdAt: row.created_at,
+        readAt: row.read_at || undefined,
+      } satisfies AppNotification));
+    } catch (error) {
+      console.warn('Supabase notifications fetch exception:', error);
+      return null;
+    }
+  },
+
+  async markNotificationsRead(userId: string, notificationIds?: string[]): Promise<boolean> {
+    try {
+      let query = getSupabase()
+        .from('app_notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('recipient_id', userId)
+        .is('read_at', null);
+      if (notificationIds?.length) query = query.in('id', notificationIds);
+      const { error } = await query;
+      if (error) {
+        console.warn('Supabase notifications read update error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase notifications read update exception:', error);
+      return false;
     }
   },
 

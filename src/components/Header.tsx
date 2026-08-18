@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   SlidersHorizontal,
+  Bell,
   Crown,
   Zap,
   Lock,
@@ -22,11 +23,16 @@ export const Header: React.FC = () => {
     triggerBoost,
     setActiveTab,
     activeTab,
+    isAuthenticated,
+    notifications,
+    unreadNotificationCount,
+    markNotificationsRead,
     isAdminAuthenticated,
     logoutAdmin,
   } = useApp();
 
   const [showModeTooltip, setShowModeTooltip] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   // Calculate active filter count
   const activeFilterCount =
@@ -43,6 +49,17 @@ export const Header: React.FC = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const formatNotificationTime = (createdAt: string) => {
+    const timestamp = new Date(createdAt).getTime();
+    if (!Number.isFinite(timestamp)) return '';
+    const minutesAgo = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutesAgo < 1) return 'Now';
+    if (minutesAgo < 60) return `${minutesAgo}m`;
+    const hoursAgo = Math.floor(minutesAgo / 60);
+    if (hoursAgo < 24) return `${hoursAgo}h`;
+    return new Date(createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   const handleLogoClick = () => {
@@ -119,8 +136,65 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Right Action Icons: Boost, Premium, Filters, Admin */}
+        {/* Right Action Icons: Notifications, Boost, Premium, Filters, Admin */}
         <div className="ml-auto flex shrink-0 items-center space-x-1.5 sm:space-x-2">
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                const opening = !isNotificationsOpen;
+                setIsNotificationsOpen(opening);
+                if (opening) void markNotificationsRead();
+              }}
+              className={`uoa-quiet-button relative rounded-xl p-2 transition-all ${isNotificationsOpen ? 'text-orange-200 ring-1 ring-orange-300/30' : ''}`}
+              title="Notifications"
+              aria-label="Notifications"
+              aria-expanded={isNotificationsOpen}
+              id="notifications-header-btn"
+            >
+              <Bell className="h-4 w-4" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-[#08040d] bg-rose-500 px-1 text-[9px] font-bold text-white">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-orange-800/50 bg-[#160a20] shadow-2xl shadow-black/50">
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-300">Notifications</p>
+                    <p className="mt-0.5 text-[11px] text-white/45">Activity about your account</p>
+                  </div>
+                  {notifications.length > 0 && <span className="text-[10px] font-bold text-white/40">{notifications.length} recent</span>}
+                </div>
+                <div className="max-h-[min(24rem,65vh)] overflow-y-auto p-2">
+                  {notifications.length === 0 ? (
+                    <p className="px-3 py-8 text-center text-xs leading-relaxed text-white/50">
+                      {isAuthenticated ? 'You’re all caught up.' : 'Sign in to receive account notifications.'}
+                    </p>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div key={notification.id} className={`flex gap-3 rounded-xl px-3 py-3 ${notification.readAt ? '' : 'bg-orange-500/[0.08]'}`}>
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-orange-200 ring-1 ring-orange-300/20">
+                          <Bell className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1 text-left">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-bold text-white">{notification.title}</p>
+                            <span className="shrink-0 text-[10px] text-white/35">{formatNotificationTime(notification.createdAt)}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-white/65">{notification.body}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Boost Button */}
           <button
             onClick={triggerBoost}
