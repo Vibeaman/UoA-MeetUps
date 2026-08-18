@@ -40,7 +40,7 @@ interface AppContextType {
   adminMetrics: AdminMetrics | null;
   refreshAdminMetrics: () => Promise<boolean>;
   currentMode: AppMode;
-  toggleAppMode: (mode?: AppMode) => void;
+  toggleAppMode: (mode?: AppMode) => Promise<boolean>;
   profiles: UserProfile[];
   swipedProfileIds: string[];
   swipeRight: (profile: UserProfile) => Promise<void>;
@@ -106,8 +106,8 @@ interface AppContextType {
   campusPolls: CampusPoll[];
   activePollIndex: number;
   setActivePollIndex: (idx: number) => void;
-  voteCampusPoll: (pollId: string, optionId: string) => void;
-  addCampusPoll: (question: string, category: string, options: string[]) => void;
+  voteCampusPoll: (pollId: string, optionId: string) => Promise<boolean>;
+  addCampusPoll: (question: string, category: string, options: string[]) => Promise<boolean>;
   selectedVibeFilter: string;
   setSelectedVibeFilter: (vibe: string) => void;
   sendDirectSpark: (profile: UserProfile, text: string) => Promise<boolean>;
@@ -121,7 +121,7 @@ interface AppContextType {
     isAnonymous: boolean,
     anonymousAlias?: string,
     imageUrl?: string
-  ) => void;
+  ) => Promise<boolean>;
   reactToGossipPost: (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea') => void;
   addGossipComment: (postId: string, content: string, isAnonymous: boolean) => Promise<boolean>;
   likeGossipComment: (postId: string, commentId: string) => Promise<boolean>;
@@ -670,42 +670,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
-  const voteCampusPoll = (pollId: string, optionId: string) => {
-    if (!requestAuthentication()) return;
+  const voteCampusPoll = async (pollId: string, optionId: string): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
 
     const existingPoll = campusPolls.find((poll) => poll.id === pollId);
-    if (!existingPoll || existingPoll.userVotedOptionId === optionId) return;
+    if (!existingPoll || existingPoll.userVotedOptionId === optionId) return false;
 
-    const hadPrevious = !!existingPoll.userVotedOptionId;
-    const updatedPoll: CampusPoll = {
-      ...existingPoll,
-      totalVotes: hadPrevious ? existingPoll.totalVotes : existingPoll.totalVotes + 1,
-      options: existingPoll.options.map((opt) => {
-        if (opt.id === optionId) return { ...opt, votes: opt.votes + 1 };
-        if (hadPrevious && opt.id === existingPoll.userVotedOptionId) {
-          return { ...opt, votes: Math.max(0, opt.votes - 1) };
-        }
-        return opt;
-      }),
-      userVotedOptionId: optionId,
-    };
+    const remotePoll = await supabaseService.voteCampusPoll(pollId, optionId);
+    if (!remotePoll) {
+      setSparkToast({ show: true, message: 'Your poll vote could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
 
-    setCampusPolls((prevPolls) => prevPolls.map((poll) => (poll.id === pollId ? updatedPoll : poll)));
-    void supabaseService.voteCampusPoll(pollId, optionId).then((remotePoll) => {
-      if (!remotePoll) return;
-      setCampusPolls((prevPolls) =>
-        prevPolls.map((poll) =>
-          poll.id === pollId
-            ? {
-                ...poll,
-                options: remotePoll.options,
-                totalVotes: remotePoll.totalVotes,
-                userVotedOptionId: remotePoll.userVotedOptionId,
-              }
-            : poll
-        )
-      );
-    });
+    setCampusPolls((prevPolls) =>
+      prevPolls.map((poll) =>
+        poll.id === pollId
+          ? {
+              ...poll,
+              options: remotePoll.options,
+              totalVotes: remotePoll.totalVotes,
+              userVotedOptionId: remotePoll.userVotedOptionId,
+            }
+          : poll
+      )
+    );
 
     confetti({
       particleCount: 35,
@@ -713,10 +702,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       origin: { y: 0.8 },
       colors: ['#a855f7', '#ec4899', '#f43f5e', '#38bdf8'],
     });
+    return true;
   };
 
-  const addCampusPoll = (question: string, category: string, options: string[]) => {
-    if (!requestAuthentication()) return;
+  const addCampusPoll = async (question: string, category: string, options: string[]): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
 
     const newPoll: CampusPoll = {
       id: `poll_${Date.now()}`,
@@ -730,14 +720,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         votes: 0,
       })),
     };
+    const persisted = await supabaseService.upsertCampusPoll(newPoll);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Your campus poll could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
     setCampusPolls((prev) => [newPoll, ...prev]);
     setActivePollIndex(0);
-    void supabaseService.upsertCampusPoll(newPoll);
     confetti({
       particleCount: 45,
       spread: 60,
       origin: { y: 0.6 },
     });
+    return true;
   };
 
   // Gossip Board State (live Supabase rows only)
@@ -759,14 +756,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
-  const addGossipPost = (
+  const addGossipPost = async (
     content: string,
     tag: string,
     isAnonymous: boolean,
     anonymousAlias?: string,
     imageUrl?: string
-  ) => {
-    if (!requestAuthentication()) return;
+  ): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
 
     const newPost: GossipPost = {
       id: `gossip_${Date.now()}`,
@@ -790,14 +787,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       comments: [],
     };
 
+    const persisted = await supabaseService.createGossipPost(newPost);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Your gossip post could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
     setGossipPosts((prev) => [newPost, ...prev]);
-    void supabaseService.createGossipPost(newPost);
     confetti({
       particleCount: 60,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#a855f7', '#ec4899', '#f97316', '#fbbf24'],
     });
+    return true;
   };
 
   const reactToGossipPost = async (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea'): Promise<void> => {
@@ -963,14 +967,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Toggle Normal / Lowkey Mode
-  const toggleAppMode = (mode?: AppMode) => {
+  const toggleAppMode = async (mode?: AppMode): Promise<boolean> => {
     const nextMode = mode || (currentMode === 'normal' ? 'lowkey' : 'normal');
-    setCurrentMode(nextMode);
-    updateCurrentUser({ mode: nextMode });
 
     if (isAuthenticated && currentUser.id && isSupabaseConfigured()) {
-      void supabaseService.upsertProfile({ ...currentUser, mode: nextMode });
+      const persisted = await supabaseService.upsertProfile({ ...currentUser, mode: nextMode });
+      if (!persisted) {
+        setSparkToast({ show: true, message: 'Campus mode could not be saved. Please try again.' });
+        setTimeout(() => setSparkToast(null), 3500);
+        return false;
+      }
     }
+
+    setCurrentMode(nextMode);
+    updateCurrentUser({ mode: nextMode });
+    return true;
   };
 
   // Reset Filters

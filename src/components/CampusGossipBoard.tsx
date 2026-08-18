@@ -70,6 +70,7 @@ export const CampusGossipBoard: React.FC = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [showImageInput, setShowImageInput] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [imageError, setImageError] = useState('');
 
   // Active expanded comments per post ID
@@ -131,7 +132,8 @@ export const CampusGossipBoard: React.FC = () => {
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestAuthentication()) return;
-    if (!content.trim() || isUploadingImage) return;
+    if (!content.trim() || isUploadingImage || isPosting) return;
+    setIsPosting(true);
 
     let uploadedImageUrl: string | undefined;
     if (imageFile) {
@@ -141,24 +143,30 @@ export const CampusGossipBoard: React.FC = () => {
       setIsUploadingImage(false);
       if (!upload.url) {
         setImageError(upload.error || 'Could not upload that photo.');
+        setIsPosting(false);
         return;
       }
       uploadedImageUrl = upload.url;
     }
 
-    addGossipPost(
-      content.trim(),
-      tag,
-      isAnonymous,
-      isAnonymous ? anonymousAlias : undefined,
-      uploadedImageUrl
-    );
+    try {
+      const posted = await addGossipPost(
+        content.trim(),
+        tag,
+        isAnonymous,
+        isAnonymous ? anonymousAlias : undefined,
+        uploadedImageUrl
+      );
+      if (!posted) return;
 
-    setContent('');
-    clearSelectedImage();
-    setShowImageInput(false);
-    setIsComposing(false);
-    showToast('☕ Tea spilled on UniAbuja Gossip Board!');
+      setContent('');
+      clearSelectedImage();
+      setShowImageInput(false);
+      setIsComposing(false);
+      showToast('☕ Tea spilled on UniAbuja Gossip Board!');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const handleSendComment = async (postId: string) => {
@@ -375,11 +383,11 @@ export const CampusGossipBoard: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={!content.trim()}
+                  disabled={!content.trim() || isUploadingImage || isPosting}
                   className="uoa-primary-button flex items-center space-x-1.5 rounded-xl px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40"
                 >
                   <Send className="w-3 h-3" />
-                  <span>Spill Tea</span>
+                  <span>{isPosting ? 'Saving...' : 'Spill Tea'}</span>
                 </button>
               </div>
             </motion.form>

@@ -31,6 +31,8 @@ export const CampusDailyPollCard: React.FC = () => {
   const [newOpt1, setNewOpt1] = useState('');
   const [newOpt2, setNewOpt2] = useState('');
   const [newOpt3, setNewOpt3] = useState('');
+  const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
+  const [isSubmittingPoll, setIsSubmittingPoll] = useState(false);
 
   const currentPoll = campusPolls[activePollIndex] || campusPolls[0];
   const hasVoted = !!currentPoll?.userVotedOptionId;
@@ -43,20 +45,26 @@ export const CampusDailyPollCard: React.FC = () => {
     setActivePollIndex((activePollIndex - 1 + campusPolls.length) % campusPolls.length);
   };
 
-  const handleCreatePollSubmit = (e: React.FormEvent) => {
+  const handleCreatePollSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requestAuthentication()) return;
+    if (!requestAuthentication() || isSubmittingPoll) return;
     if (!newQuestion.trim() || !newOpt1.trim() || !newOpt2.trim()) return;
 
     const opts = [newOpt1.trim(), newOpt2.trim()];
     if (newOpt3.trim()) opts.push(newOpt3.trim());
 
-    addCampusPoll(newQuestion.trim(), newCategory, opts);
-    setNewQuestion('');
-    setNewOpt1('');
-    setNewOpt2('');
-    setNewOpt3('');
-    setIsCreatingPoll(false);
+    setIsSubmittingPoll(true);
+    try {
+      const created = await addCampusPoll(newQuestion.trim(), newCategory, opts);
+      if (!created) return;
+      setNewQuestion('');
+      setNewOpt1('');
+      setNewOpt2('');
+      setNewOpt3('');
+      setIsCreatingPoll(false);
+    } finally {
+      setIsSubmittingPoll(false);
+    }
   };
 
   if (!currentPoll) {
@@ -157,10 +165,17 @@ export const CampusDailyPollCard: React.FC = () => {
                   <motion.button
                     key={opt.id}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (requestAuthentication()) voteCampusPoll(currentPoll.id, opt.id);
+                    onClick={async () => {
+                      if (!requestAuthentication() || votingOptionId) return;
+                      setVotingOptionId(opt.id);
+                      try {
+                        await voteCampusPoll(currentPoll.id, opt.id);
+                      } finally {
+                        setVotingOptionId(null);
+                      }
                     }}
-                    className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
+                    disabled={Boolean(votingOptionId)}
+                    className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all disabled:cursor-wait disabled:opacity-70 ${
                       isSelected
                         ? 'bg-pink-500/10 border-pink-300/50 ring-1 ring-pink-300/25'
                         : 'bg-white/[0.035] border-white/10 hover:border-white/20'
@@ -288,11 +303,11 @@ export const CampusDailyPollCard: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={!newQuestion.trim() || !newOpt1.trim() || !newOpt2.trim()}
+                  disabled={!newQuestion.trim() || !newOpt1.trim() || !newOpt2.trim() || isSubmittingPoll}
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 text-white text-xs font-semibold flex items-center space-x-1 disabled:opacity-40"
                 >
                   <Send className="w-3 h-3" />
-                  <span>Post Poll</span>
+                  <span>{isSubmittingPoll ? 'Saving...' : 'Post Poll'}</span>
                 </button>
               </div>
             </motion.form>
