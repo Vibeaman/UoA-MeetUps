@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   age INTEGER NOT NULL,
-  username TEXT UNIQUE,
+  username TEXT,
   gender TEXT NOT NULL DEFAULT 'Prefer not to say' CHECK (gender IN ('Male', 'Female', 'Non-binary', 'Prefer not to say')),
   matric_number TEXT,
   faculty TEXT NOT NULL,
@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS profiles (
   phone_whatsapp TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_ci_unique
+  ON public.profiles ((lower(trim(username))))
+  WHERE username IS NOT NULL AND trim(username) <> '';
 
 create or replace function public.activate_profile_boost(p_duration_seconds integer default 1800)
 returns table(boost_expires_at timestamptz)

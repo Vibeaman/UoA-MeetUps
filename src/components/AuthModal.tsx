@@ -79,7 +79,7 @@ export const AuthModal: React.FC = () => {
         const { data: existingProfiles, error: usernameCheckError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('username', username)
+          .ilike('username', username)
           .limit(1);
         if (usernameCheckError) {
           setAuthError('We could not check that username. Please try again.');
@@ -114,8 +114,12 @@ export const AuthModal: React.FC = () => {
         }
 
         const profileReady = await supabaseService.ensureUserProfile(user.id, username, fullNameInput, age);
-        if (!profileReady) {
-          setAuthError('Your account was created, but profile setup did not finish. Please try logging in again.');
+        if (!profileReady.ok) {
+          setAuthError(
+            profileReady.error === 'username_taken'
+              ? 'That username is already taken. Choose another one.'
+              : 'Your account was created, but profile setup did not finish. Please try logging in again.',
+          );
           return;
         }
 

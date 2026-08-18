@@ -24,6 +24,13 @@ import {
  */
 const USER_MEDIA_BUCKET = 'user-media';
 
+const normalizeUsername = (username: string) => username.trim().toLowerCase();
+
+type EnsureUserProfileResult = {
+  ok: boolean;
+  error?: 'username_taken' | 'unknown';
+};
+
 const invokePaystackFunction = async (functionName: 'paystack-init' | 'paystack-verify', body: Record<string, unknown>, accessToken: string) => {
   const response = await fetch(`${SUPABASE_URL_DISPLAY}/functions/v1/${functionName}`, {
     method: 'POST',
@@ -100,12 +107,13 @@ export const supabaseService = {
     }
   },
 
-  async ensureUserProfile(userId: string, username: string, name: string, age: number): Promise<boolean> {
+  async ensureUserProfile(userId: string, username: string, name: string, age: number): Promise<EnsureUserProfileResult> {
+    const normalizedUsername = normalizeUsername(username);
     try {
       const { error } = await getSupabase().from('profiles').upsert({
         id: userId,
-        name: name.trim() || username.trim(),
-        username: username.trim().toLowerCase(),
+        name: name.trim() || normalizedUsername,
+        username: normalizedUsername,
         age,
         faculty: '',
         department: '',
@@ -121,9 +129,15 @@ export const supabaseService = {
         badges: [],
         is_banned: false,
       }, { onConflict: 'id' });
-      return !error;
-    } catch {
-      return false;
+      if (!error) return { ok: true };
+      if (error.code === '23505' || error.message.toLowerCase().includes('username')) {
+        return { ok: false, error: 'username_taken' };
+      }
+      console.warn('Supabase profile setup error:', error.message);
+      return { ok: false, error: 'unknown' };
+    } catch (error) {
+      console.warn('Supabase profile setup exception:', error);
+      return { ok: false, error: 'unknown' };
     }
   },
 
@@ -407,7 +421,7 @@ export const supabaseService = {
         id: profile.id,
         name: profile.name,
         age: profile.age,
-        username: profile.username,
+        username: normalizeUsername(profile.username),
         gender: profile.gender,
         faculty: profile.faculty,
         department: profile.department,
