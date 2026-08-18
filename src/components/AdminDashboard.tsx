@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldAlert,
@@ -86,6 +86,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshAdminConsoleData();
+    }, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Metrics
   // The admin directory already contains the signed-in profile, so do not add it again.

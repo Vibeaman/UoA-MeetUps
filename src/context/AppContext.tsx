@@ -617,39 +617,86 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Matches, messages, reports, and verification requests are intentionally not written to shared local storage.
   // Their authoritative state comes from Supabase/admin hydration and is reset on account changes above.
 
-  useEffect(() => {
+    useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
     const anonymousIdKey = 'uoa_anonymous_id_v1';
-    const anonymousId = localStorage.getItem(anonymousIdKey) || `anon_${crypto.randomUUID()}`;
-    localStorage.setItem(anonymousIdKey, anonymousId);
+    const pendingSessionKey = 'uoa_pending_session_v2';
+    const readStorage = (key: string) => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+    const writeStorage = (key: string, value: string | null) => {
+      try {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      } catch {
+        // Private browsing can deny storage; the live write still continues.
+      }
+    };
+
+    const anonymousId = readStorage(anonymousIdKey) || `anon_${crypto.randomUUID()}`;
+    writeStorage(anonymousIdKey, anonymousId);
     const sessionId = `session_${crypto.randomUUID()}`;
     const startedAt = Date.now();
+    let lastMeasuredAt = startedAt;
+    let activeSeconds = 0;
+    let wasVisible = document.visibilityState !== 'hidden';
+
+    const measureActiveTime = () => {
+      const now = Date.now();
+      if (wasVisible) activeSeconds += Math.max(0, now - lastMeasuredAt) / 1000;
+      lastMeasuredAt = now;
+      wasVisible = document.visibilityState !== 'hidden';
+      return activeSeconds;
+    };
 
     const flushSession = (ended = false) => {
       const now = Date.now();
-      void supabaseService.upsertSiteSession({
+      const snapshot = {
         id: sessionId,
         userId: currentUser.id || undefined,
         anonymousId,
         startedAt: new Date(startedAt).toISOString(),
         lastSeenAt: new Date(now).toISOString(),
-        durationSeconds: Math.max(0, (now - startedAt) / 1000),
+        durationSeconds: measureActiveTime(),
         endedAt: ended ? new Date(now).toISOString() : undefined,
+      };
+      writeStorage(pendingSessionKey, JSON.stringify(snapshot));
+      void supabaseService.upsertSiteSession(snapshot).then((saved) => {
+        if (!saved) return;
+        try {
+          const pending = JSON.parse(readStorage(pendingSessionKey) || 'null') as { id?: string } | null;
+          if (pending?.id === sessionId) writeStorage(pendingSessionKey, null);
+        } catch {
+          writeStorage(pendingSessionKey, null);
+        }
       });
     };
+
+    const pendingSnapshot = readStorage(pendingSessionKey);
+    if (pendingSnapshot) {
+      try {
+        const pending = JSON.parse(pendingSnapshot) as Parameters<typeof supabaseService.upsertSiteSession>[0];
+        void supabaseService.upsertSiteSession(pending).then((saved) => {
+          if (saved) writeStorage(pendingSessionKey, null);
+        });
+      } catch {
+        writeStorage(pendingSessionKey, null);
+      }
+    }
 
     const interval = window.setInterval(() => {
       if (document.visibilityState !== 'hidden') flushSession();
     }, 30_000);
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flushSession(true);
-    };
+    const handleVisibilityChange = () => flushSession(false);
     const handlePageHide = () => flushSession(true);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', handlePageHide);
     flushSession();
-
     return () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

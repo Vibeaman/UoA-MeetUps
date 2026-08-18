@@ -635,24 +635,54 @@ export const supabaseService = {
     durationSeconds: number;
     endedAt?: string;
   }): Promise<boolean> {
-    try {
-      const { error } = await getSupabase().from('site_sessions').upsert({
-        id: session.id,
-        user_id: session.userId || null,
-        anonymous_id: session.anonymousId || null,
-        started_at: session.startedAt,
-        last_seen_at: session.lastSeenAt,
-        duration_seconds: Math.max(0, Math.round(session.durationSeconds)),
-        ended_at: session.endedAt || null,
+    const payload = {
+      id: session.id,
+      user_id: session.userId || null,
+      anonymous_id: session.anonymousId || null,
+      started_at: session.startedAt,
+      last_seen_at: session.lastSeenAt,
+      duration_seconds: Math.max(0, Math.round(session.durationSeconds)),
+      ended_at: session.endedAt || null,
+    };
+    const endpoint = `${SUPABASE_URL_DISPLAY}/rest/v1/site_sessions?on_conflict=id`;
+
+    const writeSession = async (accessToken: string, anonymousOnly: boolean) => {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+          apikey: SUPABASE_ANON_KEY_DISPLAY,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify(anonymousOnly ? { ...payload, user_id: null } : payload),
       });
-      if (error) {
-        console.warn('Supabase site session upsert notice:', error.message);
-        return false;
+      if (response.ok) return true;
+      if (anonymousOnly) {
+        const message = await response.text().catch(() => '');
+        console.warn('Supabase site session upsert notice:', message || `HTTP ${response.status}`);
       }
-      return true;
+      return false;
+    };
+
+    try {
+      const { data } = await getSupabase().auth.getSession();
+      const accessToken = data.session?.access_token || SUPABASE_ANON_KEY_DISPLAY;
+      const saved = await writeSession(accessToken, false);
+      if (saved) return true;
+      if (accessToken !== SUPABASE_ANON_KEY_DISPLAY) {
+        return writeSession(SUPABASE_ANON_KEY_DISPLAY, true);
+      }
+      return false;
     } catch (error) {
       console.warn('Supabase site session upsert error:', error);
-      return false;
+      try {
+        return await writeSession(SUPABASE_ANON_KEY_DISPLAY, true);
+      } catch (fallbackError) {
+        console.warn('Supabase anonymous site session fallback error:', fallbackError);
+        return false;
+      }
     }
   },
 
