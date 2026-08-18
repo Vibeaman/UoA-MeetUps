@@ -228,6 +228,46 @@ $$;
 REVOKE ALL ON FUNCTION public.consume_view_once_message(TEXT) FROM public, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.consume_view_once_message(TEXT) TO authenticated;
 
+CREATE TABLE IF NOT EXISTS user_blocks (
+  id TEXT PRIMARY KEY,
+  blocker_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  blocked_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  CONSTRAINT user_blocks_no_self_block CHECK (blocker_id <> blocked_id),
+  CONSTRAINT user_blocks_unique_pair UNIQUE (blocker_id, blocked_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_blocks_blocker_idx ON user_blocks (blocker_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx ON user_blocks (blocked_id, created_at DESC);
+
+CREATE OR REPLACE FUNCTION public.block_user(p_blocked_id TEXT)
+RETURNS TABLE(blocked_id TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_blocker_id TEXT := auth.uid()::text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_blocked_id IS NULL OR p_blocked_id = v_blocker_id THEN RAISE EXCEPTION 'invalid_block_target'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = p_blocked_id) THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+  INSERT INTO public.user_blocks (id, blocker_id, blocked_id)
+  VALUES (format('block_%s_%s', v_blocker_id, p_blocked_id), v_blocker_id, p_blocked_id)
+  ON CONFLICT (blocker_id, blocked_id) DO NOTHING;
+  DELETE FROM public.matches
+  WHERE (user_id_1 = v_blocker_id AND user_id_2 = p_blocked_id)
+     OR (user_id_1 = p_blocked_id AND user_id_2 = v_blocker_id);
+  DELETE FROM public.profile_likes
+  WHERE (sender_id = v_blocker_id AND recipient_id = p_blocked_id)
+     OR (sender_id = p_blocked_id AND recipient_id = v_blocker_id);
+  RETURN QUERY SELECT p_blocked_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.block_user(TEXT) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.block_user(TEXT) TO authenticated;
+
 -- 4. Identity Verification Requests
 CREATE TABLE IF NOT EXISTS verification_requests (
   id TEXT PRIMARY KEY,
@@ -439,6 +479,7 @@ alter table public.profiles enable row level security;
 alter table public.matches enable row level security;
 alter table public.profile_likes enable row level security;
 alter table public.messages enable row level security;
+alter table public.user_blocks enable row level security;
 alter table public.chat_security_events enable row level security;
 alter table public.verification_requests enable row level security;
 alter table public.user_reports enable row level security;
@@ -462,6 +503,9 @@ drop policy if exists "Users can read likes involving themselves" on public.prof
 drop policy if exists "Users can create their own likes" on public.profile_likes;
 drop policy if exists "Users can update their own likes" on public.profile_likes;
 drop policy if exists "Users can delete their own likes" on public.profile_likes;
+drop policy if exists "Users can read their own blocks" on public.user_blocks;
+drop policy if exists "Users can create their own blocks" on public.user_blocks;
+drop policy if exists "Users can delete their own blocks" on public.user_blocks;
 drop policy if exists "Match participants can read security events" on public.chat_security_events;
 drop policy if exists "Match participants can record security events" on public.chat_security_events;
 drop policy if exists "Match participants can read messages" on public.messages;
@@ -545,6 +589,18 @@ create policy "Users can update their own likes"
 create policy "Users can delete their own likes"
   on public.profile_likes for delete to authenticated
   using (auth.uid()::text = sender_id);
+
+create policy "Users can read their own blocks"
+  on public.user_blocks for select to authenticated
+  using (auth.uid()::text = blocker_id);
+
+create policy "Users can create their own blocks"
+  on public.user_blocks for insert to authenticated
+  with check (auth.uid()::text = blocker_id);
+
+create policy "Users can delete their own blocks"
+  on public.user_blocks for delete to authenticated
+  using (auth.uid()::text = blocker_id);
 
 create policy "Match participants can read security events"
   on public.chat_security_events for select to authenticated

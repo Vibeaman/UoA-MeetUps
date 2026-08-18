@@ -45,6 +45,7 @@ interface AppContextType {
   swipeRight: (profile: UserProfile) => Promise<void>;
   swipeLeft: (profile: UserProfile) => void;
   superLike: (profile: UserProfile) => Promise<void>;
+  blockedUserIds: string[];
   rewindLastSwipe: () => boolean;
   canRewind: boolean;
   matches: MatchItem[];
@@ -62,20 +63,20 @@ interface AppContextType {
   activePlan: PremiumEntitlement['planId'] | null;
   activatePremium: (planId: 'weekly' | 'monthly' | 'semester') => void;
   reports: UserReport[];
-  submitReport: (targetUser: UserProfile, reason: UserReport['reason'], details: string) => void;
-  blockUser: (userId: string) => void;
-  unmatchUser: (matchId: string) => void;
+  submitReport: (targetUser: UserProfile, reason: UserReport['reason'], details: string) => Promise<boolean>;
+  blockUser: (userId: string) => Promise<void>;
+  unmatchUser: (matchId: string) => Promise<void>;
   verificationRequests: VerificationRequest[];
   submitVerification: (selfieUrl: string, idCardUrl?: string) => void;
   // Admin actions
   approveVerification: (requestId: string) => void;
   rejectVerification: (requestId: string, note?: string) => void;
-  resolveReport: (reportId: string, action: 'ban' | 'dismiss') => void;
-  banUser: (userId: string) => void;
-  unbanUser: (userId: string) => void;
+  resolveReport: (reportId: string, action: 'ban' | 'dismiss') => Promise<void>;
+  banUser: (userId: string) => Promise<void>;
+  unbanUser: (userId: string) => Promise<void>;
   toggleUserVerification: (userId: string) => void;
-  deleteGossipPost: (postId: string) => void;
-  deleteCampusPoll: (pollId: string) => void;
+  deleteGossipPost: (postId: string) => Promise<void>;
+  deleteCampusPoll: (pollId: string) => Promise<void>;
   broadcastCampusAlert: (headline: string, message: string) => void;
   clearLocalCache: () => void;
   // Modals
@@ -201,12 +202,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setAdminProof(proof);
       setIsAdminAuthenticated(true);
-      const [requests, metrics] = await Promise.all([
+      const [requests, metrics, remoteReports] = await Promise.all([
         supabaseService.fetchAdminVerificationRequests(proof),
         supabaseService.fetchAdminMetrics(proof),
+        supabaseService.fetchAdminReports(proof),
       ]);
       if (requests) setVerificationRequests(requests);
       if (metrics) setAdminMetrics(metrics);
+      if (remoteReports) setReports(remoteReports);
       return true;
     } catch (error) {
       console.warn(`Admin authorization request failed for ${SUPABASE_URL_DISPLAY}:`, error);
@@ -220,6 +223,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const logoutAdmin = () => {
     setAdminProof(null);
     setAdminMetrics(null);
+    setReports([]);
     setIsAdminAuthenticated(false);
   };
 
@@ -233,6 +237,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Profiles
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+  const [whoLikedMeProfiles, setWhoLikedMeProfiles] = useState<UserProfile[]>([]);
 
   const [swipedProfileIds, setSwipedProfileIds] = useState<string[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SWIPED_IDS);
@@ -417,10 +423,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) return;
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) {
+      setBlockedUserIds([]);
+      setWhoLikedMeProfiles([]);
+      return;
+    }
     let cancelled = false;
-    void supabaseService.fetchProfile(currentUser.id).then((profile) => {
-      if (!cancelled && profile) setCurrentUser(profile);
+    void Promise.all([
+      supabaseService.fetchProfile(currentUser.id),
+      supabaseService.fetchBlockedUserIds(currentUser.id),
+      supabaseService.fetchWhoLikedMe(currentUser.id),
+    ]).then(([profile, blockedIds, likedProfiles]) => {
+      if (cancelled) return;
+      if (profile) setCurrentUser(profile);
+      if (blockedIds) setBlockedUserIds(blockedIds);
+      if (likedProfiles) setWhoLikedMeProfiles(likedProfiles);
     });
     return () => {
       cancelled = true;
@@ -1087,7 +1104,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Submit Report
-  const submitReport = (targetUser: UserProfile, reason: UserReport['reason'], details: string) => {
+  const submitReport = async (targetUser: UserProfile, reason: UserReport['reason'], details: string): Promise<boolean> => {
+    if (!isAuthenticated || !currentUser.id) return false;
     const newReport: UserReport = {
       id: `rep_${Date.now()}`,
       reporterId: currentUser.id,
@@ -1102,26 +1120,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       createdAt: Date.now(),
     };
 
+    const persisted = await supabaseService.submitReport(newReport);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Report could not be saved. Please try again.' });
+      return false;
+    }
     setReports((prev) => [newReport, ...prev]);
-    void supabaseService.submitReport(newReport);
+    return true;
   };
 
   // Block user
-  const blockUser = (userId: string) => {
+  const blockUser = async (userId: string): Promise<void> => {
+    if (!isAuthenticated || !currentUser.id) return;
+    const persisted = await supabaseService.blockUser(userId);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Block could not be saved. Please try again.' });
+      return;
+    }
+    setBlockedUserIds((prev) => Array.from(new Set([...prev, userId])));
     setProfiles((prev) => prev.filter((p) => p.id !== userId));
     setMatches((prev) => prev.filter((m) => m.matchedUser.id !== userId));
     setSwipedProfileIds((prev) => [...prev, userId]);
-    if (currentChatMatch && currentChatMatch.matchedUser.id === userId) {
-      setCurrentChatMatch(null);
-    }
+    if (currentChatMatch && currentChatMatch.matchedUser.id === userId) setCurrentChatMatch(null);
   };
 
   // Unmatch user
-  const unmatchUser = (matchId: string) => {
-    setMatches((prev) => prev.filter((m) => m.id !== matchId));
-    if (currentChatMatch && currentChatMatch.id === matchId) {
-      setCurrentChatMatch(null);
+  const unmatchUser = async (matchId: string): Promise<void> => {
+    const persisted = await supabaseService.deleteMatch(matchId);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Unmatch could not be saved. Please try again.' });
+      return;
     }
+    setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    if (currentChatMatch && currentChatMatch.id === matchId) setCurrentChatMatch(null);
   };
 
   // Submit Photo Verification
@@ -1199,42 +1230,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Admin: Resolve Report
-  const resolveReport = (reportId: string, action: 'ban' | 'dismiss') => {
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === reportId) {
-          return {
-            ...r,
-            status: action === 'ban' ? 'banned' : 'resolved',
-          };
-        }
-        return r;
-      })
-    );
-
-    const rep = reports.find((r) => r.id === reportId);
-    if (rep && action === 'ban') {
-      banUser(rep.targetUserId);
+  const resolveReport = async (reportId: string, action: 'ban' | 'dismiss'): Promise<void> => {
+    if (!adminProof) return;
+    const persisted = await supabaseService.updateAdminReport(adminProof, reportId, action);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Report moderation could not be saved. Please try again.' });
+      return;
+    }
+    setReports((prev) => prev.map((report) => report.id === reportId
+      ? { ...report, status: action === 'ban' ? 'banned' : 'resolved' }
+      : report));
+    const report = reports.find((item) => item.id === reportId);
+    if (report && action === 'ban') {
+      setProfiles((prev) => prev.map((profile) => profile.id === report.targetUserId ? { ...profile, isBanned: true } : profile));
+      setMatches((prev) => prev.filter((match) => match.matchedUser.id !== report.targetUserId));
     }
   };
 
   // Admin: Ban User
-  const banUser = (userId: string) => {
-    setProfiles((prev) =>
-      prev.map((p) => (p.id === userId ? { ...p, isBanned: true } : p))
-    );
+  const banUser = async (userId: string): Promise<void> => {
+    if (!adminProof) return;
+    const persisted = await supabaseService.updateAdminProfileBan(adminProof, userId, true);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Account suspension could not be saved. Please try again.' });
+      return;
+    }
+    setProfiles((prev) => prev.map((p) => p.id === userId ? { ...p, isBanned: true } : p));
     setMatches((prev) => prev.filter((m) => m.matchedUser.id !== userId));
     setSwipedProfileIds((prev) => [...prev, userId]);
-    if (currentChatMatch && currentChatMatch.matchedUser.id === userId) {
-      setCurrentChatMatch(null);
-    }
+    if (currentChatMatch && currentChatMatch.matchedUser.id === userId) setCurrentChatMatch(null);
   };
 
   // Admin: Unban User
-  const unbanUser = (userId: string) => {
-    setProfiles((prev) =>
-      prev.map((p) => (p.id === userId ? { ...p, isBanned: false } : p))
-    );
+  const unbanUser = async (userId: string): Promise<void> => {
+    if (!adminProof) return;
+    const persisted = await supabaseService.updateAdminProfileBan(adminProof, userId, false);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Account restoration could not be saved. Please try again.' });
+      return;
+    }
+    setProfiles((prev) => prev.map((p) => p.id === userId ? { ...p, isBanned: false } : p));
     setSwipedProfileIds((prev) => prev.filter((id) => id !== userId));
   };
 
@@ -1275,12 +1310,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Admin: Delete Gossip Post
-  const deleteGossipPost = (postId: string) => {
+  const deleteGossipPost = async (postId: string): Promise<void> => {
+    if (!adminProof) return;
+    const persisted = await supabaseService.deleteAdminGossipPost(adminProof, postId);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Gossip deletion could not be saved. Please try again.' });
+      return;
+    }
     setGossipPosts((prev) => prev.filter((p) => p.id !== postId));
   };
 
   // Admin: Delete Campus Poll
-  const deleteCampusPoll = (pollId: string) => {
+  const deleteCampusPoll = async (pollId: string): Promise<void> => {
+    if (!adminProof) return;
+    const persisted = await supabaseService.deleteAdminCampusPoll(adminProof, pollId);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Poll deletion could not be saved. Please try again.' });
+      return;
+    }
     setCampusPolls((prev) => prev.filter((p) => p.id !== pollId));
     setActivePollIndex(0);
   };
@@ -1381,8 +1428,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  // Inbound likes are populated from live user actions when that data is available.
-  const whoLikedMeProfiles: UserProfile[] = [];
+  // Inbound likes are hydrated from profile_likes and exclude matched or unavailable profiles.
 
   return (
     <AppContext.Provider
@@ -1410,6 +1456,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         swipeRight,
         swipeLeft,
         superLike,
+        blockedUserIds,
         rewindLastSwipe,
         canRewind,
         matches,

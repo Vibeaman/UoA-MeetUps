@@ -215,6 +215,91 @@ const updateProfileVerification = async (body: Record<string, unknown>) => {
   return updatedProfile;
 };
 
+const listReports = async () => {
+  const adminClient = getAdminClient();
+  const { data, error } = await adminClient
+    .from("user_reports")
+    .select("id, reporter_id, reporter_name, target_user_id, target_user_name, target_username, target_photo, reason, details, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return data || [];
+};
+
+const updateProfileBan = async (body: Record<string, unknown>) => {
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+  const isBanned = body.isBanned === true || body.isBanned === false ? body.isBanned : null;
+  if (!userId || isBanned === null) throw new Error("Invalid profile ban update.");
+
+  const { data, error } = await getAdminClient()
+    .from("profiles")
+    .update({ is_banned: isBanned })
+    .eq("id", userId)
+    .select("id, is_banned")
+    .single();
+  if (error || !data) throw error || new Error("Profile ban update failed.");
+  return data;
+};
+
+const updateReportStatus = async (body: Record<string, unknown>) => {
+  const reportId = typeof body.reportId === "string" ? body.reportId.trim() : "";
+  const action = body.moderationAction === "ban" || body.moderationAction === "dismiss" ? body.moderationAction : null;
+  if (!reportId || !action) throw new Error("Invalid report moderation update.");
+
+  const adminClient = getAdminClient();
+  const { data: report, error: reportReadError } = await adminClient
+    .from("user_reports")
+    .select("id, target_user_id")
+    .eq("id", reportId)
+    .maybeSingle();
+  if (reportReadError || !report) throw reportReadError || new Error("Report not found.");
+
+  const status = action === "ban" ? "banned" : "resolved";
+  const { data: updatedReport, error: reportUpdateError } = await adminClient
+    .from("user_reports")
+    .update({ status, resolved_at: new Date().toISOString() })
+    .eq("id", reportId)
+    .select("id, status, resolved_at")
+    .single();
+  if (reportUpdateError || !updatedReport) throw reportUpdateError || new Error("Report update failed.");
+
+  if (action === "ban") {
+    const { error: profileError } = await adminClient
+      .from("profiles")
+      .update({ is_banned: true })
+      .eq("id", report.target_user_id);
+    if (profileError) throw profileError;
+  }
+
+  return updatedReport;
+};
+
+const deleteGossipPost = async (body: Record<string, unknown>) => {
+  const postId = typeof body.postId === "string" ? body.postId.trim() : "";
+  if (!postId) throw new Error("Invalid gossip post ID.");
+  const { data, error } = await getAdminClient()
+    .from("gossip_posts")
+    .delete()
+    .eq("id", postId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data || { id: postId };
+};
+
+const deleteCampusPoll = async (body: Record<string, unknown>) => {
+  const pollId = typeof body.pollId === "string" ? body.pollId.trim() : "";
+  if (!pollId) throw new Error("Invalid campus poll ID.");
+  const { data, error } = await getAdminClient()
+    .from("campus_polls")
+    .delete()
+    .eq("id", pollId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data || { id: pollId };
+};
+
 const updateVerificationRequest = async (body: Record<string, unknown>) => {
   const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
   const status = body.status === "approved" || body.status === "rejected" ? body.status : null;
@@ -270,7 +355,17 @@ Deno.serve(async (request) => {
   try {
     const body = await request.json() as Record<string, unknown>;
 
-    if (body.action === "list_verifications" || body.action === "update_verification" || body.action === "update_profile_verification" || body.action === "admin_metrics") {
+    if ([
+      "list_verifications",
+      "update_verification",
+      "update_profile_verification",
+      "admin_metrics",
+      "list_reports",
+      "update_profile_ban",
+      "update_report",
+      "delete_gossip_post",
+      "delete_campus_poll",
+    ].includes(String(body.action))) {
       if (!(await verifyProof(body.proof))) {
         return json({ authenticated: false, message: "Admin proof is invalid or expired." }, 403);
       }
@@ -281,6 +376,26 @@ Deno.serve(async (request) => {
 
       if (body.action === "admin_metrics") {
         return json({ authenticated: true, metrics: await getAdminMetrics() });
+      }
+
+      if (body.action === "list_reports") {
+        return json({ authenticated: true, reports: await listReports() });
+      }
+
+      if (body.action === "update_profile_ban") {
+        return json({ authenticated: true, profile: await updateProfileBan(body) });
+      }
+
+      if (body.action === "update_report") {
+        return json({ authenticated: true, report: await updateReportStatus(body) });
+      }
+
+      if (body.action === "delete_gossip_post") {
+        return json({ authenticated: true, post: await deleteGossipPost(body) });
+      }
+
+      if (body.action === "delete_campus_poll") {
+        return json({ authenticated: true, poll: await deleteCampusPoll(body) });
       }
 
       if (body.action === "update_profile_verification") {

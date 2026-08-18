@@ -17,10 +17,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
 
   if (!isOpen || !targetUser) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    submitReport(targetUser, reason, details);
-    setIsSubmitted(true);
+    const submitted = await submitReport(targetUser, reason, details);
+    if (submitted) setIsSubmitted(true);
   };
 
   const handleClose = () => {

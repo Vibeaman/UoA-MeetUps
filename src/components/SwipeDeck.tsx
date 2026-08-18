@@ -50,6 +50,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 }) => {
   const {
     profiles,
+    blockedUserIds,
     swipedProfileIds,
     swipeRight,
     swipeLeft,
@@ -88,8 +89,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   // Filter available profiles
   const deckProfiles = useMemo(() => {
     const eligibleProfiles = profiles.filter((p) => {
-      // Never expose suspended accounts in the public discovery deck.
-      if (p.isBanned) return false;
+      // Never expose suspended or blocked accounts in the public discovery deck.
+      if (p.isBanned || blockedUserIds.includes(p.id)) return false;
 
       // Don't show already swiped
       if (swipedProfileIds.includes(p.id)) return false;
@@ -162,7 +163,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       const bBoosted = Boolean(b.boostExpiresAt && new Date(b.boostExpiresAt).getTime() > now);
       return Number(bBoosted) - Number(aBoosted);
     });
-  }, [profiles, swipedProfileIds, currentMode, filters, selectedVibeFilter, currentUser, boostTimeLeft]);
+  }, [    profiles,
+    swipedProfileIds,
+    blockedUserIds,
+    currentMode, filters, selectedVibeFilter, currentUser, boostTimeLeft]);
 
   // Current top, next, and 3rd cards in deck
   const currentProfile = deckProfiles[0];

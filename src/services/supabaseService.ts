@@ -361,6 +361,79 @@ export const supabaseService = {
     }
   },
 
+  async fetchAdminReports(proof: string): Promise<UserReport[] | null> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'list_reports', proof },
+      });
+      if (error || !data?.authenticated || !Array.isArray(data.reports)) return null;
+      return data.reports.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        reporterName: row.reporter_name,
+        targetUserId: row.target_user_id,
+        targetUserName: row.target_user_name,
+        targetUsername: row.target_username || '',
+        targetPhoto: row.target_photo || '',
+        reason: row.reason,
+        details: row.details || '',
+        status: row.status,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+      }));
+    } catch (error) {
+      console.warn('Supabase admin reports fetch error:', error);
+      return null;
+    }
+  },
+
+  async updateAdminProfileBan(proof: string, userId: string, isBanned: boolean): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'update_profile_ban', proof, userId, isBanned },
+      });
+      return !error && Boolean(data?.authenticated && data.profile);
+    } catch (error) {
+      console.warn('Supabase admin ban update error:', error);
+      return false;
+    }
+  },
+
+  async updateAdminReport(proof: string, reportId: string, moderationAction: 'ban' | 'dismiss'): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'update_report', proof, reportId, moderationAction },
+      });
+      return !error && Boolean(data?.authenticated && data.report);
+    } catch (error) {
+      console.warn('Supabase admin report update error:', error);
+      return false;
+    }
+  },
+
+  async deleteAdminGossipPost(proof: string, postId: string): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'delete_gossip_post', proof, postId },
+      });
+      return !error && Boolean(data?.authenticated && data.post);
+    } catch (error) {
+      console.warn('Supabase admin gossip deletion error:', error);
+      return false;
+    }
+  },
+
+  async deleteAdminCampusPoll(proof: string, pollId: string): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'delete_campus_poll', proof, pollId },
+      });
+      return !error && Boolean(data?.authenticated && data.poll);
+    } catch (error) {
+      console.warn('Supabase admin poll deletion error:', error);
+      return false;
+    }
+  },
+
   async fetchAdminVerificationRequests(proof: string): Promise<VerificationRequest[] | null> {
     try {
       const { data, error } = await getSupabase().functions.invoke('admin-auth', {
@@ -946,6 +1019,73 @@ export const supabaseService = {
     return () => {
       void supabase.removeChannel(channel);
     };
+  },
+
+  async fetchBlockedUserIds(userId: string): Promise<string[] | null> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('user_blocks')
+        .select('blocked_id')
+        .eq('blocker_id', userId)
+        .limit(500);
+      if (error) return null;
+      return (data || []).map((row: any) => row.blocked_id).filter(Boolean);
+    } catch (error) {
+      console.warn('Supabase blocked users fetch error:', error);
+      return null;
+    }
+  },
+
+  async blockUser(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().rpc('block_user', { p_blocked_id: userId });
+      return !error && Boolean(data?.[0]?.blocked_id);
+    } catch (error) {
+      console.warn('Supabase block user error:', error);
+      return false;
+    }
+  },
+
+  async deleteMatch(matchId: string): Promise<boolean> {
+    try {
+      const { error } = await getSupabase().from('matches').delete().eq('id', matchId);
+      return !error;
+    } catch (error) {
+      console.warn('Supabase match deletion error:', error);
+      return false;
+    }
+  },
+
+  async fetchWhoLikedMe(userId: string): Promise<UserProfile[] | null> {
+    try {
+      const supabase = getSupabase();
+      const [{ data: likeRows, error: likeError }, { data: matchRows, error: matchError }] = await Promise.all([
+        supabase
+          .from('profile_likes')
+          .select('sender_id, created_at')
+          .eq('recipient_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('matches')
+          .select('user_id_1, user_id_2')
+          .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+          .limit(100),
+      ]);
+      if (likeError || matchError) return null;
+
+      const matchedIds = new Set<string>();
+      (matchRows || []).forEach((row: any) => {
+        matchedIds.add(row.user_id_1 === userId ? row.user_id_2 : row.user_id_1);
+      });
+      const profiles = await supabaseService.fetchProfiles();
+      if (!profiles) return null;
+      const likedIds = new Set((likeRows || []).map((row: any) => row.sender_id));
+      return profiles.filter((profile) => likedIds.has(profile.id) && !matchedIds.has(profile.id) && !profile.isBanned && profile.id !== userId);
+    } catch (error) {
+      console.warn('Supabase inbound likes fetch error:', error);
+      return null;
+    }
   },
 
   async fetchUserChatHistory(userId: string): Promise<{
