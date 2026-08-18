@@ -618,7 +618,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       supabaseService.fetchCampusAlerts(),
     ]).then(([remoteStories, remoteAlerts]) => {
       if (cancelled) return;
-      if (remoteStories) setStories(remoteStories);
+      if (remoteStories) {
+        setStories((currentStories) => {
+          const remoteIds = new Set(remoteStories.map((story) => story.id));
+          const locallyCreatedStories = currentStories.filter((story) => !remoteIds.has(story.id));
+          return [...locallyCreatedStories, ...remoteStories];
+        });
+      }
       if (remoteAlerts) setCampusAlerts(remoteAlerts);
     });
     return () => {

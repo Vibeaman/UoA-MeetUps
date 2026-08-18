@@ -23,6 +23,7 @@ import { PremiumModal } from './components/PremiumModal';
 import { VerificationModal } from './components/VerificationModal';
 import { AuthModal } from './components/AuthModal';
 import { ProfileEditModal } from './components/ProfileEditModal';
+import { CampusStoryModal } from './components/CampusStoryModal';
 import { ReportModal } from './components/ReportModal';
 import { UserProfile } from './types';
 import { Megaphone } from 'lucide-react';
@@ -196,6 +197,7 @@ const MainAppContent: React.FC = () => {
       {activeTab !== 'admin' && <FiltersModal />}
       {activeTab !== 'admin' && <PremiumModal />}
       <VerificationModal />
+      <CampusStoryModal />
       <AuthModal />
       <ProfileEditModal />
     </div>
