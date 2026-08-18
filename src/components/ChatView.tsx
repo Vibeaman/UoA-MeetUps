@@ -107,11 +107,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages, currentChatMatch]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!currentChatMatch || !inputMessage.trim()) return;
-    sendMessage(currentChatMatch.id, inputMessage);
-    setInputMessage('');
-    setShowEmojiPicker(false);
+    const sent = await sendMessage(currentChatMatch.id, inputMessage);
+    if (sent) {
+      setInputMessage('');
+      setShowEmojiPicker(false);
+    }
   };
 
   const handleEmojiClick = (emojiData: { emoji: string }) => {
@@ -133,15 +135,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
       return;
     }
 
-    sendMessage(currentChatMatch.id, '', url, viewOnceActive);
-    setShowPhotoPicker(false);
-    setViewOnceActive(false);
+    const sent = await sendMessage(currentChatMatch.id, '', url, viewOnceActive);
+    if (sent) {
+      setShowPhotoPicker(false);
+      setViewOnceActive(false);
+    }
   };
 
-  const handleSendPromptAnswer = (promptText: string) => {
+  const handleSendPromptAnswer = async (promptText: string) => {
     if (!currentChatMatch) return;
-    sendMessage(currentChatMatch.id, `💬 Icebreaker: ${promptText}`);
-    setShowIcebreakerPicker(false);
+    const sent = await sendMessage(currentChatMatch.id, `💬 Icebreaker: ${promptText}`);
+    if (sent) setShowIcebreakerPicker(false);
   };
 
   const calculateExpiryDays = (expiresAt: number) => {

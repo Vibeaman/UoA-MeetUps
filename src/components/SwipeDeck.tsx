@@ -69,6 +69,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     boostTimeLeft,
     selectedVibeFilter,
     sendDirectSpark,
+    requestAuthentication,
     gossipPosts,
   } = useApp();
 
@@ -235,7 +236,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       isDraggingRef.current = false;
     }, 50);
 
-    if (!currentProfile || isAnimatingOut) return;
+    if (!currentProfile || isAnimatingOut || !requestAuthentication()) return;
 
     const thresholdX = 90;
     const thresholdY = -100;
@@ -302,7 +303,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   };
 
   const handleManualSwipe = async (direction: 'left' | 'right' | 'super') => {
-    if (!currentProfile || isAnimatingOut) return;
+    if (!currentProfile || isAnimatingOut || !requestAuthentication()) return;
     setIsAnimatingOut(true);
 
     if (direction === 'right') {
@@ -344,12 +345,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     resetCardState();
   };
 
-  const handleSendInstantSpark = (e: React.FormEvent) => {
+  const handleSendInstantSpark = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sparkText.trim() || !currentProfile) return;
-    sendDirectSpark(currentProfile, sparkText.trim());
-    setSparkText('');
-    setIsSparkInputOpen(false);
+    const sent = await sendDirectSpark(currentProfile, sparkText.trim());
+    if (sent) {
+      setSparkText('');
+      setIsSparkInputOpen(false);
+    }
   };
 
   return (

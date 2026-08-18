@@ -12,6 +12,7 @@ import {
   MatchItem,
   AdminMetrics,
   PremiumEntitlement,
+  ProfileLikeResult,
 } from '../types';
 
 /**
@@ -836,6 +837,26 @@ export const supabaseService = {
     }
   },
 
+  async recordProfileLike(recipientId: string, likeType: 'like' | 'super_like' = 'like'): Promise<ProfileLikeResult | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('record_profile_like', {
+        p_recipient_id: recipientId,
+        p_like_type: likeType,
+      });
+      if (error || !data?.[0]) {
+        console.warn('Supabase profile like error:', error?.message || 'No like result returned.');
+        return null;
+      }
+      return {
+        matched: Boolean(data[0].matched),
+        matchId: data[0].match_id || undefined,
+      };
+    } catch (error) {
+      console.warn('Supabase profile like exception:', error);
+      return null;
+    }
+  },
+
   async fetchUserChatHistory(userId: string): Promise<{
     matches: MatchItem[];
     messages: Record<string, ChatMessage[]>;
@@ -929,11 +950,19 @@ export const supabaseService = {
       };
 
       const { error } = await supabase.from('messages').insert(row);
-      if (error) {
-        console.warn('Supabase message insert error:', error.message);
-        return false;
+      if (!error) return true;
+
+      if (error.code === '23505') {
+        const { data: existingMessage, error: existingError } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('id', message.id)
+          .maybeSingle();
+        if (!existingError && existingMessage?.id === message.id) return true;
       }
-      return true;
+
+      console.warn('Supabase message insert error:', error.message);
+      return false;
     } catch {
       return false;
     }

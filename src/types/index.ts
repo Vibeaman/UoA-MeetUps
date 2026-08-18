@@ -131,6 +131,11 @@ export interface MatchItem {
   isLowkeyMatch?: boolean;
 }
 
+export interface ProfileLikeResult {
+  matched: boolean;
+  matchId?: string;
+}
+
 export interface ChatMessage {
   id: string;
   matchId: string;

@@ -84,6 +84,79 @@ CREATE TABLE IF NOT EXISTS matches (
   is_lowkey_match BOOLEAN NOT NULL DEFAULT false
 );
 
+CREATE TABLE IF NOT EXISTS profile_likes (
+  id TEXT PRIMARY KEY,
+  sender_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  recipient_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  like_type TEXT NOT NULL CHECK (like_type IN ('like', 'super_like')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  CONSTRAINT profile_likes_no_self_like CHECK (sender_id <> recipient_id),
+  CONSTRAINT profile_likes_unique_pair UNIQUE (sender_id, recipient_id)
+);
+
+CREATE INDEX IF NOT EXISTS profile_likes_recipient_idx ON profile_likes (recipient_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS profile_likes_sender_idx ON profile_likes (sender_id, created_at DESC);
+
+CREATE OR REPLACE FUNCTION public.record_profile_like(p_recipient_id TEXT, p_like_type TEXT DEFAULT 'like')
+RETURNS TABLE(matched BOOLEAN, match_id TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_sender_id TEXT := auth.uid()::text;
+  v_sender_banned BOOLEAN;
+  v_recipient_banned BOOLEAN;
+  v_user_id_1 TEXT;
+  v_user_id_2 TEXT;
+  v_match_id TEXT;
+  v_reciprocal_exists BOOLEAN;
+  v_expiry TIMESTAMP WITH TIME ZONE := timezone('utc'::text, now()) + interval '7 days';
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_recipient_id IS NULL OR p_recipient_id = v_sender_id THEN RAISE EXCEPTION 'invalid_recipient'; END IF;
+  IF p_like_type NOT IN ('like', 'super_like') THEN RAISE EXCEPTION 'invalid_like_type'; END IF;
+
+  SELECT is_banned INTO v_sender_banned FROM public.profiles WHERE id = v_sender_id;
+  SELECT is_banned INTO v_recipient_banned FROM public.profiles WHERE id = p_recipient_id;
+  IF v_sender_banned IS NULL OR v_recipient_banned IS NULL THEN RAISE EXCEPTION 'profile_not_found'; END IF;
+  IF v_sender_banned OR v_recipient_banned THEN RAISE EXCEPTION 'account_unavailable'; END IF;
+
+  INSERT INTO public.profile_likes (id, sender_id, recipient_id, like_type, updated_at)
+  VALUES (format('like_%s_%s', v_sender_id, p_recipient_id), v_sender_id, p_recipient_id, p_like_type, timezone('utc'::text, now()))
+  ON CONFLICT (sender_id, recipient_id)
+  DO UPDATE SET like_type = excluded.like_type, updated_at = excluded.updated_at;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.profile_likes
+    WHERE sender_id = p_recipient_id AND recipient_id = v_sender_id
+  ) INTO v_reciprocal_exists;
+  IF NOT v_reciprocal_exists THEN
+    RETURN QUERY SELECT false, NULL::TEXT;
+    RETURN;
+  END IF;
+
+  v_user_id_1 := least(v_sender_id, p_recipient_id);
+  v_user_id_2 := greatest(v_sender_id, p_recipient_id);
+  v_match_id := format('match_%s_%s', v_user_id_1, v_user_id_2);
+
+  INSERT INTO public.matches (id, user_id_1, user_id_2, expires_at, last_message, last_message_time, is_lowkey_match)
+  SELECT v_match_id, v_user_id_1, v_user_id_2, v_expiry,
+    'You matched! Say hello before the 7-day timer expires 🔥', timezone('utc'::text, now()),
+    (p.mode = 'lowkey' OR recipient.mode = 'lowkey')
+  FROM public.profiles p
+  JOIN public.profiles recipient ON recipient.id = p_recipient_id
+  WHERE p.id = v_sender_id
+  ON CONFLICT (id) DO UPDATE SET expires_at = greatest(public.matches.expires_at, excluded.expires_at);
+
+  RETURN QUERY SELECT true, v_match_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.record_profile_like(TEXT, TEXT) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_profile_like(TEXT, TEXT) TO authenticated;
+
 -- 3. Messages Table
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
@@ -308,6 +381,7 @@ grant execute on function public.is_admin() to authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.matches enable row level security;
+alter table public.profile_likes enable row level security;
 alter table public.messages enable row level security;
 alter table public.verification_requests enable row level security;
 alter table public.user_reports enable row level security;
@@ -327,6 +401,10 @@ drop policy if exists "Users can read their own matches" on public.matches;
 drop policy if exists "Users can create matches involving themselves" on public.matches;
 drop policy if exists "Users can update their own matches" on public.matches;
 drop policy if exists "Users can delete their own matches" on public.matches;
+drop policy if exists "Users can read likes involving themselves" on public.profile_likes;
+drop policy if exists "Users can create their own likes" on public.profile_likes;
+drop policy if exists "Users can update their own likes" on public.profile_likes;
+drop policy if exists "Users can delete their own likes" on public.profile_likes;
 drop policy if exists "Match participants can read messages" on public.messages;
 drop policy if exists "Users can send messages in their matches" on public.messages;
 drop policy if exists "Message senders can delete messages" on public.messages;
@@ -391,6 +469,23 @@ create policy "Users can update their own matches"
 create policy "Users can delete their own matches"
   on public.matches for delete to authenticated
   using (auth.uid()::text = user_id_1 or auth.uid()::text = user_id_2);
+
+create policy "Users can read likes involving themselves"
+  on public.profile_likes for select to authenticated
+  using (auth.uid()::text = sender_id or auth.uid()::text = recipient_id);
+
+create policy "Users can create their own likes"
+  on public.profile_likes for insert to authenticated
+  with check (auth.uid()::text = sender_id);
+
+create policy "Users can update their own likes"
+  on public.profile_likes for update to authenticated
+  using (auth.uid()::text = sender_id)
+  with check (auth.uid()::text = sender_id);
+
+create policy "Users can delete their own likes"
+  on public.profile_likes for delete to authenticated
+  using (auth.uid()::text = sender_id);
 
 create policy "Match participants can read messages"
   on public.messages for select to authenticated

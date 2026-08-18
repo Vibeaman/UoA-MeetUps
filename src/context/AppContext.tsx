@@ -42,16 +42,16 @@ interface AppContextType {
   toggleAppMode: (mode?: AppMode) => void;
   profiles: UserProfile[];
   swipedProfileIds: string[];
-  swipeRight: (profile: UserProfile) => boolean; // returns true if match created
+  swipeRight: (profile: UserProfile) => Promise<void>;
   swipeLeft: (profile: UserProfile) => void;
-  superLike: (profile: UserProfile) => void;
+  superLike: (profile: UserProfile) => Promise<void>;
   rewindLastSwipe: () => boolean;
   canRewind: boolean;
   matches: MatchItem[];
   currentChatMatch: MatchItem | null;
   setCurrentChatMatch: (match: MatchItem | null) => void;
   messages: Record<string, ChatMessage[]>;
-  sendMessage: (matchId: string, text: string, imageUrl?: string, isPhotoViewOnce?: boolean) => void;
+  sendMessage: (matchId: string, text: string, imageUrl?: string, isPhotoViewOnce?: boolean) => Promise<boolean>;
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
@@ -107,7 +107,7 @@ interface AppContextType {
   addCampusPoll: (question: string, category: string, options: string[]) => void;
   selectedVibeFilter: string;
   setSelectedVibeFilter: (vibe: string) => void;
-  sendDirectSpark: (profile: UserProfile, text: string) => void;
+  sendDirectSpark: (profile: UserProfile, text: string) => Promise<boolean>;
   sparkToast: { show: boolean; message: string } | null;
   setSparkToast: (val: { show: boolean; message: string } | null) => void;
   // Gossip Board
@@ -880,38 +880,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [isAuthenticated, currentUser.id]);
 
-  const sendDirectSpark = (profile: UserProfile, text: string) => {
+  const buildMatchItem = (profile: UserProfile, matchId: string): MatchItem => ({
+    id: matchId,
+    matchedUser: profile,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    hasUnread: true,
+    lastMessage: 'You matched! Say hello before the 7-day timer expires 🔥',
+    lastMessageTime: Date.now(),
+    isLowkeyMatch: currentMode === 'lowkey' || profile.mode === 'lowkey',
+  });
+
+  const sendDirectSpark = async (profile: UserProfile, text: string): Promise<boolean> => {
+    if (!requestAuthentication() || !currentUser.id || !text.trim()) return false;
+
     const existingMatch = matches.find((m) => m.matchedUser.id === profile.id);
     let matchId = existingMatch?.id;
 
     if (!existingMatch) {
-      matchId = `match_${Date.now()}`;
-      const newMatch: MatchItem = {
-        id: matchId,
-        matchedUser: profile,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        lastMessage: text,
-        lastMessageTime: Date.now(),
-        hasUnread: false,
-        isLowkeyMatch: currentMode === 'lowkey' || profile.mode === 'lowkey',
-      };
-      setMatches((prev) => [newMatch, ...prev]);
+      const likeResult = await supabaseService.recordProfileLike(profile.id, 'like');
+      if (!likeResult) {
+        setSparkToast({ show: true, message: 'Your Spark could not be sent. Please try again.' });
+        return false;
+      }
+      if (!likeResult.matched || !likeResult.matchId) {
+        setSparkToast({ show: true, message: `Like sent to ${profile.name.split(' ')[0]}. They can match you back.` });
+        setTimeout(() => setSparkToast(null), 4000);
+        return true;
+      }
+      matchId = likeResult.matchId;
+      const newMatch = buildMatchItem(profile, matchId);
+      setMatches((prev) => [newMatch, ...prev.filter((match) => match.id !== matchId)]);
+      setRecentMatch(profile);
     }
 
-    const msgId = `msg_${Date.now()}`;
-    const newMsg: ChatMessage = {
-      id: msgId,
-      matchId: matchId!,
-      senderId: currentUser.id,
-      text: text,
-      createdAt: Date.now(),
-      read: true,
-    };
-    setMessages((prev) => ({
-      ...prev,
-      [matchId!]: [...(prev[matchId!] || []), newMsg],
-    }));
+    const sent = await sendMessage(matchId!, text);
+    if (!sent) return false;
 
     setSparkToast({
       show: true,
@@ -926,6 +930,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTimeout(() => {
       setSparkToast(null);
     }, 4000);
+    return true;
   };
 
   // Update current user
@@ -970,57 +975,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Swipe Right (Like)
-  const swipeRight = (profile: UserProfile): boolean => {
+  const swipeRight = async (profile: UserProfile): Promise<void> => {
+    if (!requestAuthentication() || !currentUser.id) return;
     setSwipedProfileIds((prev) => [...prev, profile.id]);
     setLastSwipedId(profile.id);
 
-    // Simulated high match probability for immersive experience
-    const willMatch = profile.lookingFor === 'both' || profile.lookingFor === currentUser.lookingFor || Math.random() > 0.3;
-
-    if (willMatch) {
-      const newMatch: MatchItem = {
-        id: `match_${Date.now()}_${profile.id}`,
-        matchedUser: profile,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-        hasUnread: true,
-        lastMessage: 'You matched! Say hello before the 7-day timer expires 🔥',
-        lastMessageTime: Date.now(),
-        isLowkeyMatch: currentMode === 'lowkey' || profile.mode === 'lowkey',
-      };
-
-      setMatches((prev) => [newMatch, ...prev.filter((m) => m.matchedUser.id !== profile.id)]);
-      setRecentMatch(profile);
-      fireMatchConfetti();
-      return true;
+    const likeResult = await supabaseService.recordProfileLike(profile.id, 'like');
+    if (!likeResult) {
+      setSparkToast({ show: true, message: 'Your like could not be saved. Please try again.' });
+      return;
     }
 
-    return false;
+    if (!likeResult.matched || !likeResult.matchId) {
+      setSparkToast({ show: true, message: 'Like sent. You will see a match when they like you back.' });
+      setTimeout(() => setSparkToast(null), 4000);
+      return;
+    }
+
+    const newMatch = buildMatchItem(profile, likeResult.matchId);
+    setMatches((prev) => [newMatch, ...prev.filter((match) => match.id !== newMatch.id)]);
+    setRecentMatch(profile);
+    fireMatchConfetti();
   };
 
   // Swipe Left (Pass)
   const swipeLeft = (profile: UserProfile) => {
+    if (!requestAuthentication()) return;
     setSwipedProfileIds((prev) => [...prev, profile.id]);
     setLastSwipedId(profile.id);
   };
 
-  // Super Like
-  const superLike = (profile: UserProfile) => {
+  // Super Like records stronger interest; it does not create a match without reciprocal interest.
+  const superLike = async (profile: UserProfile): Promise<void> => {
+    if (!requestAuthentication() || !currentUser.id) return;
     setSwipedProfileIds((prev) => [...prev, profile.id]);
     setLastSwipedId(profile.id);
 
-    const newMatch: MatchItem = {
-      id: `match_super_${Date.now()}_${profile.id}`,
-      matchedUser: profile,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-      hasUnread: true,
-      lastMessage: `⭐ Super Liked! You both connected instantly!`,
-      lastMessageTime: Date.now(),
-      isLowkeyMatch: currentMode === 'lowkey' || profile.mode === 'lowkey',
-    };
+    const likeResult = await supabaseService.recordProfileLike(profile.id, 'super_like');
+    if (!likeResult) {
+      setSparkToast({ show: true, message: 'Your Super Like could not be saved. Please try again.' });
+      return;
+    }
 
-    setMatches((prev) => [newMatch, ...prev.filter((m) => m.matchedUser.id !== profile.id)]);
+    if (!likeResult.matched || !likeResult.matchId) {
+      setSparkToast({ show: true, message: 'Super Like sent. A match appears when they like you back.' });
+      setTimeout(() => setSparkToast(null), 4000);
+      return;
+    }
+
+    const newMatch = buildMatchItem(profile, likeResult.matchId);
+    setMatches((prev) => [newMatch, ...prev.filter((match) => match.id !== newMatch.id)]);
     setRecentMatch(profile);
     fireMatchConfetti();
   };
@@ -1035,9 +1039,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const canRewind = Boolean(lastSwipedId);
 
-  // Send message
-  const sendMessage = (matchId: string, text: string, imageUrl?: string, isPhotoViewOnce?: boolean) => {
-    if (!text.trim() && !imageUrl) return;
+  // Send message and only publish it to local chat after Supabase confirms persistence.
+  const sendMessage = async (
+    matchId: string,
+    text: string,
+    imageUrl?: string,
+    isPhotoViewOnce?: boolean,
+  ): Promise<boolean> => {
+    if (!isAuthenticated || !currentUser.id || (!text.trim() && !imageUrl)) return false;
 
     const newMsg: ChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -1050,12 +1059,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: true,
     };
 
+    const saved = await supabaseService.sendMessage(newMsg);
+    if (!saved) {
+      setSparkToast({ show: true, message: 'Message could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 4500);
+      return false;
+    }
+
     setMessages((prev) => ({
       ...prev,
       [matchId]: [...(prev[matchId] || []), newMsg],
     }));
 
-    // Update the local preview and persist the real message remotely.
     setMatches((prev) =>
       prev.map((m) =>
         m.id === matchId
@@ -1065,10 +1080,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               lastMessageTime: Date.now(),
               hasUnread: false,
             }
-          : m
-      )
+          : m,
+      ),
     );
-    void supabaseService.sendMessage(newMsg);
+    return true;
   };
 
   // Submit Report
