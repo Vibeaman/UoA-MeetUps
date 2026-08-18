@@ -7,9 +7,9 @@ const corsHeaders = {
 };
 
 const PLANS = {
-  weekly: { amount: 150000 },
-  monthly: { amount: 450000 },
-  semester: { amount: 1200000 },
+  weekly: { amount: 150000, durationMs: 7 * 24 * 60 * 60 * 1000 },
+  monthly: { amount: 450000, durationMs: 30 * 24 * 60 * 60 * 1000 },
+  semester: { amount: 1200000, durationMs: 4 * 30 * 24 * 60 * 60 * 1000 },
 } as const;
 
 const json = (body: Record<string, unknown>, status = 200) =>
@@ -25,6 +25,45 @@ const getAdminClient = () => {
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+};
+
+const grantPremiumEntitlement = async (
+  adminClient: ReturnType<typeof getAdminClient>,
+  userId: string,
+  planId: keyof typeof PLANS,
+  providerReference: string,
+) => {
+  const { data: alreadyGranted, error: existingError } = await adminClient
+    .from("premium_entitlements")
+    .select("id")
+    .eq("provider_reference", providerReference)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (alreadyGranted) return;
+
+  const now = new Date();
+  const { data: currentEntitlement, error: currentError } = await adminClient
+    .from("premium_entitlements")
+    .select("expires_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (currentError) throw currentError;
+
+  const currentExpiry = currentEntitlement?.expires_at ? new Date(currentEntitlement.expires_at) : null;
+  const startsAt = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
+  const expiresAt = new Date(startsAt.getTime() + PLANS[planId].durationMs);
+
+  const { error: entitlementError } = await adminClient.from("premium_entitlements").upsert({
+    id: `premium_${userId}`,
+    user_id: userId,
+    plan_id: planId,
+    provider_reference: providerReference,
+    status: "active",
+    starts_at: startsAt.toISOString(),
+    expires_at: expiresAt.toISOString(),
+    updated_at: now.toISOString(),
+  }, { onConflict: "user_id" });
+  if (entitlementError) throw entitlementError;
 };
 
 Deno.serve(async (request) => {
@@ -62,7 +101,8 @@ Deno.serve(async (request) => {
     const paystackData = await paystackResponse.json();
     const verified = paystackResponse.ok && paystackData?.status && paystackData?.data;
     const paymentData = paystackData?.data;
-    const expectedAmount = PLANS[transaction.plan_id as keyof typeof PLANS]?.amount || Number(transaction.amount_kobo);
+    const plan = PLANS[transaction.plan_id as keyof typeof PLANS];
+    const expectedAmount = plan?.amount || Number(transaction.amount_kobo);
     const isSuccessful = verified
       && paymentData.status === "success"
       && paymentData.currency === transaction.currency
@@ -92,7 +132,9 @@ Deno.serve(async (request) => {
       .eq("user_id", user.id);
     if (updateError) throw updateError;
 
-    if (isSuccessful) {
+    if (isSuccessful && plan) {
+      await grantPremiumEntitlement(adminClient, user.id, transaction.plan_id as keyof typeof PLANS, reference);
+
       const { data: profile, error: profileReadError } = await adminClient
         .from("profiles")
         .select("id, badges")

@@ -205,6 +205,15 @@ export interface PremiumPlan {
   features: string[];
 }
 
+export interface PremiumEntitlement {
+  userId: string;
+  planId: PremiumPlan['id'];
+  status: 'active' | 'expired' | 'revoked' | 'refunded';
+  startsAt: string;
+  expiresAt: string;
+  providerReference?: string;
+}
+
 export interface AdminPaymentMetrics {
   currency: string;
   totalRevenueKobo: number;

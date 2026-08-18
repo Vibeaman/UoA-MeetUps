@@ -26,6 +26,51 @@ const getAdminClient = () => {
   });
 };
 
+const PLAN_DURATIONS_MS = {
+  weekly: 7 * 24 * 60 * 60 * 1000,
+  monthly: 30 * 24 * 60 * 60 * 1000,
+  semester: 4 * 30 * 24 * 60 * 60 * 1000,
+} as const;
+
+const grantPremiumEntitlement = async (
+  adminClient: ReturnType<typeof getAdminClient>,
+  userId: string,
+  planId: keyof typeof PLAN_DURATIONS_MS,
+  providerReference: string,
+) => {
+  const { data: alreadyGranted, error: existingError } = await adminClient
+    .from("premium_entitlements")
+    .select("id")
+    .eq("provider_reference", providerReference)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (alreadyGranted) return;
+
+  const now = new Date();
+  const { data: currentEntitlement, error: currentError } = await adminClient
+    .from("premium_entitlements")
+    .select("expires_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (currentError) throw currentError;
+
+  const currentExpiry = currentEntitlement?.expires_at ? new Date(currentEntitlement.expires_at) : null;
+  const startsAt = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
+  const expiresAt = new Date(startsAt.getTime() + PLAN_DURATIONS_MS[planId]);
+
+  const { error: entitlementError } = await adminClient.from("premium_entitlements").upsert({
+    id: `premium_${userId}`,
+    user_id: userId,
+    plan_id: planId,
+    provider_reference: providerReference,
+    status: "active",
+    starts_at: startsAt.toISOString(),
+    expires_at: expiresAt.toISOString(),
+    updated_at: now.toISOString(),
+  }, { onConflict: "user_id" });
+  if (entitlementError) throw entitlementError;
+};
+
 const isValidSignature = async (payload: string, signature: string, secretKey: string) => {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -75,7 +120,7 @@ Deno.serve(async (request) => {
     const adminClient = getAdminClient();
     const { data: existing, error: existingError } = await adminClient
       .from("payment_transactions")
-      .select("id, user_id, plan_id, amount_kobo, currency, metadata")
+      .select("id, user_id, plan_id, amount_kobo, currency, metadata, status")
       .eq("provider_reference", reference)
       .maybeSingle();
     if (existingError) throw existingError;
@@ -107,7 +152,9 @@ Deno.serve(async (request) => {
     }, { onConflict: "provider_reference" });
     if (upsertError) throw upsertError;
 
-    if (status === "success" && userId) {
+    if (status === "success" && userId && (planId === "weekly" || planId === "monthly" || planId === "semester")) {
+      await grantPremiumEntitlement(adminClient, userId, planId, reference);
+
       const { data: profile, error: profileReadError } = await adminClient
         .from("profiles")
         .select("id, badges")
@@ -123,6 +170,14 @@ Deno.serve(async (request) => {
           .eq("id", userId);
         if (profileError) throw profileError;
       }
+    }
+
+    if (status === "refunded") {
+      const { error: entitlementError } = await adminClient
+        .from("premium_entitlements")
+        .update({ status: "refunded", updated_at: new Date().toISOString() })
+        .eq("provider_reference", reference);
+      if (entitlementError) throw entitlementError;
     }
 
     return json({ ok: true, recorded: true });

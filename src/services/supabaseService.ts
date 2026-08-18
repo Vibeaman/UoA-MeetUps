@@ -11,6 +11,7 @@ import {
   ChatMessage,
   MatchItem,
   AdminMetrics,
+  PremiumEntitlement,
 } from '../types';
 
 /**
@@ -223,6 +224,30 @@ export const supabaseService = {
   async fetchProfile(userId: string): Promise<UserProfile | null> {
     const profiles = await this.fetchProfiles();
     return profiles?.find((profile) => profile.id === userId) || null;
+  },
+
+  async fetchPremiumEntitlement(userId: string): Promise<PremiumEntitlement | null> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('premium_entitlements')
+        .select('user_id, plan_id, status, starts_at, expires_at, provider_reference')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error || !data) return null;
+
+      const isExpired = new Date(data.expires_at).getTime() <= Date.now();
+      return {
+        userId: data.user_id,
+        planId: data.plan_id,
+        status: isExpired && data.status === 'active' ? 'expired' : data.status,
+        startsAt: data.starts_at,
+        expiresAt: data.expires_at,
+        providerReference: data.provider_reference || undefined,
+      };
+    } catch (error) {
+      console.warn('Supabase premium entitlement fetch error:', error);
+      return null;
+    }
   },
 
   async fetchCampusStories(): Promise<CampusStory[] | null> {

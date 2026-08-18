@@ -749,6 +749,32 @@ CREATE TABLE IF NOT EXISTS public.payment_transactions (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+CREATE TABLE IF NOT EXISTS public.premium_entitlements (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE REFERENCES public.profiles(id) ON DELETE CASCADE,
+  plan_id TEXT NOT NULL CHECK (plan_id IN ('weekly', 'monthly', 'semester')),
+  provider_reference TEXT UNIQUE,
+  status TEXT NOT NULL CHECK (status IN ('active', 'expired', 'revoked', 'refunded')),
+  starts_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS premium_entitlements_user_status_idx
+  ON public.premium_entitlements (user_id, status, expires_at DESC);
+
+ALTER TABLE public.premium_entitlements ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own premium entitlement" ON public.premium_entitlements;
+CREATE POLICY "Users can read own premium entitlement"
+  ON public.premium_entitlements FOR SELECT TO authenticated
+  USING (auth.uid()::text = user_id);
+
+REVOKE ALL ON public.premium_entitlements FROM anon;
+REVOKE ALL ON public.premium_entitlements FROM authenticated;
+GRANT SELECT ON public.premium_entitlements TO authenticated;
+
 CREATE TABLE IF NOT EXISTS public.site_sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,

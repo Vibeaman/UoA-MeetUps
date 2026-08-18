@@ -4,9 +4,10 @@ import { useApp } from '../context/AppContext';
 
 export const CampusPulseBar: React.FC = () => {
   const { selectedVibeFilter, setSelectedVibeFilter, profiles } = useApp();
+  const visibleProfiles = profiles.filter((profile) => !profile.isBanned);
 
-  const activeCount = profiles.filter((profile) => profile.isOnline).length;
-  const facultyCounts = profiles.reduce<Record<string, number>>((counts, profile) => {
+  const activeCount = visibleProfiles.filter((profile) => profile.isOnline).length;
+  const facultyCounts = visibleProfiles.reduce<Record<string, number>>((counts, profile) => {
     if (profile.faculty) counts[profile.faculty] = (counts[profile.faculty] || 0) + 1;
     return counts;
   }, {});
@@ -39,7 +40,7 @@ export const CampusPulseBar: React.FC = () => {
           </span>
         </div>
         <span className="ml-1 shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold text-white/65">
-          {profiles.length > 0 ? `${profiles.length} profiles` : 'Start exploring'}
+          {visibleProfiles.length > 0 ? `${visibleProfiles.length} profiles` : 'Start exploring'}
         </span>
       </div>
 

@@ -8,7 +8,6 @@ export const PremiumModal: FC = () => {
   const {
     isPremiumModalOpen,
     setIsPremiumModalOpen,
-    activatePremium,
   } = useApp();
 
   const [selectedPlanId, setSelectedPlanId] = useState<'weekly' | 'monthly' | 'semester'>('monthly');

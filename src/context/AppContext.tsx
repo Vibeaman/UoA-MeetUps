@@ -14,6 +14,7 @@ import {
   GossipPost,
   GossipComment,
   AdminMetrics,
+  PremiumEntitlement,
 } from '../types';
 import { supabaseService } from '../services/supabaseService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_URL_DISPLAY } from '../lib/supabase';
@@ -58,8 +59,7 @@ interface AppContextType {
   setRecentMatch: (profile: UserProfile | null) => void;
   whoLikedMeProfiles: UserProfile[];
   isPremium: boolean;
-  setIsPremium: (status: boolean) => void;
-  activePlan: string | null;
+  activePlan: PremiumEntitlement['planId'] | null;
   activatePremium: (planId: 'weekly' | 'monthly' | 'semester') => void;
   reports: UserReport[];
   submitReport: (targetUser: UserProfile, reason: UserReport['reason'], details: string) => void;
@@ -135,8 +135,6 @@ const STORAGE_KEYS = {
   MESSAGES: 'uoa_messages_v3',
   REPORTS: 'uoa_reports_v3',
   VERIFICATIONS: 'uoa_verifications_v3',
-  IS_PREMIUM: 'uoa_is_premium_v2',
-  ACTIVE_PLAN: 'uoa_active_plan_v2',
   IS_AUTHENTICATED: 'uoa_is_authenticated_v1',
 };
 
@@ -253,14 +251,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [recentMatch, setRecentMatch] = useState<UserProfile | null>(null);
 
   // Premium State
-  const [isPremium, setIsPremium] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.IS_PREMIUM);
-    return saved ? JSON.parse(saved) : false;
-  });
-
-  const [activePlan, setActivePlan] = useState<string | null>(() => {
-    return localStorage.getItem(STORAGE_KEYS.ACTIVE_PLAN) || null;
-  });
+  const [isPremium, setIsPremium] = useState(false);
+  const [activePlan, setActivePlan] = useState<PremiumEntitlement['planId'] | null>(null);
 
   // Boost timer
   const [isBoostActive, setIsBoostActive] = useState<boolean>(false);
@@ -296,7 +288,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setProfiles([]);
     setMatches([]);
     setMessages({});
+    setIsPremium(false);
+    setActivePlan(null);
     localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
+    localStorage.removeItem('uoa_is_premium_v2');
+    localStorage.removeItem('uoa_active_plan_v2');
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     void getSupabase().auth.signOut();
   };
@@ -331,6 +327,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (isAuthenticated) return true;
     openAuthModal('signup');
     return false;
+  };
+
+  const applyPremiumEntitlement = (entitlement: PremiumEntitlement | null) => {
+    const isActive = Boolean(
+      entitlement?.status === 'active' && new Date(entitlement.expiresAt).getTime() > Date.now(),
+    );
+    setIsPremium(isActive);
+    setActivePlan(isActive ? entitlement?.planId || null : null);
   };
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
@@ -424,6 +428,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [isAuthenticated, currentUser.id]);
 
   useEffect(() => {
+    // Never carry the previous account’s Premium state while the new account hydrates.
+    applyPremiumEntitlement(null);
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) return;
+
+    let cancelled = false;
+    void supabaseService.fetchPremiumEntitlement(currentUser.id).then((entitlement) => {
+      if (!cancelled) applyPremiumEntitlement(entitlement);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, currentUser.id]);
+
+  useEffect(() => {
     if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured()) {
       if (!isAuthenticated) {
         setMatches([]);
@@ -466,10 +485,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [verificationRequests]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.IS_PREMIUM, JSON.stringify(isPremium));
-  }, [isPremium]);
-
-  useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
     const anonymousIdKey = 'uoa_anonymous_id_v1';
@@ -509,12 +524,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       flushSession(true);
     };
   }, [currentUser.id]);
-
-  useEffect(() => {
-    if (activePlan) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_PLAN, activePlan);
-    }
-  }, [activePlan]);
 
   // Hydrate Boost from the server-issued expiration timestamp.
   useEffect(() => {
@@ -856,10 +865,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     let cancelled = false;
-    void supabaseService.verifyPaystackTransaction(reference).then(({ data, error }) => {
+    void supabaseService.verifyPaystackTransaction(reference).then(async ({ data, error }) => {
       if (cancelled) return;
       if (data?.paid && (data.planId === 'weekly' || data.planId === 'monthly' || data.planId === 'semester')) {
-        activatePremium(data.planId);
+        await activatePremium(data.planId);
       } else {
         setSparkToast({ show: true, message: error || 'Payment was not verified. Premium access was not activated.' });
         setTimeout(() => setSparkToast(null), 6000);
@@ -1295,10 +1304,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTimeout(() => setSparkToast(null), 3000);
   };
 
-  // Activate Premium
-  const activatePremium = (planId: 'weekly' | 'monthly' | 'semester') => {
-    setIsPremium(true);
-    setActivePlan(planId);
+  // Activate Premium only after the server confirms a matching, unexpired entitlement.
+  const activatePremium = async (planId: 'weekly' | 'monthly' | 'semester') => {
+    if (!currentUser.id) return;
+    const entitlement = await supabaseService.fetchPremiumEntitlement(currentUser.id);
+    const isValid = Boolean(
+      entitlement?.planId === planId &&
+      entitlement.status === 'active' &&
+      new Date(entitlement.expiresAt).getTime() > Date.now(),
+    );
+
+    if (!isValid) {
+      applyPremiumEntitlement(entitlement);
+      setSparkToast({ show: true, message: 'Payment was recorded, but Premium access is still being confirmed.' });
+      setTimeout(() => setSparkToast(null), 5000);
+      return;
+    }
+
+    applyPremiumEntitlement(entitlement);
     setIsPremiumModalOpen(false);
     confetti({
       particleCount: 120,
@@ -1386,7 +1409,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setRecentMatch,
         whoLikedMeProfiles,
         isPremium,
-        setIsPremium,
         activePlan,
         activatePremium,
         reports,

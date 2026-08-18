@@ -67,13 +67,17 @@ Deno.serve(async (request) => {
 
     let { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("id, username")
+      .select("id, username, is_banned")
       .eq("username", username)
       .maybeSingle();
 
     if (profileError) {
       rateLimitState.count += 1;
       return invalidCredentials();
+    }
+
+    if (profile?.is_banned) {
+      return json({ ok: false, error: 'This account has been suspended.' }, 403);
     }
 
     if (!profile) {
@@ -117,7 +121,7 @@ Deno.serve(async (request) => {
         return invalidCredentials();
       }
 
-      profile = { id: authUser.id, username };
+      profile = { id: authUser.id, username, is_banned: false };
     }
 
     const { data: userResult, error: userError } = await adminClient.auth.admin.getUserById(profile.id);

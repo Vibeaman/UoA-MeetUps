@@ -87,6 +87,9 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   // Filter available profiles
   const deckProfiles = useMemo(() => {
     const eligibleProfiles = profiles.filter((p) => {
+      // Never expose suspended accounts in the public discovery deck.
+      if (p.isBanned) return false;
+
       // Don't show already swiped
       if (swipedProfileIds.includes(p.id)) return false;
 
