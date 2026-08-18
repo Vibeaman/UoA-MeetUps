@@ -94,6 +94,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [viewOnceActive, setViewOnceActive] = useState(false);
   const [viewedOncePhotos, setViewedOncePhotos] = useState<Record<string, boolean>>({});
+  const [activeViewOncePhoto, setActiveViewOncePhoto] = useState<{ messageId: string; imageUrl: string } | null>(null);
+  const [protectedPhotoBlank, setProtectedPhotoBlank] = useState(false);
+  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
+  const reportedCaptureEventsRef = useRef<Set<string>>(new Set());
+  const securityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showIcebreakerPicker, setShowIcebreakerPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -106,6 +111,94 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages, currentChatMatch]);
+
+  useEffect(() => {
+    setViewedOncePhotos({});
+    setActiveViewOncePhoto(null);
+    setProtectedPhotoBlank(false);
+    setSecurityNotice(null);
+    reportedCaptureEventsRef.current.clear();
+  }, [currentChatMatch?.id]);
+
+  useEffect(() => {
+    if (!currentChatMatch) return;
+    let cancelled = false;
+    const matchId = currentChatMatch.id;
+    const showSecurityNotice = (message: string) => {
+      setSecurityNotice(message);
+      if (securityNoticeTimeoutRef.current) clearTimeout(securityNoticeTimeoutRef.current);
+      securityNoticeTimeoutRef.current = setTimeout(() => setSecurityNotice(null), 7000);
+    };
+
+    void supabaseService.fetchChatSecurityEvents(matchId).then((events) => {
+      if (cancelled) return;
+      if (events.some((event) => event.actorId !== currentUser.id)) {
+        showSecurityNotice('Screenshot alert: a screenshot or screen-recording risk event was reported in this chat.');
+      }
+    });
+
+    const unsubscribe = supabaseService.subscribeToChatSecurityEvents(matchId, (event) => {
+      if (event.actorId !== currentUser.id) {
+        showSecurityNotice('Screenshot alert: the other participant triggered a screenshot or screen-recording alert.');
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      if (securityNoticeTimeoutRef.current) clearTimeout(securityNoticeTimeoutRef.current);
+    };
+  }, [currentChatMatch?.id, currentUser.id]);
+
+  const showCaptureAlert = (messageId: string) => {
+    if (!currentChatMatch || !currentUser.id || reportedCaptureEventsRef.current.has(messageId)) return;
+    reportedCaptureEventsRef.current.add(messageId);
+    setProtectedPhotoBlank(true);
+    setSecurityNotice('Screenshot alert: protected photo viewing was interrupted. Both participants were notified.');
+    if (securityNoticeTimeoutRef.current) clearTimeout(securityNoticeTimeoutRef.current);
+    securityNoticeTimeoutRef.current = setTimeout(() => setSecurityNotice(null), 7000);
+    void supabaseService.recordChatSecurityEvent({
+      id: `capture_${messageId}_${currentUser.id}_${Date.now()}`,
+      matchId: currentChatMatch.id,
+      messageId,
+      actorId: currentUser.id,
+      eventType: 'capture_attempt',
+      createdAt: Date.now(),
+    });
+  };
+
+  useEffect(() => {
+    if (!activeViewOncePhoto) return;
+    const messageId = activeViewOncePhoto.messageId;
+    const handleVisibilityLoss = () => {
+      if (document.visibilityState === 'hidden') showCaptureAlert(messageId);
+    };
+    const handleWindowBlur = () => showCaptureAlert(messageId);
+    const handleProtectedKey = (event: KeyboardEvent) => {
+      if (event.key === 'PrintScreen') showCaptureAlert(messageId);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityLoss);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('keyup', handleProtectedKey);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityLoss);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('keyup', handleProtectedKey);
+    };
+  }, [activeViewOncePhoto?.messageId]);
+
+  const handleViewOnceClick = async (message: ChatMessage) => {
+    if (!message.isPhotoViewOnce || !message.imageUrl || viewedOncePhotos[message.id] || message.isPhotoViewed) return;
+    const result = await supabaseService.consumeViewOnceMessage(message.id);
+    if (!result?.consumed || !result.imageUrl) {
+      setViewedOncePhotos((previous) => ({ ...previous, [message.id]: true }));
+      setSecurityNotice('This view-once photo has already been opened or is no longer available.');
+      return;
+    }
+    setViewedOncePhotos((previous) => ({ ...previous, [message.id]: true }));
+    setProtectedPhotoBlank(false);
+    setActiveViewOncePhoto({ messageId: message.id, imageUrl: result.imageUrl });
+  };
 
   const handleSend = async () => {
     if (!currentChatMatch || !inputMessage.trim()) return;
@@ -286,6 +379,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           </div>
           <span className="text-[10px] text-orange-400/80">Keeps connections fresh</span>
         </div>
+        {securityNotice && (
+          <div className="border-b border-rose-400/30 bg-rose-950/50 px-3 py-2 text-center text-[11px] font-semibold text-rose-100">
+            {securityNotice}
+          </div>
+        )}
 
         {/* Messages List Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gradient-to-b from-[#0e051a] via-[#090312] to-[#0c0416]">
@@ -306,7 +404,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           {activeMessages.map((msg) => {
             const isMe = msg.senderId === currentUser.id;
             const isViewOnce = msg.isPhotoViewOnce;
-            const hasBeenViewed = viewedOncePhotos[msg.id];
+            const hasBeenViewed = Boolean(viewedOncePhotos[msg.id] || msg.isPhotoViewed);
 
             return (
               <div
@@ -325,11 +423,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                     <div className="mb-1.5 rounded-xl overflow-hidden border border-white/10">
                       {isViewOnce && !hasBeenViewed ? (
                         <button
-                          onClick={() => setViewedOncePhotos({ ...viewedOncePhotos, [msg.id]: true })}
+                          onClick={() => void handleViewOnceClick(msg)}
                           className="flex items-center space-x-2 py-3 px-4 bg-orange-950/90 text-orange-200 font-bold hover:bg-orange-900 transition-all w-full"
                         >
                           <Eye className="w-4 h-4 text-orange-300" />
-                          <span>📸 Tap to view view-once photo</span>
+                          <span>📸 Tap to open once — screenshots alert both users</span>
                         </button>
                       ) : isViewOnce && hasBeenViewed ? (
                         <div className="py-3 px-4 bg-neutral-900/90 text-neutral-400 italic text-[11px]">
@@ -368,6 +466,50 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
           })}
           <div ref={messagesEndRef} />
         </div>
+
+        {activeViewOncePhoto && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+            <div className="flex max-h-full w-full max-w-lg flex-col gap-3 rounded-[28px] border border-orange-400/30 bg-[#100719] p-4 shadow-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">View once photo</p>
+                  <p className="mt-1 text-[11px] text-neutral-400">Screenshots and screen-recording risk events notify both participants.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveViewOncePhoto(null)}
+                  className="rounded-full px-3 py-1 text-xs font-bold text-neutral-300 hover:bg-white/10 hover:text-white"
+                >
+                  Close
+                </button>
+              </div>
+              <div
+                className="flex min-h-[min(62dvh,520px)] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black select-none"
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  showCaptureAlert(activeViewOncePhoto.messageId);
+                }}
+                onDragStart={(event) => event.preventDefault()}
+                style={{ WebkitTouchCallout: 'none' }}
+              >
+                {protectedPhotoBlank ? (
+                  <div className="px-6 text-center text-sm font-semibold text-neutral-500">
+                    Photo hidden after a screenshot or screen-recording risk signal.
+                  </div>
+                ) : (
+                  <img
+                    src={activeViewOncePhoto.imageUrl}
+                    alt="View once shared photo"
+                    draggable={false}
+                    className="max-h-[min(62dvh,520px)] w-full object-contain select-none"
+                    style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                  />
+                )}
+              </div>
+              <p className="text-center text-[10px] text-neutral-500">This photo was consumed when opened and cannot be reopened.</p>
+            </div>
+          </div>
+        )}
 
         {/* Icebreaker suggestions floating picker */}
         {showIcebreakerPicker && (

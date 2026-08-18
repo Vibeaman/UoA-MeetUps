@@ -13,6 +13,8 @@ import {
   AdminMetrics,
   PremiumEntitlement,
   ProfileLikeResult,
+  ViewOnceConsumeResult,
+  ChatSecurityEvent,
 } from '../types';
 
 /**
@@ -855,6 +857,95 @@ export const supabaseService = {
       console.warn('Supabase profile like exception:', error);
       return null;
     }
+  },
+
+  async consumeViewOnceMessage(messageId: string): Promise<ViewOnceConsumeResult | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('consume_view_once_message', {
+        p_message_id: messageId,
+      });
+      if (error || !data?.[0]) {
+        if (error) console.warn('Supabase view-once consume error:', error.message);
+        return null;
+      }
+      return {
+        consumed: Boolean(data[0].consumed),
+        imageUrl: data[0].image_url || undefined,
+      };
+    } catch (error) {
+      console.warn('Supabase view-once consume exception:', error);
+      return null;
+    }
+  },
+
+  async recordChatSecurityEvent(event: ChatSecurityEvent): Promise<boolean> {
+    try {
+      const { error } = await getSupabase().from('chat_security_events').insert({
+        id: event.id,
+        match_id: event.matchId,
+        message_id: event.messageId,
+        actor_id: event.actorId,
+        event_type: event.eventType,
+        created_at: new Date(event.createdAt).toISOString(),
+      });
+      if (error && error.code !== '23505') {
+        console.warn('Supabase chat security event error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase chat security event exception:', error);
+      return false;
+    }
+  },
+
+  async fetchChatSecurityEvents(matchId: string): Promise<ChatSecurityEvent[]> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('chat_security_events')
+        .select('id, match_id, message_id, actor_id, event_type, created_at')
+        .eq('match_id', matchId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) return [];
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        matchId: row.match_id,
+        messageId: row.message_id,
+        actorId: row.actor_id,
+        eventType: row.event_type,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+      }));
+    } catch (error) {
+      console.warn('Supabase chat security history error:', error);
+      return [];
+    }
+  },
+
+  subscribeToChatSecurityEvents(matchId: string, onEvent: (event: ChatSecurityEvent) => void): () => void {
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`chat-security-${matchId}-${Math.random().toString(36).slice(2, 8)}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_security_events', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          onEvent({
+            id: String(row.id || ''),
+            matchId: String(row.match_id || matchId),
+            messageId: String(row.message_id || ''),
+            actorId: String(row.actor_id || ''),
+            eventType: row.event_type === 'capture_attempt' ? 'capture_attempt' : 'capture_attempt',
+            createdAt: row.created_at ? new Date(String(row.created_at)).getTime() : Date.now(),
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   },
 
   async fetchUserChatHistory(userId: string): Promise<{

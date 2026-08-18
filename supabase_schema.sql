@@ -172,6 +172,62 @@ CREATE TABLE IF NOT EXISTS messages (
   read BOOLEAN DEFAULT false
 );
 
+CREATE TABLE IF NOT EXISTS chat_security_events (
+  id TEXT PRIMARY KEY,
+  match_id TEXT NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  actor_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('capture_attempt')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS chat_security_events_match_idx ON chat_security_events (match_id, created_at DESC);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'chat_security_events'
+  ) then
+    alter publication supabase_realtime add table public.chat_security_events;
+  end if;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION public.consume_view_once_message(p_message_id TEXT)
+RETURNS TABLE(consumed BOOLEAN, image_url TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id TEXT := auth.uid()::text;
+  v_is_view_once BOOLEAN;
+  v_was_viewed BOOLEAN;
+  v_image_url TEXT;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  SELECT msg.is_view_once, msg.view_once_viewed, msg.image_url
+    INTO v_is_view_once, v_was_viewed, v_image_url
+  FROM public.messages msg
+  JOIN public.matches m ON m.id = msg.match_id
+  WHERE msg.id = p_message_id
+    AND (v_user_id = m.user_id_1 OR v_user_id = m.user_id_2)
+  FOR UPDATE OF msg;
+  IF NOT FOUND OR NOT COALESCE(v_is_view_once, false) OR COALESCE(v_was_viewed, false) THEN
+    RETURN QUERY SELECT false, NULL::TEXT;
+    RETURN;
+  END IF;
+  UPDATE public.messages SET view_once_viewed = true WHERE id = p_message_id;
+  RETURN QUERY SELECT true, v_image_url;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.consume_view_once_message(TEXT) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.consume_view_once_message(TEXT) TO authenticated;
+
 -- 4. Identity Verification Requests
 CREATE TABLE IF NOT EXISTS verification_requests (
   id TEXT PRIMARY KEY,
@@ -383,6 +439,7 @@ alter table public.profiles enable row level security;
 alter table public.matches enable row level security;
 alter table public.profile_likes enable row level security;
 alter table public.messages enable row level security;
+alter table public.chat_security_events enable row level security;
 alter table public.verification_requests enable row level security;
 alter table public.user_reports enable row level security;
 alter table public.gossip_posts enable row level security;
@@ -405,6 +462,8 @@ drop policy if exists "Users can read likes involving themselves" on public.prof
 drop policy if exists "Users can create their own likes" on public.profile_likes;
 drop policy if exists "Users can update their own likes" on public.profile_likes;
 drop policy if exists "Users can delete their own likes" on public.profile_likes;
+drop policy if exists "Match participants can read security events" on public.chat_security_events;
+drop policy if exists "Match participants can record security events" on public.chat_security_events;
 drop policy if exists "Match participants can read messages" on public.messages;
 drop policy if exists "Users can send messages in their matches" on public.messages;
 drop policy if exists "Message senders can delete messages" on public.messages;
@@ -486,6 +545,29 @@ create policy "Users can update their own likes"
 create policy "Users can delete their own likes"
   on public.profile_likes for delete to authenticated
   using (auth.uid()::text = sender_id);
+
+create policy "Match participants can read security events"
+  on public.chat_security_events for select to authenticated
+  using (
+    exists (
+      select 1 from public.matches m
+      where m.id = chat_security_events.match_id
+        and (auth.uid()::text = m.user_id_1 or auth.uid()::text = m.user_id_2)
+    )
+  );
+
+create policy "Match participants can record security events"
+  on public.chat_security_events for insert to authenticated
+  with check (
+    auth.uid()::text = actor_id
+    and exists (
+      select 1 from public.matches m
+      join public.messages msg on msg.match_id = m.id
+      where m.id = chat_security_events.match_id
+        and msg.id = chat_security_events.message_id
+        and (auth.uid()::text = m.user_id_1 or auth.uid()::text = m.user_id_2)
+    )
+  );
 
 create policy "Match participants can read messages"
   on public.messages for select to authenticated

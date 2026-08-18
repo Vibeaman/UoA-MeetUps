@@ -148,6 +148,20 @@ export interface ChatMessage {
   read: boolean;
 }
 
+export interface ViewOnceConsumeResult {
+  consumed: boolean;
+  imageUrl?: string;
+}
+
+export interface ChatSecurityEvent {
+  id: string;
+  matchId: string;
+  messageId: string;
+  actorId: string;
+  eventType: 'capture_attempt';
+  createdAt: number;
+}
+
 export type ReportReason =
   | 'fake_profile'
   | 'harassment'
