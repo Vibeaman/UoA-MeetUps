@@ -384,6 +384,22 @@ export const supabaseService = {
     }
   },
 
+  async updateAdminProfileVerification(proof: string, userId: string, isVerified: boolean): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'update_profile_verification', proof, userId, isVerified },
+      });
+      if (error || !data?.authenticated || !data.profile) {
+        console.warn('Supabase admin profile verification notice:', error?.message || data?.message || 'Update failed.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase admin profile verification error:', error);
+      return false;
+    }
+  },
+
   async initializePaystackTransaction(planId: 'weekly' | 'monthly' | 'semester') {
     try {
       const { data: sessionData } = await getSupabase().auth.getSession();

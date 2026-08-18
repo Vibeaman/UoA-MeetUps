@@ -172,6 +172,49 @@ const getAdminMetrics = async () => {
   };
 };
 
+const updateProfileVerification = async (body: Record<string, unknown>) => {
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+  const isVerified = body.isVerified === true || body.isVerified === false ? body.isVerified : null;
+  if (!userId || isVerified === null) throw new Error("Invalid profile verification update.");
+
+  const adminClient = getAdminClient();
+  const { data: profile, error: profileReadError } = await adminClient
+    .from("profiles")
+    .select("id, badges")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileReadError) throw profileReadError;
+  if (!profile) throw new Error("Profile not found.");
+
+  const currentBadges = Array.isArray(profile.badges) ? profile.badges : [];
+  const nextBadges = isVerified
+    ? Array.from(new Set([...currentBadges, "🛡️ Verified Student"]))
+    : currentBadges.filter((badge: unknown) => typeof badge !== "string" || !badge.includes("Verified"));
+
+  const { data: updatedProfile, error: profileUpdateError } = await adminClient
+    .from("profiles")
+    .update({
+      is_verified: isVerified,
+      verification_status: isVerified ? "verified" : "unverified",
+      badges: nextBadges,
+    })
+    .eq("id", userId)
+    .select("id, is_verified, verification_status, badges")
+    .single();
+  if (profileUpdateError || !updatedProfile) throw profileUpdateError || new Error("Profile verification update failed.");
+
+  if (isVerified) {
+    const { error: requestUpdateError } = await adminClient
+      .from("verification_requests")
+      .update({ status: "approved", reviewed_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("status", "pending");
+    if (requestUpdateError) throw requestUpdateError;
+  }
+
+  return updatedProfile;
+};
+
 const updateVerificationRequest = async (body: Record<string, unknown>) => {
   const requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
   const status = body.status === "approved" || body.status === "rejected" ? body.status : null;
@@ -227,7 +270,7 @@ Deno.serve(async (request) => {
   try {
     const body = await request.json() as Record<string, unknown>;
 
-    if (body.action === "list_verifications" || body.action === "update_verification" || body.action === "admin_metrics") {
+    if (body.action === "list_verifications" || body.action === "update_verification" || body.action === "update_profile_verification" || body.action === "admin_metrics") {
       if (!(await verifyProof(body.proof))) {
         return json({ authenticated: false, message: "Admin proof is invalid or expired." }, 403);
       }
@@ -238,6 +281,10 @@ Deno.serve(async (request) => {
 
       if (body.action === "admin_metrics") {
         return json({ authenticated: true, metrics: await getAdminMetrics() });
+      }
+
+      if (body.action === "update_profile_verification") {
+        return json({ authenticated: true, profile: await updateProfileVerification(body) });
       }
 
       return json({ authenticated: true, request: await updateVerificationRequest(body) });

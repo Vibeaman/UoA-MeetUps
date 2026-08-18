@@ -1216,8 +1216,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Admin: Toggle Direct Verification Badge
   const toggleUserVerification = (userId: string) => {
+    const profile = userId === currentUser.id ? currentUser : profiles.find((p) => p.id === userId);
+    if (!profile) return;
+
+    const nextState = !profile.isVerified;
     if (userId === currentUser.id) {
-      const nextState = !currentUser.isVerified;
       updateCurrentUser({
         isVerified: nextState,
         verificationStatus: nextState ? 'verified' : 'unverified',
@@ -1227,19 +1230,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
     } else {
       setProfiles((prev) =>
-        prev.map((p) => {
-          if (p.id !== userId) return p;
-          const nextState = !p.isVerified;
-          return {
-            ...p,
-            isVerified: nextState,
-            verificationStatus: nextState ? 'verified' : 'unverified',
-            badges: nextState
-              ? Array.from(new Set([...p.badges, '🛡️ Verified Student']))
-              : p.badges.filter((b) => !b.includes('Verified')),
-          };
-        })
+        prev.map((p) =>
+          p.id === userId
+            ? {
+                ...p,
+                isVerified: nextState,
+                verificationStatus: nextState ? 'verified' : 'unverified',
+                badges: nextState
+                  ? Array.from(new Set([...p.badges, '🛡️ Verified Student']))
+                  : p.badges.filter((b) => !b.includes('Verified')),
+              }
+            : p
+        )
       );
+    }
+
+    if (adminProof) {
+      void supabaseService.updateAdminProfileVerification(adminProof, userId, nextState);
     }
   };
 
