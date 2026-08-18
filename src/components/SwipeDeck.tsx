@@ -92,6 +92,12 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       // Never expose suspended or blocked accounts in the public discovery deck.
       if (p.isBanned || blockedUserIds.includes(p.id)) return false;
 
+      // Never show the signed-in user their own profile.
+      if (p.id === currentUser.id) return false;
+
+      // Only show profiles with the minimum information needed for a safe, useful card.
+      if (!p.name?.trim() || !p.username?.trim() || !p.photos?.length) return false;
+
       // Don't show already swiped
       if (swipedProfileIds.includes(p.id)) return false;
 

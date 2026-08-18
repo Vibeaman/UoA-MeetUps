@@ -28,6 +28,8 @@ export const ProfileEditModal: React.FC = () => {
   const [formData, setFormData] = useState<UserProfile>({ ...currentUser });
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [newInterest, setNewInterest] = useState('');
   const [activePromptQuestion, setActivePromptQuestion] = useState(PROMPT_QUESTIONS[0]);
   const [activePromptAnswer, setActivePromptAnswer] = useState('');
@@ -41,6 +43,7 @@ export const ProfileEditModal: React.FC = () => {
       icebreakerPrompts: [...(currentUser.icebreakerPrompts || [])],
     });
     setPhotoError('');
+    setSaveError('');
     setNewInterest('');
     setActivePromptAnswer('');
   }, [isProfileEditModalOpen, currentUser]);
@@ -118,9 +121,22 @@ export const ProfileEditModal: React.FC = () => {
   };
 
   const handleSave = async () => {
-    updateCurrentUser(formData);
-    await supabaseService.upsertProfile(formData);
-    setIsProfileEditModalOpen(false);
+    if (isSaving) return;
+    setSaveError('');
+    setIsSaving(true);
+
+    try {
+      const saved = await supabaseService.upsertProfile(formData);
+      if (!saved) {
+        setSaveError('Profile could not be saved. Please try again.');
+        return;
+      }
+
+      updateCurrentUser(formData);
+      setIsProfileEditModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const campusLocations: CampusLocation[] = [
@@ -218,7 +234,7 @@ export const ProfileEditModal: React.FC = () => {
               <input
                 type="number"
                 value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || 0 })}
+                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || formData.age })}
                 className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-white focus:outline-none focus:border-orange-400"
               />
             </div>
@@ -399,7 +415,9 @@ export const ProfileEditModal: React.FC = () => {
         </div>
 
         {/* Save Footer */}
-        <div className="pt-3 border-t border-orange-950/80 flex items-center space-x-2">
+        <div className="pt-3 border-t border-orange-950/80">
+          {saveError && <p className="mb-2 text-[11px] font-semibold text-rose-300">{saveError}</p>}
+          <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={() => setIsProfileEditModalOpen(false)}
@@ -410,12 +428,14 @@ export const ProfileEditModal: React.FC = () => {
           <button
             type="button"
             onClick={handleSave}
-            className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold shadow-lg shadow-orange-900/40 hover:brightness-110 flex items-center justify-center space-x-1.5"
+            disabled={isSaving}
+            className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold shadow-lg shadow-orange-900/40 hover:brightness-110 flex items-center justify-center space-x-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
             id="save-profile-btn"
           >
             <Check className="w-4 h-4" />
-            <span>Save Profile Changes</span>
+            <span>{isSaving ? 'Saving...' : 'Save Profile Changes'}</span>
           </button>
+          </div>
         </div>
       </div>
     </div>

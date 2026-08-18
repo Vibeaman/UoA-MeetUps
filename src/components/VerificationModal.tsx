@@ -35,9 +35,20 @@ export const VerificationModal: React.FC = () => {
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    if (isVerificationModalOpen && step === 'camera') {
-      startCamera();
+    if (!isVerificationModalOpen) {
+      stopCamera();
+      setStep('camera');
+      setCapturedPhoto(null);
+      setCapturedSelfieFile(null);
+      setStudentIdFile(null);
+      setStudentIdPreview('');
+      setVerificationError('');
+      setIsUploading(false);
+      setHasCameraError(false);
+      setIsCapturing(false);
+      return;
     }
+    if (step === 'camera') void startCamera();
     return () => {
       stopCamera();
     };
