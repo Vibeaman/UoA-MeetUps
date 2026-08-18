@@ -27,6 +27,8 @@ export interface CampusStory {
   postedAt: string;
   department: string;
   level: string;
+  likesCount?: number;
+  userLiked?: boolean;
 }
 
 export interface CampusPollOption {

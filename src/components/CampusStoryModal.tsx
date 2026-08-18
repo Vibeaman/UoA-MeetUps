@@ -5,9 +5,11 @@ import { useApp } from '../context/AppContext';
 import { UserProfile } from '../types';
 
 export const CampusStoryModal: React.FC = () => {
-  const { activeStory, setActiveStory, profiles, sendDirectSpark, swipeRight } = useApp();
+  const { activeStory, setActiveStory, profiles, sendDirectSpark, toggleCampusStoryLike } = useApp();
   const [replyText, setReplyText] = useState('');
   const [progress, setProgress] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
+  const [likeError, setLikeError] = useState('');
 
   // Find user profile linked to this story
   const authorProfile: UserProfile | undefined = profiles.find(
@@ -50,11 +52,16 @@ export const CampusStoryModal: React.FC = () => {
     setActiveStory(null);
   };
 
-  const handleQuickLike = () => {
-    if (authorProfile) {
-      swipeRight(authorProfile);
-      sendDirectSpark(authorProfile, `Liked your campus story: "${activeStory.tag}"`);
-      setActiveStory(null);
+  const handleQuickLike = async () => {
+    if (!activeStory || isLiking) return;
+
+    setLikeError('');
+    setIsLiking(true);
+    try {
+      const saved = await toggleCampusStoryLike(activeStory.id);
+      if (!saved) setLikeError('Your story like could not be saved. Please try again.');
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -161,15 +168,32 @@ export const CampusStoryModal: React.FC = () => {
               </button>
             </form>
 
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleQuickLike}
-              className="p-2.5 rounded-full bg-gradient-to-tr from-rose-600 to-orange-600 text-white shadow-lg shrink-0 border border-white/20"
-              title="Like & Meet"
-            >
-              <Heart className="w-5 h-5 fill-white" />
-            </motion.button>
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleQuickLike}
+                disabled={isLiking}
+                aria-label={activeStory.userLiked ? 'Unlike story' : 'Like story'}
+                className={`rounded-full border p-2.5 text-white shadow-lg transition-colors disabled:cursor-wait disabled:opacity-70 ${
+                  activeStory.userLiked
+                    ? 'border-rose-200/80 bg-rose-500'
+                    : 'border-white/20 bg-gradient-to-tr from-rose-600 to-orange-600'
+                }`}
+                title={activeStory.userLiked ? 'Unlike story' : 'Like story'}
+              >
+                <Heart className={`h-5 w-5 ${activeStory.userLiked ? 'fill-white' : ''}`} />
+              </motion.button>
+              <span className="text-[10px] font-semibold text-white/80">
+                {activeStory.likesCount ?? 0}
+              </span>
+            </div>
+            {likeError && (
+              <p role="alert" className="absolute bottom-20 left-4 right-4 rounded-xl border border-rose-400/30 bg-black/70 px-3 py-2 text-center text-[11px] font-semibold text-rose-200">
+                {likeError}
+              </p>
+            )}
           </div>
         </div>
       </motion.div>

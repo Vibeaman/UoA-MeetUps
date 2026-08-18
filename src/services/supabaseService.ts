@@ -323,6 +323,25 @@ export const supabaseService = {
     }
   },
 
+  async toggleCampusStoryLike(storyId: string): Promise<{ liked: boolean; likesCount: number } | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('toggle_campus_story_like', {
+        p_story_id: storyId,
+      });
+      if (error || !data?.[0]) {
+        console.warn('Supabase story like error:', error?.message || 'No story like result returned.');
+        return null;
+      }
+      return {
+        liked: Boolean(data[0].liked),
+        likesCount: Number(data[0].likes_count || 0),
+      };
+    } catch (error) {
+      console.warn('Supabase story like exception:', error);
+      return null;
+    }
+  },
+
   // Save / Update User Profile
   async upsertProfile(profile: UserProfile): Promise<boolean> {
     if (!Number.isInteger(profile.age) || profile.age < 18 || profile.age > 100) {

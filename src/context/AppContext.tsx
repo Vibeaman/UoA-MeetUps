@@ -102,6 +102,7 @@ interface AppContextType {
   activeStory: CampusStory | null;
   setActiveStory: (story: CampusStory | null) => void;
   addCampusStory: (caption: string, tag: string, storyImageUrl?: string) => Promise<boolean>;
+  toggleCampusStoryLike: (storyId: string) => Promise<boolean>;
   campusPoll?: CampusPoll;
   campusPolls: CampusPoll[];
   activePollIndex: number;
@@ -650,12 +651,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const createdStory = await supabaseService.createCampusStory(newStory);
     if (!createdStory) return false;
 
-    setStories((prev) => [createdStory, ...prev]);
+    setStories((prev) => [{ ...createdStory, likesCount: 0, userLiked: false }, ...prev]);
     confetti({
       particleCount: 50,
       spread: 60,
       origin: { y: 0.6 },
     });
+    return true;
+  };
+
+  const toggleCampusStoryLike = async (storyId: string): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
+
+    const result = await supabaseService.toggleCampusStoryLike(storyId);
+    if (!result) {
+      setSparkToast({ show: true, message: 'Story like could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
+    setStories((prev) => prev.map((story) => story.id === storyId
+      ? { ...story, likesCount: result.likesCount, userLiked: result.liked }
+      : story));
+    setActiveStory((story) => story && story.id === storyId
+      ? { ...story, likesCount: result.likesCount, userLiked: result.liked }
+      : story);
     return true;
   };
 
@@ -1596,6 +1616,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         activeStory,
         setActiveStory,
         addCampusStory,
+        toggleCampusStoryLike,
         campusPoll,
         campusPolls,
         activePollIndex,
