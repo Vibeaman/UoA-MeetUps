@@ -94,13 +94,13 @@ export const supabaseService = {
     }
   },
 
-  async ensureUserProfile(userId: string, username: string, name: string): Promise<boolean> {
+  async ensureUserProfile(userId: string, username: string, name: string, age: number): Promise<boolean> {
     try {
       const { error } = await getSupabase().from('profiles').upsert({
         id: userId,
         name: name.trim() || username.trim(),
         username: username.trim().toLowerCase(),
-        age: 0,
+        age,
         faculty: '',
         department: '',
         level: '100L',

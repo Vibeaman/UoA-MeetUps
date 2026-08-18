@@ -24,7 +24,8 @@ export const AuthModal: React.FC = () => {
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [fullNameInput, setFullNameInput] = useState(currentUser.name || '');
-  const [ageConfirmed, setAgeConfirmed] = useState(true);
+  const [ageInput, setAgeInput] = useState(currentUser.age > 0 ? String(currentUser.age) : '');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,6 +35,8 @@ export const AuthModal: React.FC = () => {
     setUsernameInput(currentUser.username || '');
     setEmailInput('');
     setPasswordInput('');
+    setAgeInput(currentUser.age > 0 ? String(currentUser.age) : '');
+    setAgeConfirmed(false);
     setAuthError('');
   }, [isAuthModalOpen, authModalMode]);
 
@@ -44,6 +47,12 @@ export const AuthModal: React.FC = () => {
     setAuthError('');
     if (mode === 'signup' && !ageConfirmed) {
       setAuthError('You must confirm that you are at least 18 years old to use UoA MeetUps.');
+      return;
+    }
+
+    const age = Number.parseInt(ageInput, 10);
+    if (mode === 'signup' && (!Number.isInteger(age) || age < 18 || age > 100)) {
+      setAuthError('Enter your real age, from 18 to 100.');
       return;
     }
 
@@ -88,6 +97,7 @@ export const AuthModal: React.FC = () => {
             data: {
               full_name: fullNameInput.trim(),
               username,
+              age,
             },
           },
         });
@@ -103,13 +113,13 @@ export const AuthModal: React.FC = () => {
           return;
         }
 
-        const profileReady = await supabaseService.ensureUserProfile(user.id, username, fullNameInput);
+        const profileReady = await supabaseService.ensureUserProfile(user.id, username, fullNameInput, age);
         if (!profileReady) {
           setAuthError('Your account was created, but profile setup did not finish. Please try logging in again.');
           return;
         }
 
-        updateCurrentUser({ username, name: fullNameInput.trim() });
+        updateCurrentUser({ username, name: fullNameInput.trim(), age });
         authenticateUser(user.id, Boolean(user.email_confirmed_at || user.confirmed_at));
         setMode('onboarding');
         return;
@@ -267,6 +277,27 @@ export const AuthModal: React.FC = () => {
               />
               <p className="mt-1.5 text-left text-[11px] text-white/35">3–24 lowercase letters, numbers, or underscores.</p>
             </div>
+
+            {mode === 'signup' && (
+              <div>
+                <label className="mb-2 block text-left text-[11px] font-semibold text-white/65">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={18}
+                  max={100}
+                  inputMode="numeric"
+                  value={ageInput}
+                  onChange={(e) => setAgeInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                  placeholder="18 or older"
+                  autoComplete="off"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-pink-300/40"
+                />
+                <p className="mt-1.5 text-left text-[11px] text-white/35">Your real age is shown on your profile.</p>
+              </div>
+            )}
 
             {mode === 'signup' && (
               <div>

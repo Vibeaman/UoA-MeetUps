@@ -190,6 +190,13 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const isDraggingRef = React.useRef(false);
+  const activePhoto = currentProfile?.photos?.[photoIndex] || currentProfile?.photos?.[0] || '';
+  const profileInitials = (currentProfile?.name || '?')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   const handleNextPhoto = (e: React.MouseEvent, max: number) => {
     e.stopPropagation();
@@ -532,11 +539,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               <div
                 className="absolute inset-0 rounded-3xl overflow-hidden border border-orange-950/30 bg-[#0c0416] scale-[0.89] translate-y-7 opacity-35 pointer-events-none shadow-md"
               >
-                <img
-                  src={thirdProfile.photos[0]}
-                  alt=""
-                  className="w-full h-full object-cover filter blur-[2px] brightness-[0.4]"
-                />
+                {thirdProfile.photos?.[0] ? (
+                  <img
+                    src={thirdProfile.photos[0]}
+                    alt=""
+                    className="w-full h-full object-cover filter blur-[2px] brightness-[0.4]"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[#160a24]">
+                    <span className="font-display text-5xl font-black text-white/15">{thirdProfile.name.slice(0, 1).toUpperCase()}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -550,15 +563,21 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 }}
                 className="absolute inset-0 rounded-3xl overflow-hidden border border-orange-950/50 bg-[#120720] pointer-events-none shadow-xl transition-shadow"
               >
-                <img
-                  src={nextProfile.photos[0]}
-                  alt={nextProfile.name}
-                  className="w-full h-full object-cover filter brightness-[0.7]"
-                />
+                  {nextProfile.photos?.[0] ? (
+                    <img
+                      src={nextProfile.photos[0]}
+                      alt={nextProfile.name}
+                      className="w-full h-full object-cover filter brightness-[0.7]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#3a164e,#100719_68%)]">
+                      <span className="font-display text-6xl font-black text-white/20">{nextProfile.name.slice(0, 1).toUpperCase()}</span>
+                    </div>
+                  )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#090410] via-transparent to-black/30" />
                 <div className="absolute bottom-5 left-5 right-5 text-left">
                   <span className="text-lg font-bold text-neutral-300">
-                    {nextProfile.name}, {nextProfile.age}
+                    {nextProfile.name}, {nextProfile.age > 0 ? nextProfile.age : 'Age not set'}
                   </span>
                   <p className="text-xs text-neutral-400 truncate">{nextProfile.department}</p>
                 </div>
@@ -571,32 +590,46 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 key={currentProfile.id}
                 animate={controls}
                 style={{ x, y, rotate }}
-                drag={isExpanded ? false : true}
-                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                dragElastic={{ left: 0.9, right: 0.9, top: 0.85, bottom: 0.18 }}
+                drag={isExpanded ? false : 'x'}
+                dragDirectionLock
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={{ left: 0.9, right: 0.9 }}
                 dragTransition={{ bounceStiffness: 450, bounceDamping: 28 }}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 whileDrag={{ scale: 1.025, cursor: 'grabbing' }}
                 initial={{ scale: 0.95, opacity: 0, y: 15 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                className="absolute inset-0 rounded-3xl overflow-hidden border border-orange-800/40 bg-[#0e0618] shadow-2xl select-none flex flex-col cursor-grab active:cursor-grabbing touch-none"
+                className="absolute inset-0 rounded-3xl overflow-hidden border border-orange-800/40 bg-[#0e0618] shadow-2xl select-none flex flex-col cursor-grab active:cursor-grabbing touch-pan-y"
               >
                 {/* When Card is not expanded: Full Photo with Overlays & Scroll down trigger */}
                 {!isExpanded ? (
                   <div className="relative w-full h-full bg-neutral-950 flex flex-col justify-between">
                     <AnimatePresence mode="wait">
-                      <motion.img
-                        key={photoIndex}
-                        src={currentProfile.photos[photoIndex] || currentProfile.photos[0]}
-                        alt={currentProfile.name}
-                        initial={{ opacity: 0.85 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0.85 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        draggable={false}
-                      />
+                      {activePhoto ? (
+                        <motion.img
+                          key={activePhoto}
+                          src={activePhoto}
+                          alt={currentProfile.name}
+                          initial={{ opacity: 0.85 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0.85 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <motion.div
+                          key="no-photo"
+                          initial={{ opacity: 0.85 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0.85 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_top,#3a164e,#100719_68%)]"
+                        >
+                          <span className="font-display text-8xl font-black tracking-[-0.08em] text-white/20">{profileInitials}</span>
+                        </motion.div>
+                      )}
                     </AnimatePresence>
 
                     {/* Top Photo Navigation Indicators */}
@@ -616,16 +649,20 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     )}
 
                     {/* Left / Right Photo Tap Zones */}
-                    <div
-                      onClick={(e) => handlePrevPhoto(e, currentProfile.photos.length)}
-                      className="absolute top-0 bottom-36 left-0 w-1/3 z-10 cursor-pointer"
-                      title="Previous Photo"
-                    />
-                    <div
-                      onClick={(e) => handleNextPhoto(e, currentProfile.photos.length)}
-                      className="absolute top-0 bottom-36 right-0 w-1/3 z-10 cursor-pointer"
-                      title="Next Photo"
-                    />
+                    {currentProfile.photos.length > 1 && (
+                      <>
+                        <div
+                          onClick={(e) => handlePrevPhoto(e, currentProfile.photos.length)}
+                          className="absolute top-0 bottom-36 left-0 w-1/3 z-10 cursor-pointer"
+                          title="Previous Photo"
+                        />
+                        <div
+                          onClick={(e) => handleNextPhoto(e, currentProfile.photos.length)}
+                          className="absolute top-0 bottom-36 right-0 w-1/3 z-10 cursor-pointer"
+                          title="Next Photo"
+                        />
+                      </>
+                    )}
 
                     {/* Like / Nope / Super Like Floating Stamp Overlays */}
                     <motion.div
@@ -698,7 +735,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                           <h2 className="text-2xl sm:text-3xl font-black font-display text-white tracking-tight flex items-center">
                             {currentProfile.name}
                             <span className="text-xl sm:text-2xl font-light text-orange-300 ml-2">
-                              {currentProfile.age}
+                              {currentProfile.age > 0 ? currentProfile.age : 'Age not set'}
                             </span>
                           </h2>
 
@@ -824,7 +861,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                     <div className="sticky top-0 z-30 bg-[#120817]/95 backdrop-blur-xl border-b border-orange-900/40 p-3 flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-bold text-white">
-                          {currentProfile.name}, {currentProfile.age}
+                          {currentProfile.name}, {currentProfile.age > 0 ? currentProfile.age : 'Age not set'}
                         </span>
                         {currentProfile.isVerified && (
                           <ShieldCheck className="w-4 h-4 text-orange-400" />
@@ -847,11 +884,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                       {/* Photo Thumbnail Strip */}
                       <div>
                         <div className="relative h-56 rounded-2xl overflow-hidden border border-orange-900/40 bg-black">
-                          <img
-                            src={currentProfile.photos[photoIndex] || currentProfile.photos[0]}
-                            alt={currentProfile.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {activePhoto ? (
+                            <img
+                              src={activePhoto}
+                              alt={currentProfile.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#3a164e,#100719_68%)]">
+                              <span className="font-display text-7xl font-black tracking-[-0.08em] text-white/20">{profileInitials}</span>
+                            </div>
+                          )}
                         </div>
                         {currentProfile.photos.length > 1 && (
                           <div className="flex space-x-2 mt-2 overflow-x-auto custom-scrollbar pb-1">
