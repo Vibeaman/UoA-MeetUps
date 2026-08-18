@@ -248,8 +248,21 @@ export const ProfileEditModal: React.FC = () => {
                 className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-white focus:outline-none focus:border-orange-400"
               />
             </div>
+                    </div>
+          {/* Gender */}
+          <div>
+            <label className="block text-[11px] font-bold text-orange-300 uppercase mb-1">Gender</label>
+            <select
+              value={formData.gender}
+              onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
+              className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-white"
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
           </div>
-
           {/* Bio */}
           <div>
             <label className="block text-[11px] font-bold text-orange-300 uppercase mb-1">Bio</label>

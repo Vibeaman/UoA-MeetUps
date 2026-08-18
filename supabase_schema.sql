@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   name TEXT NOT NULL,
   age INTEGER NOT NULL,
   username TEXT UNIQUE,
+  gender TEXT NOT NULL DEFAULT 'Prefer not to say' CHECK (gender IN ('Male', 'Female', 'Non-binary', 'Prefer not to say')),
   matric_number TEXT,
   faculty TEXT NOT NULL,
   department TEXT NOT NULL,

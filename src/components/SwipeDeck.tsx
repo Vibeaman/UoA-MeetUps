@@ -120,8 +120,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         if (p.lookingFor !== 'dating' && p.lookingFor !== 'both') return false;
       }
 
-      // Gender filter
-      if (filters.gender !== 'all' && p.gender !== filters.gender) return false;
+      // Gender filter: normalize legacy whitespace/casing before comparing explicit values.
+      if (
+        filters.gender !== 'all' &&
+        (p.gender || '').trim().toLowerCase() !== filters.gender.trim().toLowerCase()
+      ) return false;
 
       // Faculty filter
       if (filters.faculty !== 'all' && p.faculty !== filters.faculty) return false;
@@ -541,8 +544,9 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               No More Profiles in {currentMode === 'lowkey' ? 'Lowkey Mode' : 'UniAbuja Feed'}
             </h3>
             <p className="text-sm text-neutral-400 mt-2 max-w-xs leading-relaxed">
-              You’ve seen all active {currentMode === 'lowkey' ? 'Lowkey' : 'Normal'} students
-              matching your current filters across campus.
+              {filters.gender !== 'all'
+                ? `No available profiles are marked ${filters.gender} yet. Gender is only matched when a student has selected it; clear this filter or ask students to complete their profile.`
+                : `You’ve seen all active ${currentMode === 'lowkey' ? 'Lowkey' : 'Normal'} students matching your current filters across campus.`}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-2.5 mt-6 w-full max-w-xs">

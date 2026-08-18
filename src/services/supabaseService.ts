@@ -408,6 +408,7 @@ export const supabaseService = {
         name: profile.name,
         age: profile.age,
         username: profile.username,
+        gender: profile.gender,
         faculty: profile.faculty,
         department: profile.department,
         level: profile.level,
