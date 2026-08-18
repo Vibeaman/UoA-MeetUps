@@ -19,7 +19,7 @@ export const FACULTIES_AND_DEPARTMENTS: { faculty: string; departments: string[]
   },
   {
     faculty: 'Faculty of Science',
-    departments: ['Computer Science', 'Microbiology', 'Biochemistry', 'Physics with Electronics', 'Chemistry', 'Mathematics', 'Statistics'],
+    departments: ['Computer Science', 'Microbiology', 'Biochemistry', 'Physics with Electronics', 'Chemistry', 'Mathematics', 'Statistics', 'Biology', 'Zoology', 'Geology & Mining'],
   },
   {
     faculty: 'Faculty of Social Sciences',
