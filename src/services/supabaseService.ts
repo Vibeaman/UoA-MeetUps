@@ -1,4 +1,4 @@
-import { getSupabase } from '../lib/supabase';
+import { getSupabase, SUPABASE_ANON_KEY_DISPLAY, SUPABASE_URL_DISPLAY } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import {
   UserProfile,
@@ -17,6 +17,20 @@ import {
  * Service for syncing UniAbuja MeetUps data with Supabase PostgreSQL
  */
 const USER_MEDIA_BUCKET = 'user-media';
+
+const invokePaystackFunction = async (functionName: 'paystack-init' | 'paystack-verify', body: Record<string, unknown>, accessToken: string) => {
+  const response = await fetch(`${SUPABASE_URL_DISPLAY}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY_DISPLAY,
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => null);
+  return { response, data };
+};
 
 const getFileExtension = (file: File) => {
   const extension = file.name.split('.').pop()?.toLowerCase();
@@ -376,12 +390,9 @@ export const supabaseService = {
       const accessToken = sessionData.session?.access_token;
       if (!accessToken) return { data: null, error: 'Please sign in again before starting payment.' };
 
-      const { data, error } = await getSupabase().functions.invoke('paystack-init', {
-        body: { planId },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (error || !data?.ok || !data.authorizationUrl) {
-        return { data: null, error: data?.error || error?.message || 'Could not initialize Paystack payment.' };
+      const { response, data } = await invokePaystackFunction('paystack-init', { planId }, accessToken);
+      if (!response.ok || !data?.ok || !data.authorizationUrl) {
+        return { data: null, error: data?.error || `Paystack initialization failed (${response.status}).` };
       }
       return { data, error: null };
     } catch (error) {
@@ -395,12 +406,9 @@ export const supabaseService = {
       const accessToken = sessionData.session?.access_token;
       if (!accessToken) return { data: null, error: 'Please sign in again before verifying payment.' };
 
-      const { data, error } = await getSupabase().functions.invoke('paystack-verify', {
-        body: { reference },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (error || !data?.ok) {
-        return { data: null, error: data?.error || error?.message || 'Could not verify Paystack payment.' };
+      const { response, data } = await invokePaystackFunction('paystack-verify', { reference }, accessToken);
+      if (!response.ok || !data?.ok) {
+        return { data: null, error: data?.error || `Paystack verification failed (${response.status}).` };
       }
       return { data, error: null };
     } catch (error) {

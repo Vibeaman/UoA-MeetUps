@@ -28,3 +28,4 @@ export const isSupabaseConfigured = (): boolean => {
 };
 
 export const SUPABASE_URL_DISPLAY = SUPABASE_PROJECT_URL;
+export const SUPABASE_ANON_KEY_DISPLAY = SUPABASE_ANON_KEY;
