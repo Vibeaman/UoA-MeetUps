@@ -287,6 +287,26 @@ const deleteGossipPost = async (body: Record<string, unknown>) => {
   return data || { id: postId };
 };
 
+const createCampusAlert = async (body: Record<string, unknown>) => {
+  const headline = typeof body.headline === "string" ? body.headline.trim() : "";
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!headline || !message) throw new Error("Headline and message are required.");
+
+  const { data, error } = await getAdminClient()
+    .from("campus_alerts")
+    .insert({
+      id: `alert_${crypto.randomUUID()}`,
+      headline: headline.slice(0, 160),
+      message: message.slice(0, 4000),
+      created_by: "UoA MeetUps Partners",
+      expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+    .select("id, headline, message, created_by, created_at, expires_at")
+    .single();
+  if (error || !data) throw error || new Error("Campus alert could not be created.");
+  return data;
+};
+
 const deleteCampusPoll = async (body: Record<string, unknown>) => {
   const pollId = typeof body.pollId === "string" ? body.pollId.trim() : "";
   if (!pollId) throw new Error("Invalid campus poll ID.");
@@ -365,6 +385,7 @@ Deno.serve(async (request) => {
       "update_report",
       "delete_gossip_post",
       "delete_campus_poll",
+      "create_campus_alert",
     ].includes(String(body.action))) {
       if (!(await verifyProof(body.proof))) {
         return json({ authenticated: false, message: "Admin proof is invalid or expired." }, 403);
@@ -396,6 +417,10 @@ Deno.serve(async (request) => {
 
       if (body.action === "delete_campus_poll") {
         return json({ authenticated: true, poll: await deleteCampusPoll(body) });
+      }
+
+      if (body.action === "create_campus_alert") {
+        return json({ authenticated: true, alert: await createCampusAlert(body) });
       }
 
       if (body.action === "update_profile_verification") {

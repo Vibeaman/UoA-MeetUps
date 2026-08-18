@@ -25,6 +25,7 @@ import { AuthModal } from './components/AuthModal';
 import { ProfileEditModal } from './components/ProfileEditModal';
 import { ReportModal } from './components/ReportModal';
 import { UserProfile } from './types';
+import { Megaphone } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const {
@@ -37,6 +38,7 @@ const MainAppContent: React.FC = () => {
     logoutAdmin,
     isAuthenticated,
     isAuthLoading,
+    campusAlerts,
   } = useApp();
 
   const isStandaloneSignedOutProfile = activeTab === 'profile' && !isAuthenticated && !isAuthLoading;
@@ -76,6 +78,19 @@ const MainAppContent: React.FC = () => {
 
       {/* Top Header */}
       {!isStandaloneSignedOutProfile && activeTab !== 'admin' && <Header />}
+
+      {activeTab !== 'admin' && campusAlerts[0] && (
+        <div className="relative z-20 w-full border-y border-orange-400/20 bg-orange-950/50 px-4 py-2.5 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-[1440px] items-start gap-2.5 text-left">
+            <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">Campus alert</p>
+              <p className="truncate text-xs font-bold text-white">{campusAlerts[0].headline}</p>
+              <p className="line-clamp-2 text-[11px] text-orange-100/80">{campusAlerts[0].message}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main

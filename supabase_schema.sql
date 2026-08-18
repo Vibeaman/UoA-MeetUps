@@ -331,12 +331,100 @@ CREATE TABLE IF NOT EXISTS gossip_comments (
   author_id TEXT NOT NULL,
   author_name TEXT NOT NULL,
   author_avatar TEXT NOT NULL,
+  author_badge TEXT,
   author_department TEXT NOT NULL,
   is_anonymous BOOLEAN DEFAULT true,
   anonymous_alias TEXT,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS gossip_comment_likes (
+  comment_id TEXT NOT NULL REFERENCES gossip_comments(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  PRIMARY KEY (comment_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS gossip_reports (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES gossip_posts(id) ON DELETE CASCADE,
+  reporter_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  details TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'dismissed')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  resolved_at TIMESTAMP WITH TIME ZONE,
+  UNIQUE (post_id, reporter_id)
+);
+
+CREATE TABLE IF NOT EXISTS campus_alerts (
+  id TEXT PRIMARY KEY,
+  headline TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (timezone('utc'::text, now()) + interval '14 days')
+);
+
+CREATE OR REPLACE FUNCTION public.toggle_gossip_comment_like(p_comment_id TEXT)
+RETURNS TABLE(likes INTEGER, user_liked BOOLEAN)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id TEXT := auth.uid()::text;
+  v_exists BOOLEAN;
+  v_likes INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.gossip_comments WHERE id = p_comment_id) THEN RAISE EXCEPTION 'comment_not_found'; END IF;
+  SELECT EXISTS (SELECT 1 FROM public.gossip_comment_likes WHERE comment_id = p_comment_id AND user_id = v_user_id) INTO v_exists;
+  IF v_exists THEN
+    DELETE FROM public.gossip_comment_likes WHERE comment_id = p_comment_id AND user_id = v_user_id;
+  ELSE
+    INSERT INTO public.gossip_comment_likes (comment_id, user_id) VALUES (p_comment_id, v_user_id);
+  END IF;
+  SELECT count(*)::integer INTO v_likes FROM public.gossip_comment_likes WHERE comment_id = p_comment_id;
+  RETURN QUERY SELECT v_likes, NOT v_exists;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fetch_gossip_comments(p_post_id TEXT)
+RETURNS TABLE(id TEXT, post_id TEXT, author_name TEXT, author_avatar TEXT, author_badge TEXT, is_anonymous BOOLEAN, content TEXT, created_at TIMESTAMPTZ, likes INTEGER, user_liked BOOLEAN)
+LANGUAGE SQL SECURITY INVOKER STABLE AS $$
+  SELECT gc.id, gc.post_id, gc.author_name, nullif(gc.author_avatar, ''), gc.author_badge, gc.is_anonymous, gc.content, gc.created_at,
+    count(gcl.user_id)::integer, coalesce(bool_or(gcl.user_id = auth.uid()::text), false)
+  FROM public.gossip_comments gc
+  LEFT JOIN public.gossip_comment_likes gcl ON gcl.comment_id = gc.id
+  WHERE gc.post_id = p_post_id
+  GROUP BY gc.id
+  ORDER BY gc.created_at ASC
+  LIMIT 200;
+$$;
+
+CREATE OR REPLACE FUNCTION public.report_gossip_post(p_post_id TEXT, p_details TEXT DEFAULT '')
+RETURNS TABLE(report_id TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_user_id TEXT := auth.uid()::text;
+  v_report_id TEXT := format('gossip_report_%s_%s', p_post_id, v_user_id);
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.gossip_posts WHERE id = p_post_id) THEN RAISE EXCEPTION 'post_not_found'; END IF;
+  INSERT INTO public.gossip_reports (id, post_id, reporter_id, details)
+  VALUES (v_report_id, p_post_id, v_user_id, left(coalesce(p_details, ''), 2000))
+  ON CONFLICT (post_id, reporter_id) DO UPDATE SET details = excluded.details;
+  RETURN QUERY SELECT v_report_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.toggle_gossip_comment_like(TEXT) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.fetch_gossip_comments(TEXT) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.report_gossip_post(TEXT, TEXT) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.toggle_gossip_comment_like(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.fetch_gossip_comments(TEXT) TO public;
+GRANT EXECUTE ON FUNCTION public.report_gossip_post(TEXT, TEXT) TO authenticated;
 
 -- 8. Campus Polls
 CREATE TABLE IF NOT EXISTS campus_polls (
@@ -485,6 +573,9 @@ alter table public.verification_requests enable row level security;
 alter table public.user_reports enable row level security;
 alter table public.gossip_posts enable row level security;
 alter table public.gossip_comments enable row level security;
+alter table public.gossip_comment_likes enable row level security;
+alter table public.gossip_reports enable row level security;
+alter table public.campus_alerts enable row level security;
 alter table public.campus_polls enable row level security;
 alter table public.campus_poll_votes enable row level security;
 alter table public.gossip_reactions enable row level security;
@@ -531,6 +622,11 @@ drop policy if exists "Public can read gossip comments" on public.gossip_comment
 drop policy if exists "Authenticated users can create gossip comments" on public.gossip_comments;
 drop policy if exists "Users can update their own gossip comments" on public.gossip_comments;
 drop policy if exists "Users can delete their own gossip comments" on public.gossip_comments;
+drop policy if exists "Users can read their own comment likes" on public.gossip_comment_likes;
+drop policy if exists "Users can create gossip reports" on public.gossip_reports;
+drop policy if exists "Admins can review gossip reports" on public.gossip_reports;
+drop policy if exists "Admins can update gossip reports" on public.gossip_reports;
+drop policy if exists "Public can read campus alerts" on public.campus_alerts;
 drop policy if exists "Authenticated users can read their own poll votes" on public.campus_poll_votes;
 drop policy if exists "Authenticated users can read their own gossip reactions" on public.gossip_reactions;
 
@@ -735,6 +831,27 @@ create policy "Users can update their own gossip comments"
 create policy "Users can delete their own gossip comments"
   on public.gossip_comments for delete to authenticated
   using (auth.uid()::text = author_id);
+
+create policy "Users can read their own comment likes"
+  on public.gossip_comment_likes for select to authenticated
+  using (auth.uid()::text = user_id);
+
+create policy "Users can create gossip reports"
+  on public.gossip_reports for insert to authenticated
+  with check (auth.uid()::text = reporter_id);
+
+create policy "Admins can review gossip reports"
+  on public.gossip_reports for select to authenticated
+  using (public.is_admin());
+
+create policy "Admins can update gossip reports"
+  on public.gossip_reports for update to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "Public can read campus alerts"
+  on public.campus_alerts for select to public
+  using (expires_at > timezone('utc'::text, now()));
 
 -- Votes and reactions are private write models. Clients mutate them only through
 -- the SECURITY DEFINER functions below, which validate the authenticated user.

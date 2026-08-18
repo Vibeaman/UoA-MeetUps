@@ -161,13 +161,14 @@ export const CampusGossipBoard: React.FC = () => {
     showToast('☕ Tea spilled on UniAbuja Gossip Board!');
   };
 
-  const handleSendComment = (postId: string) => {
+  const handleSendComment = async (postId: string) => {
     if (!requestAuthentication()) return;
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
     const isAnon = commentAnonMap[postId] !== false; // default to true
-    addGossipComment(postId, text, isAnon);
+    const saved = await addGossipComment(postId, text, isAnon);
+    if (!saved) return;
 
     setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
     showToast('💬 Comment dropped!');

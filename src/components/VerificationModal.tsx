@@ -157,7 +157,8 @@ export const VerificationModal: React.FC = () => {
         studentIdUrl = upload.url;
       }
 
-      submitVerification(selfieUrl, studentIdUrl);
+      const submitted = await submitVerification(selfieUrl, studentIdUrl);
+      if (!submitted) throw new Error('Verification could not be submitted. Please try again.');
       setStep('success');
     } catch (error) {
       setVerificationError(error instanceof Error ? error.message : 'Could not submit verification photos.');

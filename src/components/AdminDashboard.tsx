@@ -122,10 +122,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   };
 
   // Handle Send Broadcast
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastHeadline.trim() || !broadcastMessage.trim()) return;
-    broadcastCampusAlert(broadcastHeadline.trim(), broadcastMessage.trim());
+    const published = await broadcastCampusAlert(broadcastHeadline.trim(), broadcastMessage.trim());
+    if (!published) return;
     showToast('Campus-wide announcement broadcasted successfully! 📢');
     setBroadcastHeadline('');
     setBroadcastMessage('');

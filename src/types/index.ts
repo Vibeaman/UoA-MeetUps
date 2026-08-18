@@ -45,6 +45,15 @@ export interface CampusPoll {
   createdBy?: string;
 }
 
+export interface CampusAlert {
+  id: string;
+  headline: string;
+  message: string;
+  createdBy: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
 export interface GossipComment {
   id: string;
   authorName: string;

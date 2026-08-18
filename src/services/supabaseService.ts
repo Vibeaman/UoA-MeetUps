@@ -15,6 +15,7 @@ import {
   ProfileLikeResult,
   ViewOnceConsumeResult,
   ChatSecurityEvent,
+  CampusAlert,
 } from '../types';
 
 /**
@@ -727,6 +728,96 @@ export const supabaseService = {
     }
   },
 
+  async fetchGossipComments(postId: string): Promise<GossipComment[] | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('fetch_gossip_comments', { p_post_id: postId });
+      if (error) return null;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        authorName: row.author_name,
+        authorAvatar: row.author_avatar || undefined,
+        authorBadge: row.author_badge || undefined,
+        isAnonymous: Boolean(row.is_anonymous),
+        content: row.content,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        timeAgo: row.created_at ? new Date(row.created_at).toLocaleString() : 'Recently',
+        likes: Number(row.likes || 0),
+        userLiked: Boolean(row.user_liked),
+      }));
+    } catch (error) {
+      console.warn('Supabase gossip comments fetch error:', error);
+      return null;
+    }
+  },
+
+  async toggleGossipCommentLike(commentId: string): Promise<{ likes: number; userLiked: boolean } | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('toggle_gossip_comment_like', { p_comment_id: commentId });
+      if (error || !data?.[0]) return null;
+      return { likes: Number(data[0].likes || 0), userLiked: Boolean(data[0].user_liked) };
+    } catch (error) {
+      console.warn('Supabase gossip comment like error:', error);
+      return null;
+    }
+  },
+
+  async reportGossipPost(postId: string, details = ''): Promise<boolean> {
+    try {
+      const { data, error } = await getSupabase().rpc('report_gossip_post', {
+        p_post_id: postId,
+        p_details: details,
+      });
+      return !error && Boolean(data?.[0]?.report_id);
+    } catch (error) {
+      console.warn('Supabase gossip report error:', error);
+      return false;
+    }
+  },
+
+  async fetchCampusAlerts(): Promise<CampusAlert[] | null> {
+    try {
+      const { data, error } = await getSupabase()
+        .from('campus_alerts')
+        .select('id, headline, message, created_by, created_at, expires_at')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) return null;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        headline: row.headline,
+        message: row.message,
+        createdBy: row.created_by,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : Date.now(),
+      }));
+    } catch (error) {
+      console.warn('Supabase campus alerts fetch error:', error);
+      return null;
+    }
+  },
+
+  async createAdminCampusAlert(proof: string, headline: string, message: string): Promise<CampusAlert | null> {
+    try {
+      const { data, error } = await getSupabase().functions.invoke('admin-auth', {
+        body: { action: 'create_campus_alert', proof, headline, message },
+      });
+      if (error || !data?.authenticated || !data.alert) return null;
+      const row = data.alert;
+      return {
+        id: row.id,
+        headline: row.headline,
+        message: row.message,
+        createdBy: row.created_by,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : Date.now(),
+      };
+    } catch (error) {
+      console.warn('Supabase admin campus alert error:', error);
+      return null;
+    }
+  },
+
   // Create Gossip Post
   async createGossipPost(post: GossipPost): Promise<boolean> {
     try {
@@ -844,6 +935,7 @@ export const supabaseService = {
         author_id: authorId,
         author_name: comment.authorName,
         author_avatar: comment.authorAvatar || '',
+        author_badge: comment.authorBadge || null,
         author_department: authorDepartment,
         is_anonymous: comment.isAnonymous,
         anonymous_alias: comment.isAnonymous ? comment.authorName : null,

@@ -11,6 +11,7 @@ import {
   NavigationTab,
   CampusStory,
   CampusPoll,
+  CampusAlert,
   GossipPost,
   GossipComment,
   AdminMetrics,
@@ -67,7 +68,7 @@ interface AppContextType {
   blockUser: (userId: string) => Promise<void>;
   unmatchUser: (matchId: string) => Promise<void>;
   verificationRequests: VerificationRequest[];
-  submitVerification: (selfieUrl: string, idCardUrl?: string) => void;
+  submitVerification: (selfieUrl: string, idCardUrl?: string) => Promise<boolean>;
   // Admin actions
   approveVerification: (requestId: string) => void;
   rejectVerification: (requestId: string, note?: string) => void;
@@ -77,7 +78,8 @@ interface AppContextType {
   toggleUserVerification: (userId: string) => void;
   deleteGossipPost: (postId: string) => Promise<void>;
   deleteCampusPoll: (pollId: string) => Promise<void>;
-  broadcastCampusAlert: (headline: string, message: string) => void;
+  broadcastCampusAlert: (headline: string, message: string) => Promise<boolean>;
+  campusAlerts: CampusAlert[];
   clearLocalCache: () => void;
   // Modals
   isAuthModalOpen: boolean;
@@ -121,9 +123,9 @@ interface AppContextType {
     imageUrl?: string
   ) => void;
   reactToGossipPost: (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea') => void;
-  addGossipComment: (postId: string, content: string, isAnonymous: boolean) => void;
-  likeGossipComment: (postId: string, commentId: string) => void;
-  reportGossipPost: (postId: string) => void;
+  addGossipComment: (postId: string, content: string, isAnonymous: boolean) => Promise<boolean>;
+  likeGossipComment: (postId: string, commentId: string) => Promise<boolean>;
+  reportGossipPost: (postId: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -568,12 +570,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Stories & Highlights State (live Supabase rows only)
   const [stories, setStories] = useState<CampusStory[]>([]);
   const [activeStory, setActiveStory] = useState<CampusStory | null>(null);
+  const [campusAlerts, setCampusAlerts] = useState<CampusAlert[]>([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void supabaseService.fetchCampusStories().then((remoteStories) => {
-      if (!cancelled && remoteStories) setStories(remoteStories);
+    void Promise.all([
+      supabaseService.fetchCampusStories(),
+      supabaseService.fetchCampusAlerts(),
+    ]).then(([remoteStories, remoteAlerts]) => {
+      if (cancelled) return;
+      if (remoteStories) setStories(remoteStories);
+      if (remoteAlerts) setCampusAlerts(remoteAlerts);
     });
     return () => {
       cancelled = true;
@@ -700,10 +708,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void supabaseService.fetchGossipPosts().then((remotePosts) => {
-      if (!cancelled && remotePosts) {
-        setGossipPosts(remotePosts);
-      }
+    void supabaseService.fetchGossipPosts().then(async (remotePosts) => {
+      if (cancelled || !remotePosts) return;
+      const hydratedPosts = await Promise.all(remotePosts.map(async (post) => ({
+        ...post,
+        comments: await supabaseService.fetchGossipComments(post.id) || post.comments,
+      })));
+      if (!cancelled) setGossipPosts(hydratedPosts);
     });
     return () => {
       cancelled = true;
@@ -751,56 +762,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const reactToGossipPost = (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea') => {
+  const reactToGossipPost = async (postId: string, reactionType: 'spicy' | 'cap' | 'facts' | 'tea'): Promise<void> => {
     if (!requestAuthentication()) return;
-
-    const existingPost = gossipPosts.find((post) => post.id === postId);
-    if (!existingPost) return;
-
-    const currentReaction = existingPost.userReaction;
-    const counts = {
-      spicy: existingPost.spicyCount,
-      cap: existingPost.capCount,
-      facts: existingPost.factsCount,
-      tea: existingPost.teaCount,
-    };
-
-    if (currentReaction) {
-      counts[currentReaction] = Math.max(0, counts[currentReaction] - 1);
+    const remoteReaction = await supabaseService.reactToGossipPost(postId, reactionType);
+    if (!remoteReaction) {
+      setSparkToast({ show: true, message: 'Reaction could not be saved. Please try again.' });
+      return;
     }
-
-    const nextReaction = currentReaction === reactionType ? undefined : reactionType;
-    if (nextReaction) {
-      counts[nextReaction] += 1;
-    }
-
-    const updatedPost: GossipPost = {
-      ...existingPost,
-      spicyCount: counts.spicy,
-      capCount: counts.cap,
-      factsCount: counts.facts,
-      teaCount: counts.tea,
-      userReaction: nextReaction,
-    };
-
-    setGossipPosts((prev) => prev.map((post) => (post.id === postId ? updatedPost : post)));
-    void supabaseService.reactToGossipPost(postId, reactionType).then((remoteReaction) => {
-      if (!remoteReaction) return;
-      setGossipPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                ...remoteReaction,
-              }
-            : post
-        )
-      );
-    });
+    setGossipPosts((prev) => prev.map((post) => post.id === postId ? { ...post, ...remoteReaction } : post));
   };
 
-  const addGossipComment = (postId: string, content: string, isAnonymous: boolean) => {
-    if (!requestAuthentication()) return;
+  const addGossipComment = async (postId: string, content: string, isAnonymous: boolean): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
 
     const newComment: GossipComment = {
       id: `comm_${Date.now()}`,
@@ -817,48 +790,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       userLiked: false,
     };
 
-    setGossipPosts((prev) =>
-      prev.map((post) => {
-        if (post.id !== postId) return post;
-        return {
-          ...post,
-          comments: [...post.comments, newComment],
-        };
-      })
-    );
-    void supabaseService.createGossipComment(postId, newComment, currentUser.id, currentUser.department);
+    const persisted = await supabaseService.createGossipComment(postId, newComment, currentUser.id, currentUser.department);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Comment could not be saved. Please try again.' });
+      return false;
+    }
+    setGossipPosts((prev) => prev.map((post) => post.id === postId
+      ? { ...post, comments: [...post.comments, newComment] }
+      : post));
+    return true;
   };
 
-  const likeGossipComment = (postId: string, commentId: string) => {
-    if (!requestAuthentication()) return;
-
-    setGossipPosts((prev) =>
-      prev.map((post) => {
-        if (post.id !== postId) return post;
-        return {
+  const likeGossipComment = async (postId: string, commentId: string): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
+    const result = await supabaseService.toggleGossipCommentLike(commentId);
+    if (!result) {
+      setSparkToast({ show: true, message: 'Comment reaction could not be saved. Please try again.' });
+      return false;
+    }
+    setGossipPosts((prev) => prev.map((post) => post.id === postId
+      ? {
           ...post,
-          comments: post.comments.map((c) => {
-            if (c.id !== commentId) return c;
-            const isLiked = !!c.userLiked;
-            return {
-              ...c,
-              likes: isLiked ? Math.max(0, c.likes - 1) : c.likes + 1,
-              userLiked: !isLiked,
-            };
-          }),
-        };
-      })
-    );
+          comments: post.comments.map((comment) => comment.id === commentId
+            ? { ...comment, likes: result.likes, userLiked: result.userLiked }
+            : comment),
+        }
+      : post));
+    return true;
   };
 
-  const reportGossipPost = (postId: string) => {
-    if (!requestAuthentication()) return;
-
+  const reportGossipPost = async (postId: string): Promise<boolean> => {
+    if (!requestAuthentication()) return false;
+    const persisted = await supabaseService.reportGossipPost(postId);
     setSparkToast({
       show: true,
-      message: 'Gossip post flagged for campus moderation review. 🛡️',
+      message: persisted ? 'Gossip post flagged for campus moderation review. 🛡️' : 'Gossip post flag could not be saved. Please try again.',
     });
     setTimeout(() => setSparkToast(null), 3500);
+    return persisted;
   };
 
   // Vibe chip filter
@@ -1156,7 +1125,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Submit Photo Verification
-  const submitVerification = (selfieUrl: string, idCardUrl?: string) => {
+  const submitVerification = async (selfieUrl: string, idCardUrl?: string): Promise<boolean> => {
+    if (!isAuthenticated || !currentUser.id) return false;
     const newReq: VerificationRequest = {
       id: `ver_${Date.now()}`,
       userId: currentUser.id,
@@ -1171,13 +1141,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       status: 'pending',
     };
 
+    const persisted = await supabaseService.submitVerification(newReq);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Verification could not be submitted. Please try again.' });
+      return false;
+    }
     setVerificationRequests((prev) => [newReq, ...prev]);
-    void supabaseService.submitVerification(newReq);
     updateCurrentUser({
       verificationStatus: 'pending',
       selfieUrl,
       studentIdCardUrl: idCardUrl,
     });
+    return true;
   };
 
   // Admin: Approve Verification
@@ -1332,14 +1307,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setActivePollIndex(0);
   };
 
-  // Admin announcements must be persisted by a dedicated server-authorized workflow.
-  // Do not inject a fabricated local post into the shared feed.
-  const broadcastCampusAlert = (headline: string, message: string) => {
-    setSparkToast({
-      show: true,
-      message: `Public announcement unavailable: ${headline}. A server-persisted publishing workflow is required.`,
-    });
-    setTimeout(() => setSparkToast(null), 6000);
+  // Admin announcements are written through the proof-protected server workflow.
+  const broadcastCampusAlert = async (headline: string, message: string): Promise<boolean> => {
+    if (!adminProof) return false;
+    const alert = await supabaseService.createAdminCampusAlert(adminProof, headline, message);
+    if (!alert) {
+      setSparkToast({ show: true, message: 'Campus announcement could not be published. Please try again.' });
+      setTimeout(() => setSparkToast(null), 5000);
+      return false;
+    }
+    setCampusAlerts((prev) => [alert, ...prev].slice(0, 5));
+    setSparkToast({ show: true, message: 'Campus announcement published successfully.' });
+    setTimeout(() => setSparkToast(null), 3500);
+    return true;
   };
 
   // Admin: Clear browser cache without restoring any demo records.
@@ -1356,6 +1336,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setReports([]);
     setVerificationRequests([]);
     setStories([]);
+    setCampusAlerts([]);
     setCampusPolls([]);
     setGossipPosts([]);
     setActivePollIndex(0);
@@ -1470,6 +1451,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         recentMatch,
         setRecentMatch,
         whoLikedMeProfiles,
+        campusAlerts,
         isPremium,
         activePlan,
         activatePremium,
