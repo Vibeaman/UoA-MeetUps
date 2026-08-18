@@ -161,7 +161,7 @@ export const Header: React.FC = () => {
             </button>
 
             {isNotificationsOpen && (
-              <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-orange-800/50 bg-[#160a20] shadow-2xl shadow-black/50">
+              <div className="fixed inset-x-3 top-[4.5rem] z-50 overflow-hidden rounded-2xl border border-orange-800/50 bg-[#160a20] shadow-2xl shadow-black/50 sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[22rem]">
                 <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-300">Notifications</p>
