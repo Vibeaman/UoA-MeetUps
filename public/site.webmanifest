@@ -1,0 +1,17 @@
+{
+  "name": "UoA MeetUps",
+  "short_name": "UoA MeetUps",
+  "description": "Verified campus dating and social connection for University of Abuja students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08040d",
+  "theme_color": "#09050e",
+  "icons": [
+    {
+      "src": "/uoa-meetups-logo.png",
+      "sizes": "634x663",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
