@@ -372,11 +372,16 @@ export const supabaseService = {
 
   async initializePaystackTransaction(planId: 'weekly' | 'monthly' | 'semester') {
     try {
+      const { data: sessionData } = await getSupabase().auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { data: null, error: 'Please sign in again before starting payment.' };
+
       const { data, error } = await getSupabase().functions.invoke('paystack-init', {
         body: { planId },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error || !data?.ok || !data.authorizationUrl) {
-        return { data: null, error: error?.message || data?.error || 'Could not initialize Paystack payment.' };
+        return { data: null, error: data?.error || error?.message || 'Could not initialize Paystack payment.' };
       }
       return { data, error: null };
     } catch (error) {
@@ -386,11 +391,16 @@ export const supabaseService = {
 
   async verifyPaystackTransaction(reference: string) {
     try {
+      const { data: sessionData } = await getSupabase().auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { data: null, error: 'Please sign in again before verifying payment.' };
+
       const { data, error } = await getSupabase().functions.invoke('paystack-verify', {
         body: { reference },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error || !data?.ok) {
-        return { data: null, error: error?.message || data?.error || 'Could not verify Paystack payment.' };
+        return { data: null, error: data?.error || error?.message || 'Could not verify Paystack payment.' };
       }
       return { data, error: null };
     } catch (error) {

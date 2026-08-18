@@ -76,8 +76,9 @@ Deno.serve(async (request) => {
     const paystackData = await paystackResponse.json();
 
     if (!paystackResponse.ok || !paystackData?.status || !paystackData?.data?.authorization_url) {
-      console.error("Paystack initialization failed:", paystackData);
-      return json({ ok: false, error: "Paystack could not initialize this payment." }, 502);
+      const providerMessage = typeof paystackData?.message === "string" ? paystackData.message : "Paystack rejected the request.";
+      console.error("Paystack initialization failed:", { status: paystackResponse.status, message: providerMessage, code: paystackData?.code || null });
+      return json({ ok: false, error: `Paystack could not initialize this payment. ${providerMessage}` }, 502);
     }
 
     const { error: insertError } = await adminClient.from("payment_transactions").insert({
