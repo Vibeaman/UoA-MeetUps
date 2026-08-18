@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Sparkles, X, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -13,6 +13,20 @@ export const CampusStoriesBar: React.FC = () => {
   const [postError, setPostError] = useState('');
   const [isPosting, setIsPosting] = useState(false);
 
+  useEffect(() => {
+    if (!isAddModalOpen) {
+      setSelectedPhotoIndex(0);
+      setPostError('');
+      return;
+    }
+
+    setSelectedPhotoIndex((currentIndex) =>
+      currentUser.photos.length > 0
+        ? Math.min(currentIndex, currentUser.photos.length - 1)
+        : 0,
+    );
+  }, [isAddModalOpen, currentUser.photos.length]);
+
   const PRESET_TAGS = [
     'Campus Vibe',
     'Study Session',
@@ -26,7 +40,7 @@ export const CampusStoriesBar: React.FC = () => {
   const handlePostStory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCaption.trim()) return;
-    const photoUrl = currentUser.photos[selectedPhotoIndex];
+    const photoUrl = currentUser.photos[selectedPhotoIndex] || currentUser.photos[0];
     if (!photoUrl) {
       setPostError('Add a real profile photo before posting a story.');
       return;
@@ -160,7 +174,10 @@ export const CampusStoriesBar: React.FC = () => {
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setSelectedPhotoIndex(idx)}
+                        onClick={() => {
+                          setSelectedPhotoIndex(idx);
+                          setPostError('');
+                        }}
                         className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
                           selectedPhotoIndex === idx
                             ? 'border-orange-400 scale-105 shadow-md shadow-orange-900/60 ring-2 ring-orange-500/50'

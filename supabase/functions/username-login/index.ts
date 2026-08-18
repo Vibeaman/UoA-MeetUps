@@ -81,46 +81,38 @@ Deno.serve(async (request) => {
     }
 
     if (!profile) {
-      const { data: usersResult, error: usersError } = await adminClient.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-      });
-      const authUser = usersResult?.users.find(
-        (candidate) => normalizeUsername(candidate.user_metadata?.username) === username,
-      );
+      // Legacy accounts may have auth metadata but no profile row. Search all auth-user pages
+      // instead of silently failing after the first 1,000 users.
+      const authUsersPageSize = 1000;
+      let page = 1;
+      let authUser: any = null;
+      let usersError: unknown = null;
+
+      while (!authUser) {
+        const { data: usersResult, error } = await adminClient.auth.admin.listUsers({
+          page,
+          perPage: authUsersPageSize,
+        });
+        if (error) {
+          usersError = error;
+          break;
+        }
+
+        authUser = usersResult?.users.find(
+          (candidate) => normalizeUsername(candidate.user_metadata?.username) === username,
+        );
+
+        if (authUser || !usersResult?.users?.length || usersResult.users.length < authUsersPageSize) break;
+        page += 1;
+      }
 
       if (usersError || !authUser) {
         rateLimitState.count += 1;
         return invalidCredentials();
       }
 
-      const { error: bootstrapError } = await adminClient.from("profiles").upsert({
-        id: authUser.id,
-        name: typeof authUser.user_metadata?.full_name === "string"
-          ? authUser.user_metadata.full_name.trim() || username
-          : username,
-        age: 0,
-        username,
-        faculty: "",
-        department: "",
-        level: "100L",
-        campus_location: "Main Campus",
-        bio: "",
-        photos: [],
-        interests: [],
-        looking_for: "both",
-        mode: "normal",
-        is_verified: false,
-        verification_status: "unverified",
-        badges: [],
-        is_banned: false,
-      }, { onConflict: "id" });
-
-      if (bootstrapError) {
-        rateLimitState.count += 1;
-        return invalidCredentials();
-      }
-
+      // Do not create a fabricated age-0 profile. The client will let the authenticated
+      // legacy account complete its real age and profile details after the session starts.
       profile = { id: authUser.id, username, is_banned: false };
     }
 

@@ -141,6 +141,24 @@ const STORAGE_KEYS = {
   IS_AUTHENTICATED: 'uoa_is_authenticated_v1',
 };
 
+const scopedStorageKey = (key: string, userId: string) => `${key}:${userId}`;
+
+const readStoredJson = <T,>(key: string, fallback: T): T => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? (JSON.parse(saved) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const removeScopedStorage = (key: string) => {
+  const prefix = `${key}:`;
+  Object.keys(localStorage)
+    .filter((storageKey) => storageKey.startsWith(prefix))
+    .forEach((storageKey) => localStorage.removeItem(storageKey));
+};
+
 const EMPTY_CURRENT_USER: UserProfile = {
   id: '',
   name: '',
@@ -167,10 +185,7 @@ const EMPTY_CURRENT_USER: UserProfile = {
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Current user state
-  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return saved ? JSON.parse(saved) : EMPTY_CURRENT_USER;
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile>(EMPTY_CURRENT_USER);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -242,10 +257,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [whoLikedMeProfiles, setWhoLikedMeProfiles] = useState<UserProfile[]>([]);
 
-  const [swipedProfileIds, setSwipedProfileIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SWIPED_IDS);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [swipedProfileIds, setSwipedProfileIds] = useState<string[]>([]);
+  const [accountStateUserId, setAccountStateUserId] = useState<string | null>(null);
 
   const [lastSwipedId, setLastSwipedId] = useState<string | null>(null);
 
@@ -296,12 +309,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setProfiles([]);
     setMatches([]);
     setMessages({});
+    setCurrentChatMatch(null);
+    setRecentMatch(null);
     setIsPremium(false);
     setActivePlan(null);
+    setSwipedProfileIds([]);
+    setReports([]);
+    setVerificationRequests([]);
     localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
     localStorage.removeItem('uoa_is_premium_v2');
     localStorage.removeItem('uoa_active_plan_v2');
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(STORAGE_KEYS.SWIPED_IDS);
+    localStorage.removeItem(STORAGE_KEYS.MATCHES);
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    localStorage.removeItem(STORAGE_KEYS.REPORTS);
+    localStorage.removeItem(STORAGE_KEYS.VERIFICATIONS);
     void getSupabase().auth.signOut();
   };
 
@@ -362,11 +385,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     searchQuery: '',
   });
 
-  // Sync to local storage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-  }, [currentUser]);
-
+  // Only keep the authentication marker globally; user data and behavior state are account-scoped.
   useEffect(() => {
     if (isAuthenticated) {
       localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, 'true');
@@ -374,6 +393,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem(STORAGE_KEYS.IS_AUTHENTICATED);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const userId = isAuthenticated && currentUser.id ? currentUser.id : null;
+    setAccountStateUserId(userId);
+    setBlockedUserIds([]);
+    setWhoLikedMeProfiles([]);
+    setCurrentChatMatch(null);
+    setRecentMatch(null);
+    setIsPremium(false);
+    setActivePlan(null);
+
+    if (!userId) {
+      setSwipedProfileIds([]);
+      setMatches([]);
+      setMessages({});
+      setReports([]);
+      setVerificationRequests([]);
+      return;
+    }
+
+    setSwipedProfileIds(readStoredJson(scopedStorageKey(STORAGE_KEYS.SWIPED_IDS, userId), []));
+    // Matches and messages are server-backed. Never restore another account's browser cache.
+    setMatches([]);
+    setMessages({});
+    // Reports and verification requests are admin/server data, not per-account browser caches.
+    setReports([]);
+    setVerificationRequests([]);
+  }, [isAuthenticated, currentUser.id]);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -484,24 +531,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [isAuthenticated, currentUser.id]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SWIPED_IDS, JSON.stringify(swipedProfileIds));
-  }, [swipedProfileIds]);
+    if (!isAuthenticated || !accountStateUserId || accountStateUserId !== currentUser.id) return;
+    localStorage.setItem(
+      scopedStorageKey(STORAGE_KEYS.SWIPED_IDS, accountStateUserId),
+      JSON.stringify(swipedProfileIds),
+    );
+  }, [isAuthenticated, accountStateUserId, currentUser.id, swipedProfileIds]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MATCHES, JSON.stringify(matches));
-  }, [matches]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
-  }, [reports]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.VERIFICATIONS, JSON.stringify(verificationRequests));
-  }, [verificationRequests]);
+  // Matches, messages, reports, and verification requests are intentionally not written to shared local storage.
+  // Their authoritative state comes from Supabase/admin hydration and is reset on account changes above.
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -1325,6 +1363,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Admin: Clear browser cache without restoring any demo records.
   const clearLocalCache = () => {
     Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    [STORAGE_KEYS.SWIPED_IDS, STORAGE_KEYS.MATCHES, STORAGE_KEYS.MESSAGES, STORAGE_KEYS.REPORTS, STORAGE_KEYS.VERIFICATIONS].forEach(removeScopedStorage);
+    localStorage.removeItem('uoa_is_premium_v2');
+    localStorage.removeItem('uoa_active_plan_v2');
     localStorage.removeItem('uoa_stories_v2');
     localStorage.removeItem('uoa_campus_polls_v2');
     localStorage.removeItem('uoa_campus_polls_v3');
@@ -1333,6 +1374,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSwipedProfileIds([]);
     setMatches([]);
     setMessages({});
+    setCurrentChatMatch(null);
+    setRecentMatch(null);
     setReports([]);
     setVerificationRequests([]);
     setStories([]);
