@@ -83,8 +83,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   };
 
   // Metrics
-  const totalStudents = profiles.length + 1; // + current user
-  const verifiedCount = profiles.filter((p) => p.isVerified).length + (currentUser.isVerified ? 1 : 0);
+  // The admin directory already contains the signed-in profile, so do not add it again.
+  const totalStudents = profiles.length;
+  const verifiedCount = profiles.filter((p) => p.isVerified).length;
   const pendingVerifications = verificationRequests.filter((v) => v.status === 'pending').length;
   const pendingReports = reports.filter((r) => r.status === 'pending').length;
   const bannedCount = profiles.filter((p) => p.isBanned).length;
