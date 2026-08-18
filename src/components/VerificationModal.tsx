@@ -5,6 +5,7 @@ import {
   Camera,
   RotateCw,
   CheckCircle2,
+  Clock,
   Sparkles,
   Upload,
   AlertCircle,
@@ -48,11 +49,15 @@ export const VerificationModal: React.FC = () => {
       setIsCapturing(false);
       return;
     }
+    if (currentUser.verificationStatus === 'pending' || currentUser.verificationStatus === 'verified') {
+      stopCamera();
+      return;
+    }
     if (step === 'camera') void startCamera();
     return () => {
       stopCamera();
     };
-  }, [isVerificationModalOpen, step]);
+  }, [currentUser.verificationStatus, isVerificationModalOpen, step]);
 
   const startCamera = async () => {
     try {
@@ -145,6 +150,14 @@ export const VerificationModal: React.FC = () => {
 
   const handleConfirmSubmit = async () => {
     if (!capturedPhoto || isUploading) return;
+    if (currentUser.verificationStatus === 'pending') {
+      setVerificationError('Your current verification is still under review. You can submit again only after it is approved or rejected.');
+      return;
+    }
+    if (currentUser.verificationStatus === 'verified') {
+      setVerificationError('Your UniAbuja identity is already verified.');
+      return;
+    }
     setVerificationError('');
     setIsUploading(true);
 
@@ -197,8 +210,51 @@ export const VerificationModal: React.FC = () => {
         {/* Hidden Canvas for capture */}
         <canvas ref={canvasRef} className="hidden" />
 
+        {currentUser.verificationStatus === 'pending' && step !== 'success' && (
+          <div className="py-8 space-y-4 animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-amber-900/40 border-2 border-amber-400/70 text-amber-300 flex items-center justify-center mx-auto">
+              <Clock className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black font-display text-white">Verification Under Review</h3>
+              <p className="text-sm text-neutral-300 mt-2 max-w-sm mx-auto leading-relaxed">
+                Your selfie and student ID have already been submitted. An admin is reviewing them now.
+              </p>
+              <p className="text-xs text-amber-200/80 mt-3 max-w-sm mx-auto leading-relaxed">
+                You cannot take or submit another verification photo while this request is pending. You can try again only if the request is rejected.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsVerificationModalOpen(false)}
+              className="w-full py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs"
+            >
+              Got it
+            </button>
+          </div>
+        )}
+
+        {currentUser.verificationStatus === 'verified' && step !== 'success' && (
+          <div className="py-8 space-y-4 animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-emerald-900/40 border-2 border-emerald-400/70 text-emerald-300 flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black font-display text-white">Already Verified</h3>
+              <p className="text-sm text-neutral-300 mt-2 max-w-sm mx-auto leading-relaxed">
+                Your UniAbuja identity has already been verified. There is no need to submit another verification.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsVerificationModalOpen(false)}
+              className="w-full py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs"
+            >
+              Close
+            </button>
+          </div>
+        )}
+
         {/* STEP 1: CAMERA STREAM */}
-        {step === 'camera' && (
+        {step === 'camera' && currentUser.verificationStatus !== 'pending' && currentUser.verificationStatus !== 'verified' && (
           <div className="space-y-4">
             <div>
               <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-orange-950/80 border border-orange-500/50 text-orange-300 text-xs font-bold uppercase tracking-wider mb-2">
@@ -269,7 +325,7 @@ export const VerificationModal: React.FC = () => {
         )}
 
         {/* STEP 2: PREVIEW CAPTURED SELFIE */}
-        {step === 'preview' && (
+        {step === 'preview' && currentUser.verificationStatus !== 'pending' && currentUser.verificationStatus !== 'verified' && (
           <div className="space-y-4">
             <div>
               <h3 className="text-xl font-bold font-display text-white">Review Your Live Selfie</h3>

@@ -691,6 +691,24 @@ export const supabaseService = {
   async submitVerification(req: VerificationRequest): Promise<boolean> {
     try {
       const supabase = getSupabase();
+      const { data: existingPending, error: pendingLookupError } = await supabase
+        .from('verification_requests')
+        .select('id')
+        .eq('user_id', req.userId)
+        .eq('status', 'pending')
+        .limit(1)
+        .maybeSingle();
+
+      if (pendingLookupError) {
+        console.warn('Supabase pending verification lookup error:', pendingLookupError.message);
+        return false;
+      }
+
+      if (existingPending) {
+        console.warn('Verification submission blocked: this account already has a pending request.');
+        return false;
+      }
+
       const row = {
         id: req.id,
         user_id: req.userId,
@@ -707,7 +725,11 @@ export const supabaseService = {
 
       const { error } = await supabase.from('verification_requests').insert(row);
       if (error) {
-        console.warn('Supabase verification insert error:', error.message);
+        if (error.code === '23505') {
+          console.warn('Verification submission blocked by the pending-request uniqueness rule.');
+        } else {
+          console.warn('Supabase verification insert error:', error.message);
+        }
         return false;
       }
       return true;

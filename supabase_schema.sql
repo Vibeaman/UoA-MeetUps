@@ -287,6 +287,11 @@ CREATE TABLE IF NOT EXISTS verification_requests (
   reviewed_at TIMESTAMP WITH TIME ZONE
 );
 
+-- A student may have many historical requests, but only one request awaiting review.
+CREATE UNIQUE INDEX IF NOT EXISTS verification_requests_one_pending_per_user_idx
+  ON public.verification_requests (user_id)
+  WHERE status = 'pending';
+
 -- 5. Safety & Disciplinary Reports
 CREATE TABLE IF NOT EXISTS user_reports (
   id TEXT PRIMARY KEY,
