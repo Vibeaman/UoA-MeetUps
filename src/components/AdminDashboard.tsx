@@ -76,6 +76,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const [broadcastHeadline, setBroadcastHeadline] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [savingVerificationUserId, setSavingVerificationUserId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -752,22 +753,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                   <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
                     {/* Toggle Verification Badge */}
                     <button
-                      onClick={() => {
-                        toggleUserVerification(user.id);
-                        showToast(
-                          user.isVerified
-                            ? `Revoked verified badge for ${user.name}`
-                            : `Granted verified badge to ${user.name} 🛡️`
-                        );
+                      onClick={async () => {
+                        if (savingVerificationUserId) return;
+                        setSavingVerificationUserId(user.id);
+                        try {
+                          const saved = await toggleUserVerification(user.id);
+                          if (saved) {
+                            showToast(
+                              user.isVerified
+                                ? `Revoked verified badge for ${user.name}`
+                                : `Granted verified badge to ${user.name} 🛡️`
+                            );
+                          }
+                        } finally {
+                          setSavingVerificationUserId(null);
+                        }
                       }}
-                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center space-x-1 border transition-all ${
+                      disabled={savingVerificationUserId !== null}
+                      className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center space-x-1 border transition-all disabled:cursor-wait disabled:opacity-60 ${
                         user.isVerified
                           ? 'bg-orange-950/80 text-orange-300 border-orange-700 hover:bg-orange-900'
                           : 'bg-emerald-950/80 text-emerald-300 border-emerald-700 hover:bg-emerald-900'
                       }`}
                     >
-                      <ShieldCheck className="w-3 h-3" />
-                      <span>{user.isVerified ? 'Revoke Badge' : 'Verify ID'}</span>
+                      {savingVerificationUserId === user.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                      <span>{savingVerificationUserId === user.id ? 'Saving...' : user.isVerified ? 'Revoke Badge' : 'Verify ID'}</span>
                     </button>
 
                     {/* Ban / Unban Button */}

@@ -75,7 +75,7 @@ interface AppContextType {
   resolveReport: (reportId: string, action: 'ban' | 'dismiss') => Promise<void>;
   banUser: (userId: string) => Promise<void>;
   unbanUser: (userId: string) => Promise<void>;
-  toggleUserVerification: (userId: string) => void;
+  toggleUserVerification: (userId: string) => Promise<boolean>;
   deleteGossipPost: (postId: string) => Promise<void>;
   deleteCampusPoll: (pollId: string) => Promise<void>;
   broadcastCampusAlert: (headline: string, message: string) => Promise<boolean>;
@@ -1298,11 +1298,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Admin: Toggle Direct Verification Badge
-  const toggleUserVerification = (userId: string) => {
+  const toggleUserVerification = async (userId: string): Promise<boolean> => {
     const profile = userId === currentUser.id ? currentUser : profiles.find((p) => p.id === userId);
-    if (!profile) return;
+    if (!profile || !adminProof) return false;
 
     const nextState = !profile.isVerified;
+    const persisted = await supabaseService.updateAdminProfileVerification(adminProof, userId, nextState);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Verification badge change could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
     if (userId === currentUser.id) {
       updateCurrentUser({
         isVerified: nextState,
@@ -1328,9 +1335,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       );
     }
 
-    if (adminProof) {
-      void supabaseService.updateAdminProfileVerification(adminProof, userId, nextState);
-    }
+    return true;
   };
 
   // Admin: Delete Gossip Post
