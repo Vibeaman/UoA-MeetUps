@@ -97,6 +97,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
       // Only show profiles with the minimum information needed for a safe, useful card.
       if (!p.name?.trim() || !p.username?.trim() || !p.photos?.length) return false;
+      if (!Number.isInteger(p.age) || p.age < 18 || p.age > 100) return false;
 
       // Don't show already swiped
       if (swipedProfileIds.includes(p.id)) return false;

@@ -325,6 +325,11 @@ export const supabaseService = {
 
   // Save / Update User Profile
   async upsertProfile(profile: UserProfile): Promise<boolean> {
+    if (!Number.isInteger(profile.age) || profile.age < 18 || profile.age > 100) {
+      console.warn('Profile save blocked: age must be an integer from 18 to 100.');
+      return false;
+    }
+
     try {
       const supabase = getSupabase();
       const row = {

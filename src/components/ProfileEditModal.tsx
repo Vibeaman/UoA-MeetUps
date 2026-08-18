@@ -122,6 +122,11 @@ export const ProfileEditModal: React.FC = () => {
 
   const handleSave = async () => {
     if (isSaving) return;
+    if (!Number.isInteger(formData.age) || formData.age < 18 || formData.age > 100) {
+      setSaveError('Enter your real age, from 18 to 100, before saving.');
+      return;
+    }
+
     setSaveError('');
     setIsSaving(true);
 
@@ -233,8 +238,13 @@ export const ProfileEditModal: React.FC = () => {
               <label className="block text-[11px] font-bold text-orange-300 uppercase mb-1">Age</label>
               <input
                 type="number"
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || formData.age })}
+                value={formData.age || ''}
+                min={18}
+                max={100}
+                onChange={(e) => {
+                  const nextAge = parseInt(e.target.value, 10);
+                  setFormData({ ...formData, age: Number.isNaN(nextAge) ? 0 : nextAge });
+                }}
                 className="w-full p-2.5 rounded-xl bg-[#1a0b22] border border-orange-900/50 text-white focus:outline-none focus:border-orange-400"
               />
             </div>

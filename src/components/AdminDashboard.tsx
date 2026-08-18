@@ -707,15 +707,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <img
-                      src={user.photos[0]}
-                      alt=""
-                      className="w-12 h-12 rounded-2xl object-cover border border-orange-800 shrink-0"
-                    />
+                    {user.photos[0] ? (
+                      <img
+                        src={user.photos[0]}
+                        alt=""
+                        className="w-12 h-12 rounded-2xl object-cover border border-orange-800 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-[#261037] border border-orange-800 shrink-0 flex items-center justify-center">
+                        <span className="font-display text-lg font-black text-white/35">
+                          {(user.name?.trim().charAt(0) || '?').toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center space-x-1.5 flex-wrap">
                         <span className="font-black text-xs text-white">
-                          {user.name}, {user.age}
+                          {user.name}, {user.age > 0 ? user.age : 'Age not set'}
                         </span>
                         {user.isVerified && (
                           <span

@@ -34,6 +34,8 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
   if (!profile) return null;
 
+  const activePhoto = profile.photos[photoIndex] || profile.photos[0] || '';
+
   const handleLike = () => {
     swipeRight(profile);
     onClose();
@@ -67,11 +69,19 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto custom-scrollbar pb-24">
           {/* Main Photo Gallery Hero */}
           <div className="relative w-full h-[400px] sm:h-[440px] bg-black">
-            <img
-              src={profile.photos[photoIndex] || profile.photos[0]}
-              alt={profile.name}
-              className="w-full h-full object-cover"
-            />
+            {activePhoto ? (
+              <img
+                src={activePhoto}
+                alt={profile.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#3a164e,#100719_68%)]">
+                <span className="font-display text-8xl font-black text-white/20">
+                  {(profile.name?.trim().charAt(0) || '?').toUpperCase()}
+                </span>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0517] via-transparent to-black/40" />
 
             {/* Photo Navigation dots */}
@@ -130,7 +140,10 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             <div>
               <div className="flex items-baseline justify-between">
                 <h1 className="text-3xl font-black font-display text-white">
-                  {profile.name} <span className="text-2xl font-light text-orange-300">{profile.age}</span>
+                  {profile.name}{' '}
+                  <span className="text-2xl font-light text-orange-300">
+                    {profile.age > 0 ? profile.age : 'Age not set'}
+                  </span>
                 </h1>
                 <span className="text-xs text-neutral-400">{profile.gender}</span>
               </div>

@@ -86,13 +86,21 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
             className="uoa-surface relative flex h-60 flex-col justify-end overflow-hidden rounded-2xl group"
           >
             {/* Background photo */}
-            <img
-              src={profile.photos[0]}
-              alt={profile.name}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 ${
-                isPremium ? 'filter none group-hover:scale-105' : 'filter blur-md scale-110 brightness-[0.7]'
-              }`}
-            />
+            {profile.photos[0] ? (
+              <img
+                src={profile.photos[0]}
+                alt={profile.name}
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 ${
+                  isPremium ? 'filter none group-hover:scale-105' : 'filter blur-md scale-110 brightness-[0.7]'
+                }`}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_top,#3a164e,#100719_68%)]">
+                <span className="font-display text-7xl font-black text-white/20">
+                  {(profile.name?.trim().charAt(0) || '?').toUpperCase()}
+                </span>
+              </div>
+            )}
 
             <div className="absolute inset-0 bg-gradient-to-t from-[#090312] via-[#090312]/60 to-transparent" />
 
@@ -115,7 +123,9 @@ export const WhoLikedMeView: React.FC<WhoLikedMeViewProps> = ({ onOpenProfileDet
             {isPremium ? (
               <div className="relative z-10 p-3 flex flex-col justify-end space-y-1.5">
                 <div className="flex items-center space-x-1">
-                  <span className="font-bold text-xs text-white truncate">{profile.name}, {profile.age}</span>
+                  <span className="font-bold text-xs text-white truncate">
+                    {profile.name}, {profile.age > 0 ? profile.age : 'Age not set'}
+                  </span>
                   {profile.isVerified && <ShieldCheck className="w-3 h-3 text-orange-400 shrink-0" />}
                 </div>
 

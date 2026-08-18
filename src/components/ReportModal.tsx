@@ -14,17 +14,33 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
   const [reason, setReason] = useState<ReportReason>('fake_profile');
   const [details, setDetails] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   if (!isOpen || !targetUser) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitted = await submitReport(targetUser, reason, details);
-    if (submitted) setIsSubmitted(true);
+    if (isSubmitting) return;
+
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      const submitted = await submitReport(targetUser, reason, details);
+      if (submitted) {
+        setIsSubmitted(true);
+      } else {
+        setSubmitError('Your report could not be saved. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     setIsSubmitted(false);
+    setIsSubmitting(false);
+    setSubmitError('');
     setDetails('');
     onClose();
   };
@@ -136,6 +152,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
               />
             </div>
 
+            {submitError && <p className="text-xs font-semibold text-rose-300">{submitError}</p>}
             {/* Submit buttons */}
             <div className="pt-2 flex items-center space-x-2">
               <button
@@ -147,10 +164,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({ targetUser, isOpen, on
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-950/50 transition-all flex items-center justify-center space-x-1.5"
+                disabled={isSubmitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-950/50 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <ShieldAlert className="w-4 h-4" />
-                <span>Submit Confidential Report</span>
+                <span>{isSubmitting ? 'Saving Report...' : 'Submit Confidential Report'}</span>
               </button>
             </div>
           </form>

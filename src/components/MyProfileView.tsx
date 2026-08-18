@@ -229,7 +229,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
         <div className="mt-4 space-y-1">
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-black font-display text-white">
-              {currentUser.name}, {currentUser.age}
+              {currentUser.name}, {currentUser.age > 0 ? currentUser.age : 'Age not set'}
             </h2>
             {currentUser.isVerified && (
               <span className="px-2 py-0.5 rounded-full bg-orange-900/60 border border-orange-500/40 text-orange-300 text-[10px] font-bold">

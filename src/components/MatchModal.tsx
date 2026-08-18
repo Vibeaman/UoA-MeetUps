@@ -79,8 +79,14 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
         {/* Overlapping Avatars */}
         <div className="relative flex items-center justify-center my-6">
           {/* Current User */}
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(168,85,247,0.6)] transform -translate-x-3 z-10">
-            <img src={currentUser.photos[0]} alt="You" className="w-full h-full object-cover" />
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(168,85,247,0.6)] transform -translate-x-3 z-10 bg-[#160a24] flex items-center justify-center">
+            {currentUser.photos[0] ? (
+              <img src={currentUser.photos[0]} alt="You" className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-display text-4xl font-black text-white/30">
+                {(currentUser.name?.trim().charAt(0) || 'U').toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Glowing Center Heart */}
@@ -89,8 +95,14 @@ export const MatchModal: React.FC<MatchModalProps> = ({ matchedProfile, onClose 
           </div>
 
           {/* Matched Profile */}
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(216,70,239,0.6)] transform translate-x-3 z-10">
-            <img src={matchedProfile.photos[0]} alt={matchedProfile.name} className="w-full h-full object-cover" />
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-orange-500 shadow-[0_0_20px_rgba(216,70,239,0.6)] transform translate-x-3 z-10 bg-[#160a24] flex items-center justify-center">
+            {matchedProfile.photos[0] ? (
+              <img src={matchedProfile.photos[0]} alt={matchedProfile.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-display text-4xl font-black text-white/30">
+                {(matchedProfile.name?.trim().charAt(0) || '?').toUpperCase()}
+              </span>
+            )}
           </div>
         </div>
 
