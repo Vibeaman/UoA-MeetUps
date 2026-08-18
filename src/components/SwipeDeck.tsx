@@ -190,6 +190,18 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const isDraggingRef = React.useRef(false);
+
+  useEffect(() => {
+    if (!currentProfile) return;
+    void controls.start({
+      x: 0,
+      y: 0,
+      rotate: 0,
+      scale: 1,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 350, damping: 28 },
+    });
+  }, [currentProfile?.id, controls]);
   const activePhoto = currentProfile?.photos?.[photoIndex] || currentProfile?.photos?.[0] || '';
   const profileInitials = (currentProfile?.name || '?')
     .split(' ')
