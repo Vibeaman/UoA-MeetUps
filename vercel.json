@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/paystack-webhook",
+      "destination": "https://ylyfpatonnplpmvmrsji.supabase.co/functions/v1/paystack-webhook"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
