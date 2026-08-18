@@ -130,7 +130,7 @@ export const PremiumModal: FC = () => {
                 <Lock className="h-3 w-3 text-emerald-400" />
                 <span>Server-verified by Paystack</span>
               </span>
-              <span>Test mode</span>
+              <span>Live checkout</span>
             </div>
 
             <button
@@ -149,7 +149,7 @@ export const PremiumModal: FC = () => {
               <div className="mb-1 inline-block rounded-xl border border-orange-700/50 bg-orange-950 p-2 text-orange-300">
                 <CreditCard className="h-6 w-6 text-orange-400" />
               </div>
-              <h3 className="text-lg font-black text-white">Paystack Test Checkout</h3>
+              <h3 className="text-lg font-black text-white">Paystack Secure Checkout</h3>
               <p className="text-xs text-neutral-400">
                 Paying <strong className="text-orange-300">{selectedPlan.price}</strong> for {selectedPlan.name}
               </p>
