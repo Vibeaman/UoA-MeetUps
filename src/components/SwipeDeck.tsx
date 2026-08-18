@@ -78,6 +78,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const [isCampusHubOpen, setIsCampusHubOpen] = useState(false);
   const [sparkText, setSparkText] = useState('');
   const [isSparkInputOpen, setIsSparkInputOpen] = useState(false);
+  const [isRewinding, setIsRewinding] = useState(false);
 
   useEffect(() => {
     if (!openCampusConversation) return;
@@ -346,14 +347,20 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     resetCardState();
   };
 
-  const handleRewindClick = () => {
-    if (!canRewind) return;
+  const handleRewindClick = async () => {
+    if (!canRewind || isRewinding) return;
     if (!isPremium) {
       setIsPremiumModalOpen(true);
       return;
     }
-    rewindLastSwipe();
-    resetCardState();
+
+    setIsRewinding(true);
+    try {
+      const rewound = await rewindLastSwipe();
+      if (rewound) resetCardState();
+    } finally {
+      setIsRewinding(false);
+    }
   };
 
   const handleSendInstantSpark = async (e: React.FormEvent) => {
@@ -553,11 +560,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleRewindClick}
-                disabled={!canRewind}
+                disabled={!canRewind || isRewinding}
                 className="uoa-primary-button flex-1 flex items-center justify-center space-x-2 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-40"
               >
-                <RotateCcw className="w-4 h-4" />
-                <span>Rewind Last</span>
+                <RotateCcw className={`w-4 h-4 ${isRewinding ? 'animate-spin' : ''}`} />
+                <span>{isRewinding ? 'Rewinding...' : 'Rewind Last'}</span>
               </motion.button>
             </div>
           </motion.div>
@@ -1085,7 +1092,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           whileHover={{ scale: canRewind ? 1.15 : 1 }}
           whileTap={{ scale: canRewind ? 0.9 : 1 }}
           onClick={handleRewindClick}
-          disabled={!canRewind || isAnimatingOut}
+          disabled={!canRewind || isAnimatingOut || isRewinding}
           className={`rounded-full border p-3 transition-colors duration-200 ${
             canRewind
               ? 'uoa-quiet-button text-orange-300'
@@ -1094,7 +1101,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           title="Rewind Last Swipe (VIP Feature)"
           id="btn-swipe-rewind"
         >
-          <RotateCcw className="w-5 h-5" />
+          <RotateCcw className={`w-5 h-5 ${isRewinding ? 'animate-spin' : ''}`} />
         </motion.button>
 
         {/* Pass (Nope) */}

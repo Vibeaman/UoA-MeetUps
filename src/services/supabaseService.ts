@@ -1029,6 +1029,23 @@ export const supabaseService = {
     }
   },
 
+  async removeProfileLike(recipientId: string): Promise<boolean> {
+    try {
+      const { error } = await getSupabase()
+        .from('profile_likes')
+        .delete()
+        .eq('recipient_id', recipientId);
+      if (error) {
+        console.warn('Supabase profile like removal error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase profile like removal exception:', error);
+      return false;
+    }
+  },
+
   async consumeViewOnceMessage(messageId: string): Promise<ViewOnceConsumeResult | null> {
     try {
       const { data, error } = await getSupabase().rpc('consume_view_once_message', {

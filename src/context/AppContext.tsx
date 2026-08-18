@@ -47,7 +47,7 @@ interface AppContextType {
   swipeLeft: (profile: UserProfile) => void;
   superLike: (profile: UserProfile) => Promise<void>;
   blockedUserIds: string[];
-  rewindLastSwipe: () => boolean;
+  rewindLastSwipe: () => Promise<boolean>;
   canRewind: boolean;
   matches: MatchItem[];
   currentChatMatch: MatchItem | null;
@@ -70,8 +70,8 @@ interface AppContextType {
   verificationRequests: VerificationRequest[];
   submitVerification: (selfieUrl: string, idCardUrl?: string) => Promise<boolean>;
   // Admin actions
-  approveVerification: (requestId: string) => void;
-  rejectVerification: (requestId: string, note?: string) => void;
+  approveVerification: (requestId: string) => Promise<boolean>;
+  rejectVerification: (requestId: string, note?: string) => Promise<boolean>;
   resolveReport: (reportId: string, action: 'ban' | 'dismiss') => Promise<void>;
   banUser: (userId: string) => Promise<void>;
   unbanUser: (userId: string) => Promise<void>;
@@ -1017,7 +1017,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const likeResult = await supabaseService.recordProfileLike(profile.id, 'like');
     if (!likeResult) {
-      setSparkToast({ show: true, message: 'Your like could not be saved. Please try again.' });
+      setSwipedProfileIds((prev) => prev.filter((id) => id !== profile.id));
+      setLastSwipedId((previousId) => (previousId === profile.id ? null : previousId));
+      setSparkToast({ show: true, message: 'Your like could not be saved. The profile is available again.' });
+      setTimeout(() => setSparkToast(null), 4000);
       return;
     }
 
@@ -1048,7 +1051,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const likeResult = await supabaseService.recordProfileLike(profile.id, 'super_like');
     if (!likeResult) {
-      setSparkToast({ show: true, message: 'Your Super Like could not be saved. Please try again.' });
+      setSwipedProfileIds((prev) => prev.filter((id) => id !== profile.id));
+      setLastSwipedId((previousId) => (previousId === profile.id ? null : previousId));
+      setSparkToast({ show: true, message: 'Your Super Like could not be saved. The profile is available again.' });
+      setTimeout(() => setSparkToast(null), 4000);
       return;
     }
 
@@ -1064,10 +1070,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fireMatchConfetti();
   };
 
-  // Rewind last swipe
-  const rewindLastSwipe = (): boolean => {
+  // Rewind last swipe and remove the corresponding persisted like when one exists.
+  const rewindLastSwipe = async (): Promise<boolean> => {
     if (!lastSwipedId) return false;
-    setSwipedProfileIds((prev) => prev.filter((id) => id !== lastSwipedId));
+
+    const rewoundId = lastSwipedId;
+    const removed = await supabaseService.removeProfileLike(rewoundId);
+    if (!removed) {
+      setSparkToast({ show: true, message: 'Rewind could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
+    setSwipedProfileIds((prev) => prev.filter((id) => id !== rewoundId));
     setLastSwipedId(null);
     return true;
   };
@@ -1205,20 +1220,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Admin: Approve Verification
-  const approveVerification = (requestId: string) => {
-    setVerificationRequests((prev) =>
-      prev.map((req) => (req.id === requestId ? { ...req, status: 'approved' } : req))
-    );
-    if (adminProof) void supabaseService.updateAdminVerification(adminProof, requestId, 'approved');
-
+  const approveVerification = async (requestId: string): Promise<boolean> => {
+    if (!adminProof) return false;
     const req = verificationRequests.find((r) => r.id === requestId);
-    if (req && req.userId === currentUser.id) {
+    if (!req) return false;
+
+    const persisted = await supabaseService.updateAdminVerification(adminProof, requestId, 'approved');
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Verification approval could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
+    setVerificationRequests((prev) =>
+      prev.map((item) => (item.id === requestId ? { ...item, status: 'approved' } : item))
+    );
+    if (req.userId === currentUser.id) {
       updateCurrentUser({
         isVerified: true,
         verificationStatus: 'verified',
         badges: Array.from(new Set([...currentUser.badges, '🛡️ Verified Student'])),
       });
-    } else if (req) {
+    } else {
       setProfiles((prev) =>
         prev.map((p) =>
           p.id === req.userId
@@ -1232,25 +1255,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         )
       );
     }
+    return true;
   };
 
   // Admin: Reject Verification
-  const rejectVerification = (requestId: string, note?: string) => {
+  const rejectVerification = async (requestId: string, note?: string): Promise<boolean> => {
+    if (!adminProof) return false;
     const adminNote = note || 'Photo mismatch or unclear selfie.';
+    const req = verificationRequests.find((r) => r.id === requestId);
+    if (!req) return false;
+
+    const persisted = await supabaseService.updateAdminVerification(adminProof, requestId, 'rejected', adminNote);
+    if (!persisted) {
+      setSparkToast({ show: true, message: 'Verification rejection could not be saved. Please try again.' });
+      setTimeout(() => setSparkToast(null), 3500);
+      return false;
+    }
+
     setVerificationRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId ? { ...req, status: 'rejected', adminNote } : req
+      prev.map((item) =>
+        item.id === requestId ? { ...item, status: 'rejected', adminNote } : item
       )
     );
-    if (adminProof) void supabaseService.updateAdminVerification(adminProof, requestId, 'rejected', adminNote);
-
-    const req = verificationRequests.find((r) => r.id === requestId);
-    if (req && req.userId === currentUser.id) {
+    if (req.userId === currentUser.id) {
       updateCurrentUser({
         isVerified: false,
         verificationStatus: 'rejected',
       });
+    } else {
+      setProfiles((prev) =>
+        prev.map((p) =>
+          p.id === req.userId
+            ? { ...p, isVerified: false, verificationStatus: 'rejected' }
+            : p
+        )
+      );
     }
+    return true;
   };
 
   // Admin: Resolve Report

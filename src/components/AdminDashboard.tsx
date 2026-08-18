@@ -77,6 +77,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [savingVerificationUserId, setSavingVerificationUserId] = useState<string | null>(null);
+  const [savingVerificationRequestId, setSavingVerificationRequestId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -113,13 +114,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
   });
 
   // Handle Submit Rejection
-  const handleConfirmReject = () => {
-    if (!selectedRejectReq) return;
+  const handleConfirmReject = async () => {
+    if (!selectedRejectReq || savingVerificationRequestId) return;
+    const request = selectedRejectReq;
     const finalNote = customRejectNote.trim() || rejectReasonPreset;
-    rejectVerification(selectedRejectReq.id, finalNote);
-    showToast(`Verification rejected for ${selectedRejectReq.userName}. Note logged.`);
-    setSelectedRejectReq(null);
-    setCustomRejectNote('');
+    setSavingVerificationRequestId(request.id);
+    try {
+      const saved = await rejectVerification(request.id, finalNote);
+      if (!saved) return;
+      showToast(`Verification rejected for ${request.userName}. Note logged.`);
+      setSelectedRejectReq(null);
+      setCustomRejectNote('');
+    } finally {
+      setSavingVerificationRequestId(null);
+    }
   };
 
   // Handle Send Broadcast
@@ -503,19 +511,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                   {req.status === 'pending' ? (
                     <>
                       <button
-                        onClick={() => {
-                          approveVerification(req.id);
-                          showToast(`Badge granted to ${req.userName} 🛡️`);
+                        onClick={async () => {
+                          if (savingVerificationRequestId) return;
+                          setSavingVerificationRequestId(req.id);
+                          try {
+                            const saved = await approveVerification(req.id);
+                            if (saved) showToast(`Badge granted to ${req.userName} 🛡️`);
+                          } finally {
+                            setSavingVerificationRequestId(null);
+                          }
                         }}
-                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md transition-all"
+                        disabled={savingVerificationRequestId !== null}
+                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md transition-all disabled:opacity-60 disabled:cursor-wait"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Approve & Grant Badge</span>
+                        <span>{savingVerificationRequestId === req.id ? 'Saving...' : 'Approve & Grant Badge'}</span>
                       </button>
 
                       <button
                         onClick={() => setSelectedRejectReq(req)}
-                        className="py-2 px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 text-rose-300 font-bold text-xs flex items-center justify-center space-x-1 transition-all"
+                        disabled={savingVerificationRequestId !== null}
+                        className="py-2 px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 text-rose-300 font-bold text-xs flex items-center justify-center space-x-1 transition-all disabled:opacity-60 disabled:cursor-wait"
                       >
                         <XCircle className="w-4 h-4" />
                         <span>Reject</span>
@@ -529,8 +545,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                           if (req.status === 'approved') {
                             setSelectedRejectReq(req);
                           } else {
-                            approveVerification(req.id);
-                            showToast(`Status overturned to Approved for ${req.userName} 🛡️`);
+                            void (async () => {
+                              if (savingVerificationRequestId) return;
+                              setSavingVerificationRequestId(req.id);
+                              try {
+                                const saved = await approveVerification(req.id);
+                                if (saved) showToast(`Status overturned to Approved for ${req.userName} 🛡️`);
+                              } finally {
+                                setSavingVerificationRequestId(null);
+                              }
+                            })();
                           }
                         }}
                         className="text-orange-400 font-bold hover:underline"
@@ -1076,9 +1100,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                 </button>
                 <button
                   onClick={handleConfirmReject}
-                  className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md"
+                  disabled={savingVerificationRequestId !== null}
+                  className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md disabled:opacity-60 disabled:cursor-wait"
                 >
-                  Confirm Rejection
+                  {savingVerificationRequestId === selectedRejectReq.id ? 'Saving...' : 'Confirm Rejection'}
                 </button>
               </div>
             </motion.div>
