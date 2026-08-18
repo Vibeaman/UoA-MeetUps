@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserProfile, UserReport, VerificationRequest, GossipPost } from '../types';
+import { ProfileDetailModal } from './ProfileDetailModal';
 
 interface AdminDashboardProps {
   onExit: () => void;
@@ -42,6 +43,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
     currentUser,
     adminMetrics,
     refreshAdminMetrics,
+    refreshAdminConsoleData,
     reports,
     verificationRequests,
     approveVerification,
@@ -69,6 +71,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
   // Modals inside Admin
   const [inspectPhotoUrl, setInspectPhotoUrl] = useState<{ url: string; title: string } | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
   const [selectedRejectReq, setSelectedRejectReq] = useState<VerificationRequest | null>(null);
   const [rejectReasonPreset, setRejectReasonPreset] = useState('Face angle mismatch with profile');
   const [customRejectNote, setCustomRejectNote] = useState('');
@@ -199,11 +202,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
           <button
             onClick={() => {
-              void refreshAdminMetrics().then((refreshed) => {
-                showToast(refreshed ? 'Live operations metrics refreshed.' : 'Metrics could not be refreshed.');
+              void refreshAdminConsoleData().then((refreshed) => {
+                showToast(refreshed ? 'Admin queue and live metrics refreshed.' : 'Some admin data could not be refreshed.');
               });
             }}
-            title="Refresh live operations metrics"
+            title="Refresh admin queue and live operations metrics"
             className="p-2 rounded-xl bg-orange-950/80 border border-orange-800/40 text-orange-300 hover:text-white transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -375,13 +378,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
             <div className="p-8 text-center bg-[#120620] rounded-3xl border border-orange-950 text-neutral-400 text-xs space-y-2">
               <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto opacity-60" />
               <p>No verification requests matching "{verificationFilter}".</p>
-              {verificationFilter !== 'all' && (
-                <button
-                  onClick={() => setVerificationFilter('all')}
-                  className="text-orange-400 font-bold hover:underline text-xs"
-                >
-                  View all requests
-                </button>
+              {verificationRequests.length > 0 ? (
+                <>
+                  <p className="text-[11px] text-neutral-500">
+                    {verificationRequests.length} recorded submission{verificationRequests.length === 1 ? '' : 's'} exist{verificationRequests.length === 1 ? 's' : ''}. A new submission will appear here after refreshing the admin queue.
+                  </p>
+                  {verificationFilter !== 'all' && (
+                    <button
+                      onClick={() => setVerificationFilter('all')}
+                      className="text-orange-400 font-bold hover:underline text-xs"
+                    >
+                      View all recorded requests
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-[11px] text-neutral-500">No submission has been received yet. Ask the student to complete the verification flow, then refresh this queue.</p>
               )}
             </div>
           ) : (
@@ -709,7 +721,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           <div className="flex items-center justify-between rounded-2xl border border-orange-950 bg-[#120620] px-3 py-2.5">
             <div>
               <p className="text-xs font-bold text-white">Student directory</p>
-              <p className="text-[10px] text-neutral-400">Review accounts and apply moderation actions.</p>
+              <p className="text-[10px] text-neutral-400">Open full profiles, review verification status, and apply moderation actions.</p>
             </div>
             <span className="text-[10px] font-black uppercase tracking-wider text-orange-300">{profiles.length} records</span>
           </div>
@@ -775,6 +787,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
 
                   {/* Direct Admin Control Actions */}
                   <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
+                    <button
+                      onClick={() => setSelectedProfile(user)}
+                      className="px-2.5 py-1.5 rounded-xl bg-orange-950/80 text-orange-200 border border-orange-700/50 text-[10px] font-bold hover:bg-orange-900 transition-all flex items-center space-x-1"
+                      title={`View ${user.name}'s full profile`}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>View</span>
+                    </button>
+
                     {/* Toggle Verification Badge */}
                     <button
                       onClick={async () => {
@@ -1021,6 +1042,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
           </div>
         </div>
       )}
+
+      <ProfileDetailModal
+        profile={selectedProfile}
+        onClose={() => setSelectedProfile(null)}
+        adminPreview
+      />
 
       {/* ========================================================================= */}
       {/* REJECTION REASON MODAL                                                    */}

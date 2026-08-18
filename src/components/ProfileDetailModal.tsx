@@ -21,13 +21,15 @@ import { useApp } from '../context/AppContext';
 interface ProfileDetailModalProps {
   profile: UserProfile | null;
   onClose: () => void;
-  onOpenReport: (profile: UserProfile) => void;
+  onOpenReport?: (profile: UserProfile) => void;
+  adminPreview?: boolean;
 }
 
 export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
   profile,
   onClose,
   onOpenReport,
+  adminPreview = false,
 }) => {
   const { swipeRight, swipeLeft, blockUser } = useApp();
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -261,52 +263,55 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Safety Actions: Report & Block */}
-            <div className="pt-4 border-t border-orange-950/60 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenReport(profile);
-                }}
-                className="flex items-center space-x-1.5 text-xs text-neutral-400 hover:text-rose-400 transition-colors"
-                id="report-profile-btn"
-              >
-                <Flag className="w-3.5 h-3.5" />
-                <span>Report Student</span>
-              </button>
+            {!adminPreview && (
+              <div className="pt-4 border-t border-orange-950/60 flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenReport?.(profile);
+                  }}
+                  className="flex items-center space-x-1.5 text-xs text-neutral-400 hover:text-rose-400 transition-colors"
+                  id="report-profile-btn"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                  <span>Report Student</span>
+                </button>
 
-              <button
-                onClick={handleBlock}
-                className="flex items-center space-x-1.5 text-xs text-neutral-400 hover:text-rose-400 transition-colors"
-                id="block-profile-btn"
-              >
-                <UserX className="w-3.5 h-3.5" />
-                <span>Block User</span>
-              </button>
-            </div>
+                <button
+                  onClick={handleBlock}
+                  className="flex items-center space-x-1.5 text-xs text-neutral-400 hover:text-rose-400 transition-colors"
+                  id="block-profile-btn"
+                >
+                  <UserX className="w-3.5 h-3.5" />
+                  <span>Block User</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Sticky Action Footer */}
-        <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-[#090410] via-[#090410]/95 to-transparent border-t border-orange-950/80 flex items-center justify-center space-x-6 backdrop-blur-xl z-40">
-          <button
-            onClick={handlePass}
-            className="flex-1 py-3 px-4 rounded-2xl bg-[#160924] border border-rose-600/40 text-rose-300 font-bold text-sm flex items-center justify-center space-x-2 hover:bg-rose-950/50 transition-all shadow-md"
-            id="detail-modal-pass-btn"
-          >
-            <X className="w-4 h-4" />
-            <span>Pass</span>
-          </button>
+        {!adminPreview && (
+          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-[#090410] via-[#090410]/95 to-transparent border-t border-orange-950/80 flex items-center justify-center space-x-6 backdrop-blur-xl z-40">
+            <button
+              onClick={handlePass}
+              className="flex-1 py-3 px-4 rounded-2xl bg-[#160924] border border-rose-600/40 text-rose-300 font-bold text-sm flex items-center justify-center space-x-2 hover:bg-rose-950/50 transition-all shadow-md"
+              id="detail-modal-pass-btn"
+            >
+              <X className="w-4 h-4" />
+              <span>Pass</span>
+            </button>
 
-          <button
-            onClick={handleLike}
-            className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-orange-900/50 hover:brightness-110 transition-all"
-            id="detail-modal-like-btn"
-          >
-            <Heart className="w-4 h-4 fill-white" />
-            <span>Meet & Connect</span>
-          </button>
-        </div>
+            <button
+              onClick={handleLike}
+              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 text-white font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-orange-900/50 hover:brightness-110 transition-all"
+              id="detail-modal-like-btn"
+            >
+              <Heart className="w-4 h-4 fill-white" />
+              <span>Meet & Connect</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

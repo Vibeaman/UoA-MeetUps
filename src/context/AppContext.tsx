@@ -57,6 +57,7 @@ interface AppContextType {
   logoutAdmin: () => void;
   adminMetrics: AdminMetrics | null;
   refreshAdminMetrics: () => Promise<boolean>;
+  refreshAdminConsoleData: () => Promise<boolean>;
   currentMode: AppMode;
   toggleAppMode: (mode?: AppMode) => Promise<boolean>;
   profiles: UserProfile[];
@@ -269,6 +270,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!metrics) return false;
     setAdminMetrics(metrics);
     return true;
+  };
+
+  const refreshAdminConsoleData = async () => {
+    if (!adminProof) return false;
+    const [requests, metrics, remoteReports] = await Promise.all([
+      supabaseService.fetchAdminVerificationRequests(adminProof),
+      supabaseService.fetchAdminMetrics(adminProof),
+      supabaseService.fetchAdminReports(adminProof),
+    ]);
+    if (requests) setVerificationRequests(requests);
+    if (metrics) setAdminMetrics(metrics);
+    if (remoteReports) setReports(remoteReports);
+    return Boolean(requests && metrics && remoteReports);
   };
 
   // Profiles
@@ -1620,6 +1634,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         logoutAdmin,
         adminMetrics,
         refreshAdminMetrics,
+        refreshAdminConsoleData,
         currentMode,
         toggleAppMode,
         profiles,
