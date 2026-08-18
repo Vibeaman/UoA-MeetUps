@@ -305,8 +305,8 @@ export const CampusGossipBoard: React.FC = () => {
               {showImageInput && (
                 <div className="space-y-2">
                   {imagePreview ? (
-                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-orange-700/60">
-                      <img src={imagePreview} alt="Selected attachment preview" className="w-full h-full object-cover" />
+                    <div className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-orange-700/60 bg-black/70">
+                      <img src={imagePreview} alt="Selected attachment preview" className="h-full w-full object-contain" />
                       <button
                         type="button"
                         onClick={clearSelectedImage}
@@ -484,12 +484,12 @@ export const CampusGossipBoard: React.FC = () => {
 
                 {/* Optional Image */}
                 {post.imageUrl && (
-                  <div className="mt-2.5 rounded-xl overflow-hidden border border-orange-900/60 max-h-56 bg-black">
+                  <div className="mt-2.5 flex max-h-[28rem] w-full items-center justify-center overflow-hidden rounded-xl border border-orange-900/60 bg-black/70">
                     <img
                       src={post.imageUrl}
                       alt="Gossip attachment"
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
+                      className="block h-auto max-h-[28rem] w-full object-contain"
                     />
                   </div>
                 )}

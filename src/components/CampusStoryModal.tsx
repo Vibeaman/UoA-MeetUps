@@ -75,11 +75,13 @@ export const CampusStoryModal: React.FC = () => {
         id="campus-story-viewer-modal"
       >
         {/* Story Background Image */}
-        <img
-          src={activeStory.storyImage}
-          alt={activeStory.userName}
-          className="absolute inset-0 w-full h-full object-cover filter brightness-[0.85]"
-        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <img
+            src={activeStory.storyImage}
+            alt={activeStory.userName}
+            className="max-h-full max-w-full object-contain brightness-[0.85]"
+          />
+        </div>
 
         {/* Top Vignette Gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
