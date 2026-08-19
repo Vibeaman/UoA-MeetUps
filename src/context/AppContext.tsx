@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import {
   UserProfile,
@@ -301,7 +301,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Messages per matchId
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
 
-  const [currentChatMatch, setCurrentChatMatch] = useState<MatchItem | null>(null);
+  const [currentChatMatch, setCurrentChatMatchState] = useState<MatchItem | null>(null);
+  const currentChatMatchIdRef = useRef<string | null>(null);
+  const setCurrentChatMatch = (match: MatchItem | null) => {
+    currentChatMatchIdRef.current = match?.id || null;
+    setCurrentChatMatchState(match);
+    if (match) {
+      setMatches((prev) => prev.map((item) => item.id === match.id ? { ...item, hasUnread: false } : item));
+    }
+  };
   const [recentMatch, setRecentMatch] = useState<UserProfile | null>(null);
 
   // Premium State
@@ -605,6 +613,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       cancelled = true;
     };
   }, [isAuthenticated, currentUser.id]);
+
+  useEffect(() => {
+    currentChatMatchIdRef.current = currentChatMatch?.id || null;
+  }, [currentChatMatch]);
+
+  const chatMatchIdsKey = matches.map((match) => match.id).sort().join('|');
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser.id || !isSupabaseConfigured() || !chatMatchIdsKey) return;
+
+    let cancelled = false;
+    const cleanups = matches.map((match) => supabaseService.subscribeToMessages(match.id, (incomingMessage) => {
+      if (cancelled) return;
+
+      setMessages((previous) => {
+        const existingMessages = previous[incomingMessage.matchId] || [];
+        if (existingMessages.some((message) => message.id === incomingMessage.id)) return previous;
+        return {
+          ...previous,
+          [incomingMessage.matchId]: [...existingMessages, incomingMessage],
+        };
+      });
+
+      setMatches((previous) => previous.map((matchItem) => {
+        if (matchItem.id !== incomingMessage.matchId) return matchItem;
+        const preview = incomingMessage.imageUrl
+          ? (incomingMessage.isPhotoViewOnce ? '📸 View-once photo' : '📷 Photo')
+          : incomingMessage.text;
+        const shouldMarkUnread = incomingMessage.senderId !== currentUser.id
+          && currentChatMatchIdRef.current !== incomingMessage.matchId;
+        return {
+          ...matchItem,
+          lastMessage: preview,
+          lastMessageTime: incomingMessage.createdAt,
+          hasUnread: shouldMarkUnread ? true : matchItem.hasUnread,
+        };
+      }));
+    }));
+
+    return () => {
+      cancelled = true;
+      cleanups.forEach((cleanup) => cleanup());
+    };
+  }, [isAuthenticated, currentUser.id, chatMatchIdsKey]);
 
   useEffect(() => {
     if (!isAuthenticated || !accountStateUserId || accountStateUserId !== currentUser.id) return;

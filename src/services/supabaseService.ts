@@ -432,14 +432,8 @@ export const supabaseService = {
         interests: profile.interests,
         looking_for: profile.lookingFor,
         mode: profile.mode,
-        is_verified: profile.isVerified,
-        verification_status: profile.verificationStatus,
-        badges: profile.badges,
-        is_banned: profile.isBanned,
-        boost_expires_at: profile.boostExpiresAt || null,
         instagram: profile.instagramHandle || null,
         snapchat: profile.snapchatHandle || null,
-        phone_whatsapp: null,
       };
 
       const { error } = await supabase.from('profiles').upsert(row);
@@ -1263,6 +1257,34 @@ export const supabaseService = {
             actorId: String(row.actor_id || ''),
             eventType: row.event_type === 'capture_attempt' ? 'capture_attempt' : 'capture_attempt',
             createdAt: row.created_at ? new Date(String(row.created_at)).getTime() : Date.now(),
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  },
+  subscribeToMessages(matchId: string, onMessage: (message: ChatMessage) => void): () => void {
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`messages-${matchId}-${Math.random().toString(36).slice(2, 8)}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          onMessage({
+            id: String(row.id || ''),
+            matchId: String(row.match_id || matchId),
+            senderId: String(row.sender_id || ''),
+            text: typeof row.text === 'string' ? row.text : '',
+            imageUrl: typeof row.image_url === 'string' ? row.image_url : undefined,
+            isPhotoViewOnce: Boolean(row.is_view_once),
+            isPhotoViewed: Boolean(row.view_once_viewed),
+            createdAt: row.created_at ? new Date(String(row.created_at)).getTime() : Date.now(),
+            read: Boolean(row.read),
           });
         },
       )
