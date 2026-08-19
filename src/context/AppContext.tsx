@@ -547,11 +547,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void supabaseService.fetchProfiles().then((remoteProfiles) => {
-      if (!cancelled && remoteProfiles) setProfiles(remoteProfiles);
-    });
+    const refreshProfiles = () => {
+      void supabaseService.fetchProfiles().then((remoteProfiles) => {
+        if (!cancelled && remoteProfiles) setProfiles(remoteProfiles);
+      });
+    };
+    refreshProfiles();
+    const interval = window.setInterval(refreshProfiles, 30_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -717,6 +722,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         endedAt: ended ? new Date(now).toISOString() : undefined,
       };
       writeStorage(pendingSessionKey, JSON.stringify(snapshot));
+      if (isAuthenticated && currentUser.id) {
+        void supabaseService.updatePresence(!ended && document.visibilityState !== 'hidden');
+      }
       void supabaseService.upsertSiteSession(snapshot).then((saved) => {
         if (!saved) return;
         try {
@@ -754,7 +762,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       window.removeEventListener('pagehide', handlePageHide);
       flushSession(true);
     };
-  }, [currentUser.id]);
+  }, [currentUser.id, isAuthenticated]);
 
   // Hydrate Boost from the server-issued expiration timestamp.
   useEffect(() => {

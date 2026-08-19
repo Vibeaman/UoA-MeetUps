@@ -25,7 +25,32 @@ import {
 const USER_MEDIA_BUCKET = 'user-media';
 
 const normalizeUsername = (username: string) => username.trim().toLowerCase();
-
+const PUBLIC_PROFILE_SELECT = [
+  'id',
+  'name',
+  'age',
+  'username',
+  'gender',
+  'faculty',
+  'department',
+  'level',
+  'campus_location',
+  'bio',
+  'photos',
+  'interests',
+  'looking_for',
+  'mode',
+  'is_verified',
+  'verification_status',
+  'badges',
+  'is_banned',
+  'boost_expires_at',
+  'instagram',
+  'snapchat',
+  'is_online',
+  'last_active',
+  'created_at',
+].join(', ');
 type EnsureUserProfileResult = {
   ok: boolean;
   error?: 'username_taken' | 'unknown';
@@ -200,13 +225,20 @@ export const supabaseService = {
   // Fetch only real profiles; empty Supabase results remain empty.
   async fetchProfiles(): Promise<UserProfile[] | null> {
     try {
-      const { data, error } = await getSupabase().from('profiles').select('*').order('created_at', { ascending: false });
+      const { data, error } = await getSupabase()
+        .from('profiles')
+        .select(PUBLIC_PROFILE_SELECT)
+        .order('created_at', { ascending: false });
       if (error) {
         console.warn('Supabase profiles query notice:', error.message);
         return null;
       }
 
-      return (data || []).map((r: any) => ({
+      return (data || []).map((r: any) => {
+        const lastActiveAt = r.last_active ? new Date(r.last_active) : null;
+        const lastActiveTimestamp = lastActiveAt && !Number.isNaN(lastActiveAt.getTime()) ? lastActiveAt.getTime() : 0;
+        const isOnline = Boolean(r.is_online && lastActiveTimestamp && Date.now() - lastActiveTimestamp < 2 * 60 * 1000);
+        return {
         id: r.id,
         name: r.name,
         age: r.age,
@@ -227,13 +259,14 @@ export const supabaseService = {
         icebreakerPrompts: Array.isArray(r.icebreaker_prompts) ? r.icebreaker_prompts : [],
         badges: Array.isArray(r.badges) ? r.badges : [],
         isBanned: Boolean(r.is_banned),
-        lastActive: r.last_active ? new Date(r.last_active).toLocaleString() : '',
-        isOnline: Boolean(r.is_online),
+        lastActive: lastActiveTimestamp ? new Date(lastActiveTimestamp).toLocaleString() : '',
+        isOnline,
         boostExpiresAt: r.boost_expires_at || undefined,
         isBoosted: Boolean(r.boost_expires_at && new Date(r.boost_expires_at).getTime() > Date.now()),
         instagramHandle: r.instagram || undefined,
         snapchatHandle: r.snapchat || undefined,
-      }));
+        };
+      });
     } catch (error) {
       console.warn('Supabase profiles fetch error:', error);
       return null;
@@ -695,6 +728,16 @@ export const supabaseService = {
     }
   },
 
+  async updatePresence(isOnline: boolean): Promise<boolean> {
+    try {
+      const { error } = await getSupabase().rpc('update_presence', { p_is_online: isOnline });
+      return !error;
+    } catch (error) {
+      console.warn('Supabase presence update error:', error);
+      return false;
+    }
+  },
+
   // Submit Verification Request
   async submitVerification(req: VerificationRequest): Promise<boolean> {
     try {
@@ -720,15 +763,9 @@ export const supabaseService = {
       const row = {
         id: req.id,
         user_id: req.userId,
-        user_name: req.userName,
-        username: req.username,
-        faculty: req.faculty,
-        department: req.department,
         profile_photo: req.profilePhoto,
         live_selfie_photo: req.liveSelfiePhoto,
         student_id_photo: req.studentIdPhoto || null,
-        status: req.status,
-        submitted_at: new Date(req.submittedAt).toISOString(),
       };
 
       const { error } = await supabase.from('verification_requests').insert(row);
