@@ -81,6 +81,7 @@ export const CampusGossipBoard: React.FC = () => {
   const [commentAnonMap, setCommentAnonMap] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const recordedViewIdsRef = useRef<Set<string>>(new Set());
+  const recordedViewAccountRef = useRef<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -98,17 +99,25 @@ export const CampusGossipBoard: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    filteredPosts.forEach((post) => {
-      if (recordedViewIdsRef.current.has(post.id)) return;
-      recordedViewIdsRef.current.add(post.id);
-      void recordGossipView(post.id).then((saved) => {
-        if (!saved) recordedViewIdsRef.current.delete(post.id);
-      });
+    const accountKey = isAuthenticated && currentUser.id ? currentUser.id : null;
+    if (recordedViewAccountRef.current === accountKey) return;
+    recordedViewAccountRef.current = accountKey;
+    recordedViewIdsRef.current.clear();
+  }, [currentUser.id, isAuthenticated]);
+
+  const recordPostView = (postId: string) => {
+    if (!isAuthenticated || !currentUser.id) return;
+    const viewKey = `${currentUser.id}:${postId}`;
+    if (recordedViewIdsRef.current.has(viewKey)) return;
+    recordedViewIdsRef.current.add(viewKey);
+    void recordGossipView(postId).then((saved) => {
+      if (!saved) recordedViewIdsRef.current.delete(viewKey);
     });
-  }, [filteredPosts, isAuthenticated]);
+  };
 
   const toggleComments = (postId: string) => {
+    const opening = !expandedComments[postId];
+    if (opening) recordPostView(postId);
     setExpandedComments((prev) => ({
       ...prev,
       [postId]: !prev[postId],

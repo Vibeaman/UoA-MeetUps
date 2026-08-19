@@ -792,19 +792,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [stories, setStories] = useState<CampusStory[]>([]);
   const [activeStory, setActiveStory] = useState<CampusStory | null>(null);
   const [campusAlerts, setCampusAlerts] = useState<CampusAlert[]>([]);
+  const pendingStoryIdsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
     const refreshCampusStories = () => {
       void supabaseService.fetchCampusStories().then((remoteStories) => {
-        if (!cancelled && remoteStories) {
-          setStories((currentStories) => {
-            const remoteIds = new Set(remoteStories.map((story) => story.id));
-            const locallyCreatedStories = currentStories.filter((story) => !remoteIds.has(story.id));
-            return [...locallyCreatedStories, ...remoteStories];
+        if (cancelled || !remoteStories) return;
+
+        const remoteIds = new Set(remoteStories.map((story) => story.id));
+        const now = Date.now();
+        pendingStoryIdsRef.current.forEach((expiresAt, storyId) => {
+          if (expiresAt <= now || remoteIds.has(storyId)) {
+            pendingStoryIdsRef.current.delete(storyId);
+          }
+        });
+        const pendingStoryIds = new Set(pendingStoryIdsRef.current.keys());
+
+        setStories((currentStories) => {
+          const currentById = new Map<string, CampusStory>(
+            currentStories.map((story): [string, CampusStory] => [story.id, story]),
+          );
+          const refreshedRemoteStories = remoteStories.map((story) => {
+            const currentStory = currentById.get(story.id);
+            return currentStory?.likesCount === undefined
+              ? story
+              : { ...story, likesCount: currentStory.likesCount };
           });
-        }
+          const locallyPendingStories = currentStories.filter(
+            (story) => pendingStoryIds.has(story.id) && !remoteIds.has(story.id),
+          );
+          return [...locallyPendingStories, ...refreshedRemoteStories];
+        });
+
+        setActiveStory((story) => (
+          story && !remoteIds.has(story.id) && !pendingStoryIds.has(story.id) ? null : story
+        ));
       });
     };
     const refreshCampusAlerts = () => {
@@ -842,6 +866,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const createdStory = await supabaseService.createCampusStory(newStory);
     if (!createdStory) return false;
 
+    // Allow the insert a short propagation window, but do not preserve missing stories forever.
+    pendingStoryIdsRef.current.set(createdStory.id, Date.now() + 60_000);
     setStories((prev) => [{ ...createdStory, likesCount: 0, userLiked: false }, ...prev]);
     confetti({
       particleCount: 50,

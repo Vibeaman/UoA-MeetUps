@@ -10,6 +10,8 @@ export const CampusStoryModal: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
   const [likeError, setLikeError] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   // Find user profile linked to this story
   const authorProfile: UserProfile | undefined = profiles.find(
@@ -44,10 +46,20 @@ export const CampusStoryModal: React.FC = () => {
 
   if (!activeStory) return null;
 
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !authorProfile) return;
-    sendDirectSpark(authorProfile, `Replying to your story: "${replyText.trim()}"`);
+    if (!replyText.trim() || !authorProfile || isReplying) return;
+
+    setReplyError('');
+    setIsReplying(true);
+    const sent = await sendDirectSpark(authorProfile, `Replying to your story: "${replyText.trim()}"`);
+    setIsReplying(false);
+
+    if (!sent) {
+      setReplyError('Your reply could not be saved. Please try again.');
+      return;
+    }
+
     setReplyText('');
     setActiveStory(null);
   };
@@ -163,7 +175,8 @@ export const CampusStoryModal: React.FC = () => {
               />
               <button
                 type="submit"
-                disabled={!replyText.trim()}
+                disabled={!replyText.trim() || isReplying}
+                aria-label={isReplying ? 'Sending reply' : 'Send reply'}
                 className="absolute right-1.5 p-1.5 rounded-full bg-orange-600 text-white disabled:opacity-30 transition-all hover:bg-orange-500"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -191,9 +204,9 @@ export const CampusStoryModal: React.FC = () => {
                 {activeStory.likesCount ?? 0}
               </span>
             </div>
-            {likeError && (
+            {(replyError || likeError) && (
               <p role="alert" className="absolute bottom-20 left-4 right-4 rounded-xl border border-rose-400/30 bg-black/70 px-3 py-2 text-center text-[11px] font-semibold text-rose-200">
-                {likeError}
+                {replyError || likeError}
               </p>
             )}
           </div>

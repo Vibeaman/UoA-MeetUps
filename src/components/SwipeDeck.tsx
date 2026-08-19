@@ -254,24 +254,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     if (!currentProfile || isAnimatingOut || !requestAuthentication()) return;
 
     const thresholdX = 90;
-    const thresholdY = -100;
     const velocityX = info.velocity.x;
-    const velocityY = info.velocity.y;
     const offsetX = info.offset.x;
-    const offsetY = info.offset.y;
 
-    // Super Like gesture (Swipe Up flick or drag)
-    if ((offsetY < thresholdY || velocityY < -450) && Math.abs(offsetX) < 100) {
-      setIsAnimatingOut(true);
-      await controls.start({
-        y: -600,
-        opacity: 0,
-        scale: 1.08,
-        transition: { duration: 0.28, ease: 'easeOut' },
-      });
-      superLike(currentProfile);
-      resetCardState();
-    } else if (offsetX > thresholdX || velocityX > 450) {
+    if (offsetX > thresholdX || velocityX > 450) {
       // Swipe Right (Like / Meet)
       setIsAnimatingOut(true);
       await controls.start({
