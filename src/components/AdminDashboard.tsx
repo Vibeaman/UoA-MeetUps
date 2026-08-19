@@ -559,27 +559,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
                   ) : (
                     <div className="w-full flex items-center justify-between text-xs text-neutral-400">
                       <span>Status recorded: <strong className="text-white capitalize">{req.status}</strong></span>
-                      <button
-                        onClick={() => {
-                          if (req.status === 'approved') {
-                            setSelectedRejectReq(req);
-                          } else {
-                            void (async () => {
-                              if (savingVerificationRequestId) return;
-                              setSavingVerificationRequestId(req.id);
-                              try {
-                                const saved = await approveVerification(req.id);
-                                if (saved) showToast(`Status overturned to Approved for ${req.userName} 🛡️`);
-                              } finally {
-                                setSavingVerificationRequestId(null);
-                              }
-                            })();
-                          }
-                        }}
-                        className="text-orange-400 font-bold hover:underline"
-                      >
-                        Change Status
-                      </button>
+                      <span className="text-[10px] text-neutral-500">Historical request — no further action</span>
                     </div>
                   )}
                 </div>

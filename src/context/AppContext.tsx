@@ -146,6 +146,7 @@ interface AppContextType {
   addGossipComment: (postId: string, content: string, isAnonymous: boolean) => Promise<boolean>;
   likeGossipComment: (postId: string, commentId: string) => Promise<boolean>;
   reportGossipPost: (postId: string) => Promise<boolean>;
+  recordGossipView: (postId: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -795,22 +796,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void Promise.all([
-      supabaseService.fetchCampusStories(),
-      supabaseService.fetchCampusAlerts(),
-    ]).then(([remoteStories, remoteAlerts]) => {
-      if (cancelled) return;
-      if (remoteStories) {
-        setStories((currentStories) => {
-          const remoteIds = new Set(remoteStories.map((story) => story.id));
-          const locallyCreatedStories = currentStories.filter((story) => !remoteIds.has(story.id));
-          return [...locallyCreatedStories, ...remoteStories];
-        });
-      }
-      if (remoteAlerts) setCampusAlerts(remoteAlerts);
-    });
+    const refreshCampusStories = () => {
+      void supabaseService.fetchCampusStories().then((remoteStories) => {
+        if (!cancelled && remoteStories) {
+          setStories((currentStories) => {
+            const remoteIds = new Set(remoteStories.map((story) => story.id));
+            const locallyCreatedStories = currentStories.filter((story) => !remoteIds.has(story.id));
+            return [...locallyCreatedStories, ...remoteStories];
+          });
+        }
+      });
+    };
+    const refreshCampusAlerts = () => {
+      void supabaseService.fetchCampusAlerts().then((remoteAlerts) => {
+        if (!cancelled && remoteAlerts) setCampusAlerts(remoteAlerts);
+      });
+    };
+    refreshCampusStories();
+    refreshCampusAlerts();
+    const interval = window.setInterval(() => {
+      refreshCampusStories();
+      refreshCampusAlerts();
+    }, 30_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -869,11 +879,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void supabaseService.fetchCampusPolls().then((remotePolls) => {
-      if (!cancelled && remotePolls) setCampusPolls(remotePolls);
-    });
+    const refreshCampusPolls = () => {
+      void supabaseService.fetchCampusPolls().then((remotePolls) => {
+        if (!cancelled && remotePolls) setCampusPolls(remotePolls);
+      });
+    };
+    refreshCampusPolls();
+    const interval = window.setInterval(refreshCampusPolls, 30_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -950,16 +965,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
-    void supabaseService.fetchGossipPosts().then(async (remotePosts) => {
-      if (cancelled || !remotePosts) return;
-      const hydratedPosts = await Promise.all(remotePosts.map(async (post) => ({
-        ...post,
-        comments: await supabaseService.fetchGossipComments(post.id) || post.comments,
-      })));
-      if (!cancelled) setGossipPosts(hydratedPosts);
-    });
+    const refreshGossipPosts = () => {
+      void supabaseService.fetchGossipPosts().then(async (remotePosts) => {
+        if (cancelled || !remotePosts) return;
+        const hydratedPosts = await Promise.all(remotePosts.map(async (post) => ({
+          ...post,
+          comments: await supabaseService.fetchGossipComments(post.id) || post.comments,
+        })));
+        if (!cancelled) setGossipPosts(hydratedPosts);
+      });
+    };
+    refreshGossipPosts();
+    const interval = window.setInterval(refreshGossipPosts, 30_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -1001,13 +1021,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return false;
     }
 
-    setGossipPosts((prev) => [newPost, ...prev]);
+    setGossipPosts((prev) => [persisted, ...prev]);
     confetti({
       particleCount: 60,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#a855f7', '#ec4899', '#f97316', '#fbbf24'],
     });
+    return true;
+  };
+
+  const recordGossipView = async (postId: string): Promise<boolean> => {
+    if (!isAuthenticated) return false;
+    const viewsCount = await supabaseService.recordGossipView(postId);
+    if (viewsCount === null) return false;
+    setGossipPosts((prev) => prev.map((post) => post.id === postId ? { ...post, viewsCount } : post));
     return true;
   };
 
@@ -1819,6 +1847,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addGossipComment,
         likeGossipComment,
         reportGossipPost,
+        recordGossipView,
       }}
     >
       {children}

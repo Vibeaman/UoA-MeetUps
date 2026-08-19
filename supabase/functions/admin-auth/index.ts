@@ -335,10 +335,12 @@ const updateVerificationRequest = async (body: Record<string, unknown>) => {
       reviewed_at: new Date().toISOString(),
     })
     .eq("id", requestId)
+    .eq("status", "pending")
     .select("id, user_id, status, admin_note, reviewed_at")
     .maybeSingle();
 
-  if (requestError || !updatedRequest) throw requestError || new Error("Verification request not found.");
+  if (requestError) throw requestError;
+  if (!updatedRequest) throw new Error("This verification request has already been reviewed. Refresh the queue.");
 
   const { data: profile, error: profileReadError } = await adminClient
     .from("profiles")

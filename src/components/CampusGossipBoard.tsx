@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Flame,
@@ -55,6 +55,7 @@ export const CampusGossipBoard: React.FC = () => {
     addGossipComment,
     likeGossipComment,
     reportGossipPost,
+    recordGossipView,
     currentUser,
     isAuthenticated,
     requestAuthentication,
@@ -79,6 +80,7 @@ export const CampusGossipBoard: React.FC = () => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [commentAnonMap, setCommentAnonMap] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const recordedViewIdsRef = useRef<Set<string>>(new Set());
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -94,6 +96,17 @@ export const CampusGossipBoard: React.FC = () => {
     const normalizedSelectedTag = normalizeGossipTag(selectedTag);
     return normalizeGossipTag(post.tag).includes(normalizedSelectedTag);
   });
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    filteredPosts.forEach((post) => {
+      if (recordedViewIdsRef.current.has(post.id)) return;
+      recordedViewIdsRef.current.add(post.id);
+      void recordGossipView(post.id).then((saved) => {
+        if (!saved) recordedViewIdsRef.current.delete(post.id);
+      });
+    });
+  }, [filteredPosts, isAuthenticated]);
 
   const toggleComments = (postId: string) => {
     setExpandedComments((prev) => ({

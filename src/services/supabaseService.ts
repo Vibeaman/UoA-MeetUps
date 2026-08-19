@@ -75,6 +75,28 @@ const getFileExtension = (file: File) => {
   return extension && /^[a-z0-9]+$/.test(extension) ? extension : 'jpg';
 };
 
+const mapGossipPostRow = (row: any): GossipPost => ({
+  id: row.id,
+  authorId: row.author_id,
+  authorName: row.author_name,
+  authorAvatar: row.author_avatar || undefined,
+  authorDepartment: row.author_department,
+  authorLevel: row.author_level,
+  isAnonymous: row.is_anonymous ?? true,
+  anonymousAlias: row.anonymous_alias || undefined,
+  tag: row.tag,
+  content: row.content,
+  imageUrl: row.image_url || undefined,
+  createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+  timeAgo: row.created_at ? new Date(row.created_at).toLocaleString() : 'Recently',
+  spicyCount: row.spicy_count || 0,
+  capCount: row.cap_count || 0,
+  factsCount: row.facts_count || 0,
+  teaCount: row.tea_count || 0,
+  viewsCount: row.views_count || 0,
+  comments: [],
+});
+
 export const supabaseService = {
   async uploadUserMedia(file: File, userId: string, folder: 'profiles' | 'gossip' | 'verification' | 'chat') {
     if (!file.type.startsWith('image/')) {
@@ -875,27 +897,7 @@ export const supabaseService = {
         return null;
       }
 
-      return (data || []).map((row: any) => ({
-        id: row.id,
-        authorId: row.author_id,
-        authorName: row.author_name,
-        authorAvatar: row.author_avatar || undefined,
-        authorDepartment: row.author_department,
-        authorLevel: row.author_level,
-        isAnonymous: row.is_anonymous ?? true,
-        anonymousAlias: row.anonymous_alias || undefined,
-        tag: row.tag,
-        content: row.content,
-        imageUrl: row.image_url || undefined,
-        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-        timeAgo: row.created_at ? new Date(row.created_at).toLocaleString() : 'Recently',
-        spicyCount: row.spicy_count || 0,
-        capCount: row.cap_count || 0,
-        factsCount: row.facts_count || 0,
-        teaCount: row.tea_count || 0,
-        viewsCount: row.views_count || 0,
-        comments: [],
-      }));
+      return (data || []).map(mapGossipPostRow);
     } catch (error) {
       console.warn('Supabase gossip fetch error:', error);
       return null;
@@ -992,38 +994,44 @@ export const supabaseService = {
     }
   },
 
+  async recordGossipView(postId: string): Promise<number | null> {
+    try {
+      const { data, error } = await getSupabase().rpc('record_gossip_view', { p_post_id: postId });
+      if (error || !data?.[0]) return null;
+      return Number(data[0].views_count || 0);
+    } catch (error) {
+      console.warn('Supabase gossip view error:', error);
+      return null;
+    }
+  },
+
   // Create Gossip Post
-  async createGossipPost(post: GossipPost): Promise<boolean> {
+  async createGossipPost(post: GossipPost): Promise<GossipPost | null> {
     try {
       const supabase = getSupabase();
       const row = {
         id: post.id,
         author_id: post.authorId,
-        author_name: post.authorName,
-        author_avatar: post.authorAvatar || '',
-        author_department: post.authorDepartment,
-        author_level: post.authorLevel,
         is_anonymous: post.isAnonymous,
         anonymous_alias: post.anonymousAlias || null,
         tag: post.tag,
         content: post.content,
         image_url: post.imageUrl || null,
-        spicy_count: post.spicyCount || 0,
-        cap_count: post.capCount || 0,
-        facts_count: post.factsCount || 0,
-        tea_count: post.teaCount || 0,
-        views_count: post.viewsCount || 1,
         created_at: new Date(post.createdAt).toISOString(),
       };
 
-      const { error } = await supabase.from('gossip_posts').insert(row);
-      if (error) {
-        console.warn('Supabase gossip insert error:', error.message);
-        return false;
+      const { data, error } = await supabase
+        .from('gossip_posts')
+        .insert(row)
+        .select('id, author_id, author_name, author_avatar, author_department, author_level, is_anonymous, anonymous_alias, tag, content, image_url, spicy_count, cap_count, facts_count, tea_count, views_count, created_at')
+        .single();
+      if (error || !data) {
+        console.warn('Supabase gossip insert error:', error?.message || 'No post returned.');
+        return null;
       }
-      return true;
+      return mapGossipPostRow(data);
     } catch {
-      return false;
+      return null;
     }
   },
 
