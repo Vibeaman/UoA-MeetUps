@@ -261,7 +261,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExit }) => {
             {adminMetrics ? formatRevenue(adminMetrics.payments.totalRevenueKobo, adminMetrics.payments.currency) : '—'}
           </p>
           <span className="text-[9px] text-neutral-400">
-            {adminMetrics ? `${adminMetrics.payments.successfulPayments} successful payment events` : 'Partner metrics loading'}
+            {adminMetrics
+              ? `${adminMetrics.payments.successfulPayments} successful · ${adminMetrics.payments.refundedPayments} refunded`
+              : 'Partner metrics loading'}
           </span>
         </div>
 

@@ -265,6 +265,8 @@ export interface AdminPaymentMetrics {
   totalRevenueKobo: number;
   successfulPayments: number;
   failedPayments: number;
+  refundedPayments: number;
+  refundedRevenueKobo: number;
   lastPaymentAt: number | null;
 }
 

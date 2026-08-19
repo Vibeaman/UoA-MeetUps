@@ -104,41 +104,44 @@ const getAdminClient = () => {
   });
 };
 
-const listVerificationRequests = async () => {
-  const adminClient = getAdminClient();
-  const { data, error } = await adminClient
-    .from("verification_requests")
-    .select("id, user_id, user_name, username, faculty, department, profile_photo, live_selfie_photo, student_id_photo, status, admin_note, submitted_at")
-    .order("submitted_at", { ascending: false })
-    .limit(100);
+const PAGE_SIZE = 500;
 
-  if (error) throw error;
-  return data || [];
+type AdminTable = "verification_requests" | "user_reports" | "payment_transactions" | "site_sessions";
+
+const fetchAllAdminRows = async (table: AdminTable, select: string, orderColumn: string) => {
+  const adminClient = getAdminClient();
+  const rows: Record<string, any>[] = [];
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await adminClient
+      .from(table)
+      .select(select)
+      .order(orderColumn, { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    rows.push(...((data || []) as Record<string, any>[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+
+  return rows;
 };
 
+const listVerificationRequests = async () => fetchAllAdminRows(
+  "verification_requests",
+  "id, user_id, user_name, username, faculty, department, profile_photo, live_selfie_photo, student_id_photo, status, admin_note, submitted_at",
+  "submitted_at",
+);
+
 const getAdminMetrics = async () => {
-  const adminClient = getAdminClient();
-  const [{ data: paymentRows, error: paymentError }, { data: sessionRows, error: sessionError }] = await Promise.all([
-    adminClient
-      .from("payment_transactions")
-      .select("amount_kobo, currency, status, paid_at")
-      .limit(10000),
-    adminClient
-      .from("site_sessions")
-      .select("duration_seconds, last_seen_at, ended_at")
-      .limit(10000),
+  const [payments, sessions] = await Promise.all([
+    fetchAllAdminRows("payment_transactions", "amount_kobo, currency, status, paid_at", "created_at"),
+    fetchAllAdminRows("site_sessions", "duration_seconds, last_seen_at, ended_at", "last_seen_at"),
   ]);
-
-  if (paymentError) throw paymentError;
-  if (sessionError) throw sessionError;
-
-  const payments = paymentRows || [];
-  const sessions = sessionRows || [];
   const successfulPayments = payments.filter((row) => row.status === "success");
   const failedPayments = payments.filter((row) => row.status === "failed" || row.status === "abandoned");
   const refundedPayments = payments.filter((row) => row.status === "refunded");
-  const totalRevenueKobo = successfulPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0)
-    - refundedPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0);
+  const totalRevenueKobo = successfulPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0);
   const lastPaymentAt = successfulPayments.reduce<number | null>((latest, row) => {
     const timestamp = row.paid_at ? new Date(row.paid_at).getTime() : null;
     return timestamp && (!latest || timestamp > latest) ? timestamp : latest;
@@ -160,6 +163,8 @@ const getAdminMetrics = async () => {
       totalRevenueKobo,
       successfulPayments: successfulPayments.length,
       failedPayments: failedPayments.length,
+      refundedPayments: refundedPayments.length,
+      refundedRevenueKobo: refundedPayments.reduce((total, row) => total + Number(row.amount_kobo || 0), 0),
       lastPaymentAt,
     },
     engagement: {
@@ -215,16 +220,11 @@ const updateProfileVerification = async (body: Record<string, unknown>) => {
   return updatedProfile;
 };
 
-const listReports = async () => {
-  const adminClient = getAdminClient();
-  const { data, error } = await adminClient
-    .from("user_reports")
-    .select("id, reporter_id, reporter_name, target_user_id, target_user_name, target_username, target_photo, reason, details, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) throw error;
-  return data || [];
-};
+const listReports = async () => fetchAllAdminRows(
+  "user_reports",
+  "id, reporter_id, reporter_name, target_user_id, target_user_name, target_username, target_photo, reason, details, status, created_at",
+  "created_at",
+);
 
 const updateProfileBan = async (body: Record<string, unknown>) => {
   const userId = typeof body.userId === "string" ? body.userId.trim() : "";

@@ -1741,3 +1741,46 @@ $$;
 
 revoke all on function public.record_gossip_view(text) from public, anon, authenticated;
 grant execute on function public.record_gossip_view(text) to authenticated;
+
+-- 26. Final least-privilege cleanup for trigger-only helpers and gossip view records.
+REVOKE EXECUTE ON FUNCTION public.guard_profile_protected_fields() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.normalize_gossip_post() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.normalize_verification_request() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_match() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_message() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_profile_like() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_story_like() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_verification() FROM public, anon, authenticated;
+
+ALTER FUNCTION public.fetch_gossip_comments(TEXT) SECURITY INVOKER;
+REVOKE EXECUTE ON FUNCTION public.fetch_gossip_comments(TEXT) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fetch_gossip_comments(TEXT) TO anon, authenticated;
+
+DROP POLICY IF EXISTS "No direct client access to gossip_post_views" ON public.gossip_post_views;
+CREATE POLICY "No direct client access to gossip_post_views"
+  ON public.gossip_post_views
+  FOR ALL
+  TO anon, authenticated
+  USING (false)
+  WITH CHECK (false);
+
+NOTIFY pgrst, 'reload schema';
+
+COMMIT;
+
+-- 27. Foreign-key indexes reported by Supabase performance advisor.
+CREATE INDEX IF NOT EXISTS app_notifications_actor_id_idx ON public.app_notifications (actor_id);
+CREATE INDEX IF NOT EXISTS campus_stories_user_id_idx ON public.campus_stories (user_id);
+CREATE INDEX IF NOT EXISTS campus_story_likes_user_id_idx ON public.campus_story_likes (user_id);
+CREATE INDEX IF NOT EXISTS chat_security_events_actor_id_idx ON public.chat_security_events (actor_id);
+CREATE INDEX IF NOT EXISTS chat_security_events_message_id_idx ON public.chat_security_events (message_id);
+CREATE INDEX IF NOT EXISTS gossip_comment_likes_user_id_idx ON public.gossip_comment_likes (user_id);
+CREATE INDEX IF NOT EXISTS gossip_comments_post_id_idx ON public.gossip_comments (post_id);
+CREATE INDEX IF NOT EXISTS gossip_post_views_user_id_idx ON public.gossip_post_views (user_id);
+CREATE INDEX IF NOT EXISTS gossip_reports_reporter_id_idx ON public.gossip_reports (reporter_id);
+CREATE INDEX IF NOT EXISTS matches_user_id_1_idx ON public.matches (user_id_1);
+CREATE INDEX IF NOT EXISTS matches_user_id_2_idx ON public.matches (user_id_2);
+CREATE INDEX IF NOT EXISTS messages_match_id_idx ON public.messages (match_id);
+CREATE INDEX IF NOT EXISTS messages_sender_id_idx ON public.messages (sender_id);
+CREATE INDEX IF NOT EXISTS payment_transactions_user_id_idx ON public.payment_transactions (user_id);
+CREATE INDEX IF NOT EXISTS user_reports_target_user_id_idx ON public.user_reports (target_user_id);
