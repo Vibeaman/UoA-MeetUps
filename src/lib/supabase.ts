@@ -1,12 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Default project configuration provided by user
-const SUPABASE_PROJECT_URL =
-  import.meta.env.VITE_SUPABASE_URL || 'https://ylyfpatonnplpmvmrsji.supabase.co';
+// Project configuration must come from environment variables. There is no
+// hardcoded fallback: shipping without real config should fail loudly rather
+// than silently connecting to a fixed project.
+const SUPABASE_PROJECT_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlseWZwYXRvbm5wbHBtdm1yc2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDA0ODYsImV4cCI6MjEwMjQ3NjQ4Nn0.qfvWmHHk-SY06QXgb6cEtacV7ACeqPQ5jAEuQecMlJA';
+if (!SUPABASE_PROJECT_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+}
 
 // Lazy client holder
 let supabaseClient: SupabaseClient | null = null;

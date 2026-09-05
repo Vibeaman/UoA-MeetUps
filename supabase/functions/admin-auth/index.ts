@@ -2,8 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PASSWORD_DIGEST = "2a3ee2fb4bfb076d76092bd36af364e89fb492d898d7ca7b7bd5bf4bf1d3a360";
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
-const FAILED_ATTEMPT_LIMIT = 5;
-const FAILED_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+const FAILED_ATTEMPT_LIMIT = 3;
+const FAILED_ATTEMPT_WINDOW_MS = 30 * 60 * 1000;
 const failedAttempts = new Map<string, { count: number; windowStarted: number }>();
 
 const corsHeaders = {
@@ -127,11 +127,39 @@ const fetchAllAdminRows = async (table: AdminTable, select: string, orderColumn:
   return rows;
 };
 
-const listVerificationRequests = async () => fetchAllAdminRows(
-  "verification_requests",
-  "id, user_id, user_name, username, faculty, department, profile_photo, live_selfie_photo, student_id_photo, status, admin_note, submitted_at",
-  "submitted_at",
-);
+const VERIFICATION_MEDIA_BUCKET = "verification-media";
+const SIGNED_URL_TTL_SECONDS = 60 * 10;
+
+// live_selfie_photo / student_id_photo are stored as private storage paths
+// (bucket: verification-media). Resolve them to short-lived signed URLs for
+// the admin console. Pre-migration rows may still hold a legacy public URL,
+// which is passed through unchanged.
+const resolveVerificationMediaUrl = async (
+  adminClient: ReturnType<typeof getAdminClient>,
+  value: string | null | undefined,
+) => {
+  if (!value) return value ?? null;
+  if (/^https?:\/\//i.test(value)) return value;
+  const { data, error } = await adminClient.storage
+    .from(VERIFICATION_MEDIA_BUCKET)
+    .createSignedUrl(value, SIGNED_URL_TTL_SECONDS);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+};
+
+const listVerificationRequests = async () => {
+  const rows = await fetchAllAdminRows(
+    "verification_requests",
+    "id, user_id, user_name, username, faculty, department, profile_photo, live_selfie_photo, student_id_photo, status, admin_note, submitted_at",
+    "submitted_at",
+  );
+  const adminClient = getAdminClient();
+  return Promise.all(rows.map(async (row) => ({
+    ...row,
+    live_selfie_photo: await resolveVerificationMediaUrl(adminClient, row.live_selfie_photo),
+    student_id_photo: await resolveVerificationMediaUrl(adminClient, row.student_id_photo),
+  })));
+};
 
 const getAdminMetrics = async () => {
   const [payments, sessions] = await Promise.all([
@@ -440,6 +468,12 @@ Deno.serve(async (request) => {
     }
 
     const password = typeof body.password === "string" ? body.password.trim().toUpperCase() : "";
+
+    if (password.length < 8) {
+      rateLimitState.count += 1;
+      return json({ authenticated: false, message: "Invalid partner password." }, 401);
+    }
+
     const digest = await sha256Hex(password);
 
     if (!timingSafeEqual(digest, PASSWORD_DIGEST)) {

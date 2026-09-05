@@ -23,6 +23,7 @@ import {
  * Service for syncing UniAbuja MeetUps data with Supabase PostgreSQL
  */
 const USER_MEDIA_BUCKET = 'user-media';
+const VERIFICATION_MEDIA_BUCKET = 'verification-media';
 
 const normalizeUsername = (username: string) => username.trim().toLowerCase();
 const PUBLIC_PROFILE_SELECT = [
@@ -110,7 +111,12 @@ export const supabaseService = {
       const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '_') || 'anonymous';
       const filePath = `${safeUserId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${getFileExtension(file)}`;
       const supabase = getSupabase();
-      const { error: uploadError } = await supabase.storage.from(USER_MEDIA_BUCKET).upload(filePath, file, {
+      // Verification selfies/ID photos are sensitive and must never be public.
+      // They are uploaded to a private bucket; the returned "url" is a storage
+      // path (not a fetchable link), which is what submitVerification stores.
+      // The admin console resolves it to a short-lived signed URL server-side.
+      const bucket = folder === 'verification' ? VERIFICATION_MEDIA_BUCKET : USER_MEDIA_BUCKET;
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file, {
         cacheControl: '3600',
         contentType: file.type,
         upsert: false,
@@ -120,7 +126,11 @@ export const supabaseService = {
         return { url: null, error: uploadError.message };
       }
 
-      const { data } = supabase.storage.from(USER_MEDIA_BUCKET).getPublicUrl(filePath);
+      if (bucket === VERIFICATION_MEDIA_BUCKET) {
+        return { url: filePath, error: null };
+      }
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
       return { url: data.publicUrl, error: null };
     } catch (error) {
       return {
@@ -1367,7 +1377,10 @@ export const supabaseService = {
 
   async deleteMatch(matchId: string): Promise<boolean> {
     try {
-      const { error } = await getSupabase().from('matches').delete().eq('id', matchId);
+      // Matches can no longer be deleted with a direct table write (RLS only
+      // allows SELECT now); unmatching goes through the unmatch_user RPC,
+      // which verifies the caller is a participant before deleting.
+      const { error } = await getSupabase().rpc('unmatch_user', { p_match_id: matchId });
       return !error;
     } catch (error) {
       console.warn('Supabase match deletion error:', error);
@@ -1375,32 +1388,75 @@ export const supabaseService = {
     }
   },
 
-  async fetchWhoLikedMe(userId: string): Promise<UserProfile[] | null> {
+  async updateMatchLastMessage(matchId: string, text: string): Promise<boolean> {
     try {
-      const supabase = getSupabase();
-      const [{ data: likeRows, error: likeError }, { data: matchRows, error: matchError }] = await Promise.all([
-        supabase
-          .from('profile_likes')
-          .select('sender_id, created_at')
-          .eq('recipient_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(100),
-        supabase
-          .from('matches')
-          .select('user_id_1, user_id_2')
-          .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
-          .limit(100),
-      ]);
-      if (likeError || matchError) return null;
-
-      const matchedIds = new Set<string>();
-      (matchRows || []).forEach((row: any) => {
-        matchedIds.add(row.user_id_1 === userId ? row.user_id_2 : row.user_id_1);
+      // Matches can no longer be updated with a direct table write (RLS only
+      // allows SELECT now); the last-message preview goes through this RPC.
+      const { error } = await getSupabase().rpc('update_match_last_message', {
+        p_match_id: matchId,
+        p_text: text,
       });
+      if (error) {
+        console.warn('Supabase match last-message update error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn('Supabase match last-message update exception:', error);
+      return false;
+    }
+  },
+
+  async fetchWhoLikedMe(): Promise<UserProfile[] | null> {
+    try {
+      // Recipients can no longer SELECT profile_likes rows where they are the
+      // recipient (RLS now only allows reading likes you sent), and full
+      // profile data for inbound likers is never sent to free users. This
+      // SECURITY DEFINER RPC decides server-side what the caller may see.
+      const { data, error } = await getSupabase().rpc('fetch_who_liked_me');
+      if (error || !Array.isArray(data)) {
+        console.warn('Supabase inbound likes fetch notice:', error?.message || 'No data returned.');
+        return null;
+      }
+
+      if (data.length === 0) return [];
+
+      const isPremium = Boolean(data[0]?.is_premium);
+
+      if (!isPremium) {
+        // Free users only get inert placeholder profiles: enough to render
+        // the blurred "who liked you" grid, nothing that identifies the
+        // liker.
+        return data.map((row: any, index: number): UserProfile => ({
+          id: `hidden_${index}`,
+          name: 'Someone',
+          age: 0,
+          username: '',
+          gender: 'Prefer not to say',
+          faculty: '',
+          course: '',
+          department: '',
+          level: '100L',
+          campusLocation: 'Main Campus',
+          bio: '',
+          photos: [],
+          interests: [],
+          lookingFor: 'both',
+          mode: 'normal',
+          icebreakerPrompts: [],
+          isVerified: false,
+          verificationStatus: 'unverified',
+          badges: [],
+          isBanned: false,
+          lastActive: '',
+          isOnline: false,
+        }));
+      }
+
+      const senderIds = new Set(data.map((row: any) => row.sender_id));
       const profiles = await supabaseService.fetchProfiles();
       if (!profiles) return null;
-      const likedIds = new Set((likeRows || []).map((row: any) => row.sender_id));
-      return profiles.filter((profile) => likedIds.has(profile.id) && !matchedIds.has(profile.id) && !profile.isBanned && profile.id !== userId);
+      return profiles.filter((profile) => senderIds.has(profile.id));
     } catch (error) {
       console.warn('Supabase inbound likes fetch error:', error);
       return null;

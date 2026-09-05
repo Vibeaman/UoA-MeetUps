@@ -571,7 +571,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     void Promise.all([
       supabaseService.fetchProfile(currentUser.id),
       supabaseService.fetchBlockedUserIds(currentUser.id),
-      supabaseService.fetchWhoLikedMe(currentUser.id),
+      supabaseService.fetchWhoLikedMe(),
     ]).then(([profile, blockedIds, likedProfiles]) => {
       if (cancelled) return;
       if (profile) setCurrentUser(profile);
@@ -1382,18 +1382,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       [matchId]: [...(prev[matchId] || []), newMsg],
     }));
 
+    const lastMessagePreview = imageUrl ? (isPhotoViewOnce ? '📸 View-once photo' : '📷 Photo') : text;
+
     setMatches((prev) =>
       prev.map((m) =>
         m.id === matchId
           ? {
               ...m,
-              lastMessage: imageUrl ? (isPhotoViewOnce ? '📸 View-once photo' : '📷 Photo') : text,
+              lastMessage: lastMessagePreview,
               lastMessageTime: Date.now(),
               hasUnread: false,
             }
           : m,
       ),
     );
+
+    // Persist the preview server-side via RPC (matches can no longer be
+    // updated with a direct table write).
+    void supabaseService.updateMatchLastMessage(matchId, lastMessagePreview);
     return true;
   };
 

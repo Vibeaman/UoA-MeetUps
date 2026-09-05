@@ -32,45 +32,6 @@ const PLAN_DURATIONS_MS = {
   semester: 4 * 30 * 24 * 60 * 60 * 1000,
 } as const;
 
-const grantPremiumEntitlement = async (
-  adminClient: ReturnType<typeof getAdminClient>,
-  userId: string,
-  planId: keyof typeof PLAN_DURATIONS_MS,
-  providerReference: string,
-) => {
-  const { data: alreadyGranted, error: existingError } = await adminClient
-    .from("premium_entitlements")
-    .select("id")
-    .eq("provider_reference", providerReference)
-    .maybeSingle();
-  if (existingError) throw existingError;
-  if (alreadyGranted) return;
-
-  const now = new Date();
-  const { data: currentEntitlement, error: currentError } = await adminClient
-    .from("premium_entitlements")
-    .select("expires_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (currentError) throw currentError;
-
-  const currentExpiry = currentEntitlement?.expires_at ? new Date(currentEntitlement.expires_at) : null;
-  const startsAt = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
-  const expiresAt = new Date(startsAt.getTime() + PLAN_DURATIONS_MS[planId]);
-
-  const { error: entitlementError } = await adminClient.from("premium_entitlements").upsert({
-    id: `premium_${userId}`,
-    user_id: userId,
-    plan_id: planId,
-    provider_reference: providerReference,
-    status: "active",
-    starts_at: startsAt.toISOString(),
-    expires_at: expiresAt.toISOString(),
-    updated_at: now.toISOString(),
-  }, { onConflict: "user_id" });
-  if (entitlementError) throw entitlementError;
-};
-
 const isValidSignature = async (payload: string, signature: string, secretKey: string) => {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -134,9 +95,15 @@ Deno.serve(async (request) => {
     };
     const amountKobo = Number(eventData.amount || existing?.amount_kobo || 0);
     const currency = eventData.currency || existing?.currency || "NGN";
-    const userId = eventMetadata.user_id || existing?.user_id || null;
-    const planId = eventMetadata.plan_id || existing?.plan_id || null;
+    const userId = existing?.user_id || eventMetadata.user_id || null;
+    const planId = existing?.plan_id || eventMetadata.plan_id || null;
     const paidAt = status === "success" && eventData.paid_at ? eventData.paid_at : null;
+
+    // Validate amount matches pending transaction
+    if (existing && status === "success" && existing.amount_kobo > 0 && amountKobo !== existing.amount_kobo) {
+      console.error("Webhook amount mismatch:", { expected: existing.amount_kobo, received: amountKobo, reference });
+      return json({ ok: false, error: "Amount mismatch." }, 400);
+    }
 
     const { error: upsertError } = await adminClient.from("payment_transactions").upsert({
       id: existing?.id || reference,
@@ -153,7 +120,13 @@ Deno.serve(async (request) => {
     if (upsertError) throw upsertError;
 
     if (status === "success" && userId && (planId === "weekly" || planId === "monthly" || planId === "semester")) {
-      await grantPremiumEntitlement(adminClient, userId, planId, reference);
+      const { error: entitlementError } = await adminClient.rpc("grant_premium_entitlement", {
+        p_user_id: userId,
+        p_plan_id: planId,
+        p_provider_reference: reference,
+        p_duration_ms: PLAN_DURATIONS_MS[planId as keyof typeof PLAN_DURATIONS_MS],
+      });
+      if (entitlementError) throw entitlementError;
 
       const { data: profile, error: profileReadError } = await adminClient
         .from("profiles")
