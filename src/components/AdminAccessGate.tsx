@@ -65,20 +65,20 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
             type="password"
             value={password}
             onChange={(event) => {
-              setPassword(event.target.value.replace(/[^a-z]/gi, '').slice(0, 3));
+              setPassword(event.target.value.replace(/[^0-9]/g, '').slice(0, 6));
               setError('');
             }}
-            placeholder="•••"
-            maxLength={3}
-            autoCapitalize="characters"
+            placeholder="••••••"
+            maxLength={6}
+            inputMode="numeric"
             autoComplete="off"
             spellCheck={false}
             autoFocus
-            className="w-full rounded-2xl border border-orange-800/70 bg-[#090312] px-4 py-3 text-center text-xl font-black uppercase tracking-[0.55em] text-white outline-none transition-colors placeholder:text-orange-300/30 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20"
+            className="w-full rounded-2xl border border-orange-800/70 bg-[#090312] px-4 py-3 text-center text-xl font-black uppercase tracking-[0.35em] text-white outline-none transition-colors placeholder:text-orange-300/30 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20"
             aria-describedby={error ? 'admin-password-error' : 'admin-password-help'}
           />
           <p id="admin-password-help" className="text-center text-[11px] text-neutral-500">
-            Enter the three-letter partner password.
+            Enter the six-digit partner code.
           </p>
           {error && (
             <p id="admin-password-error" role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-center text-xs font-semibold text-rose-300">
@@ -87,7 +87,7 @@ export const AdminAccessGate: FC<AdminAccessGateProps> = ({ onBack }) => {
           )}
           <button
             type="submit"
-            disabled={password.length !== 3 || isSubmitting}
+            disabled={password.length !== 6 || isSubmitting}
             className="w-full rounded-2xl bg-gradient-to-r from-orange-600 to-orange-600 px-4 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(168,85,247,0.28)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting ? 'Verifying...' : 'Unlock partner console'}

@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const PASSWORD_DIGEST = "2a3ee2fb4bfb076d76092bd36af364e89fb492d898d7ca7b7bd5bf4bf1d3a360";
+const PASSWORD_DIGEST = "585814e2bf60bac12ef3450b375ab1726021d01ad1d7ebc775e99106f3db7b32";
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
 const FAILED_ATTEMPT_LIMIT = 3;
 const FAILED_ATTEMPT_WINDOW_MS = 30 * 60 * 1000;
@@ -469,7 +469,7 @@ Deno.serve(async (request) => {
 
     const password = typeof body.password === "string" ? body.password.trim().toUpperCase() : "";
 
-    if (password.length < 8) {
+    if (password.length < 6) {
       rateLimitState.count += 1;
       return json({ authenticated: false, message: "Invalid partner password." }, 401);
     }
