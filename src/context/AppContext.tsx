@@ -81,6 +81,7 @@ interface AppContextType {
   whoLikedMeProfiles: UserProfile[];
   isPremium: boolean;
   activePlan: PremiumEntitlement['planId'] | null;
+  premiumExpiresAt: string | null;
   activatePremium: (planId: 'weekly' | 'monthly' | 'semester') => void;
   reports: UserReport[];
   submitReport: (targetUser: UserProfile, reason: UserReport['reason'], details: string) => Promise<boolean>;
@@ -316,6 +317,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Premium State
   const [isPremium, setIsPremium] = useState(false);
   const [activePlan, setActivePlan] = useState<PremiumEntitlement['planId'] | null>(null);
+  const [premiumExpiresAt, setPremiumExpiresAt] = useState<string | null>(null);
 
   // Boost timer
   const [isBoostActive, setIsBoostActive] = useState<boolean>(false);
@@ -408,6 +410,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     );
     setIsPremium(isActive);
     setActivePlan(isActive ? entitlement?.planId || null : null);
+    setPremiumExpiresAt(isActive ? entitlement?.expiresAt || null : null);
   };
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
@@ -1825,6 +1828,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         campusAlerts,
         isPremium,
         activePlan,
+        premiumExpiresAt,
         activatePremium,
         reports,
         submitReport,

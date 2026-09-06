@@ -253,7 +253,7 @@ export interface PremiumPlan {
 
 export interface PremiumEntitlement {
   userId: string;
-  planId: PremiumPlan['id'];
+  planId: PremiumPlan['id'] | 'trial';
   status: 'active' | 'expired' | 'revoked' | 'refunded';
   startsAt: string;
   expiresAt: string;

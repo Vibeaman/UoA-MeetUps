@@ -40,6 +40,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
     isAuthLoading,
     isPremium,
     activePlan,
+    premiumExpiresAt,
     setIsPremiumModalOpen,
     setIsVerificationModalOpen,
     openAuthModal,
@@ -330,11 +331,24 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-black text-white">
-                {isPremium ? 'VIP Royal Pass Active' : 'UoA MeetUps VIP'}
+                {isPremium
+                  ? activePlan === 'trial'
+                    ? 'Free VIP Trial Active 🎉'
+                    : 'VIP Royal Pass Active'
+                  : 'UoA MeetUps VIP'}
               </h3>
               <p className="text-[11px] text-orange-200/80">
                 {isPremium
-                  ? `Active on ${activePlan} plan (Paystack verified)`
+                  ? activePlan === 'trial'
+                    ? (() => {
+                        const daysLeft = premiumExpiresAt
+                          ? Math.max(0, Math.ceil((new Date(premiumExpiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+                          : null;
+                        return daysLeft !== null
+                          ? `Your 3-week welcome trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
+                          : 'Enjoy full VIP access on us, welcome to UoA MeetUps';
+                      })()
+                    : `Active on ${activePlan} plan (Paystack verified)`
                   : 'See who liked you, rewind swipes, and incognito mode'}
               </p>
             </div>

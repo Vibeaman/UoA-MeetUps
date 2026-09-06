@@ -1112,7 +1112,7 @@ CREATE TABLE IF NOT EXISTS public.payment_transactions (
 CREATE TABLE IF NOT EXISTS public.premium_entitlements (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL UNIQUE REFERENCES public.profiles(id) ON DELETE CASCADE,
-  plan_id TEXT NOT NULL CHECK (plan_id IN ('weekly', 'monthly', 'semester')),
+  plan_id TEXT NOT NULL CHECK (plan_id IN ('trial', 'weekly', 'monthly', 'semester')),
   provider_reference TEXT UNIQUE,
   status TEXT NOT NULL CHECK (status IN ('active', 'expired', 'revoked', 'refunded')),
   starts_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
