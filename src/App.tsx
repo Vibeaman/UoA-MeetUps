@@ -14,6 +14,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminAccessGate } from './components/AdminAccessGate';
 import { CommunityGuidelinesView } from './components/CommunityGuidelinesView';
 import { TipsView } from './components/TipsView';
+import { SignedOutLanding } from './components/SignedOutLanding';
 
 // Modals
 import { ProfileDetailModal } from './components/ProfileDetailModal';
@@ -26,7 +27,7 @@ import { ProfileEditModal } from './components/ProfileEditModal';
 import { CampusStoryModal } from './components/CampusStoryModal';
 import { ReportModal } from './components/ReportModal';
 import { UserProfile } from './types';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, Sparkles } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const {
@@ -42,7 +43,9 @@ const MainAppContent: React.FC = () => {
     campusAlerts,
   } = useApp();
 
-  const isStandaloneSignedOutProfile = activeTab === 'profile' && !isAuthenticated && !isAuthLoading;
+  // Gate every tab except the password-protected admin console behind sign up / login.
+  // Returning visitors with a valid session skip straight past this.
+  const isStandaloneSignedOutProfile = activeTab !== 'admin' && !isAuthenticated && !isAuthLoading;
 
   // Modal and sub-view states
   const [selectedProfile, setSelectedProfile] = useState<UserProfile | null>(null);
@@ -70,6 +73,19 @@ const MainAppContent: React.FC = () => {
 
   const showDesktopWorkspace = !isStandaloneSignedOutProfile && activeTab !== 'admin';
   const showDesktopCampusRail = showDesktopWorkspace && activeTab === 'discover' && !showGuidelines && !showTips;
+
+  // While we confirm whether a returning visitor already has a valid session, show a
+  // neutral loading state instead of flashing app content or the sign-up gate.
+  if (isAuthLoading && activeTab !== 'admin') {
+    return (
+      <div className="flex min-h-[100dvh] w-full flex-1 items-center justify-center bg-[#0b0610] px-6 text-center text-white">
+        <div>
+          <Sparkles className="mx-auto h-7 w-7 animate-pulse text-pink-200" />
+          <p className="mt-4 text-sm text-white/55">Checking your secure session</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="uoa-app-shell relative min-h-[100dvh] w-full min-w-0 overflow-x-hidden text-neutral-100 flex flex-col items-center justify-between font-sans selection:bg-pink-500 selection:text-white">
@@ -101,7 +117,9 @@ const MainAppContent: React.FC = () => {
             : 'relative z-10 mx-auto flex w-full min-w-0 max-w-[1440px] flex-1 flex-col justify-start px-3 pb-24 sm:px-5 sm:pb-28 lg:px-6 lg:pb-10'
         }
       >
-        {showGuidelines ? (
+        {isStandaloneSignedOutProfile ? (
+          <SignedOutLanding />
+        ) : showGuidelines ? (
           <CommunityGuidelinesView onBack={() => setShowGuidelines(false)} />
         ) : showTips ? (
           <TipsView onBack={() => setShowTips(false)} />
