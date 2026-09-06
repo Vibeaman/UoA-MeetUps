@@ -114,6 +114,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
 
   useEffect(() => {
     setViewedOncePhotos({});
+    if (activeViewOncePhoto) {
+      void supabaseService.deleteViewOnceMedia(activeViewOncePhoto.imageUrl);
+    }
     setActiveViewOncePhoto(null);
     setProtectedPhotoBlank(false);
     setSecurityNotice(null);
@@ -477,7 +480,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onOpenProfileDetails, onOpen
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveViewOncePhoto(null)}
+                  onClick={() => {
+                    void supabaseService.deleteViewOnceMedia(activeViewOncePhoto.imageUrl);
+                    setActiveViewOncePhoto(null);
+                  }}
                   className="rounded-full px-3 py-1 text-xs font-bold text-neutral-300 hover:bg-white/10 hover:text-white"
                 >
                   Close

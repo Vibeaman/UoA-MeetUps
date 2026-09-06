@@ -1252,6 +1252,18 @@ export const supabaseService = {
     }
   },
 
+  async deleteViewOnceMedia(imageUrl: string): Promise<void> {
+    try {
+      const marker = '/storage/v1/object/public/user-media/';
+      const idx = imageUrl.indexOf(marker);
+      if (idx === -1) return;
+      const storagePath = decodeURIComponent(imageUrl.substring(idx + marker.length));
+      await getSupabase().rpc('delete_view_once_media', { p_storage_path: storagePath });
+    } catch (error) {
+      console.warn('View-once media cleanup error:', error);
+    }
+  },
+
   async recordChatSecurityEvent(event: ChatSecurityEvent): Promise<boolean> {
     try {
       const { error } = await getSupabase().from('chat_security_events').insert({
